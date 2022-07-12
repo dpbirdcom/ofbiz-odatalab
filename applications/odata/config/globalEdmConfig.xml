@@ -1,0 +1,38 @@
+<ofbiz-edm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<EnumType Name="PartyStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=PARTY_STATUS" />
+	<EntityType Name="Party" OfbizEntity="Party" hasDerivedEntity="true">
+		<Property Name="partyId" />
+		<Property Name="partyTypeId" />
+		<Property Name="description" />
+		<Property Name="statusId" Type="PartyStatus" />
+		<Property Name="createdDate" />
+	</EntityType>
+	<EntityType Name="PartyGroup" BaseType="Party">
+		<Property Name="groupName"/>
+		<Property Name="comments"/>
+	</EntityType>
+	<EntityType Name="Person" BaseType="Party">
+		<Property Name="firstName"/>
+		<Property Name="lastName"/>
+		<Property Name="nickname"/>
+		<Property Name="gender"/>
+		<Property Name="maritalStatus"/>
+	</EntityType>
+	<EntityType Name="UserLogin">
+		<Property Name="userLoginId"/>
+		<Property Name="partyId"/>
+        <NavigationProperty Name="Party" Type="Party"/>
+	</EntityType>
+	<EntityType Name="ContactMech" AutoProperties="true"/>
+	<EntityType Name="RoleType" AutoProperties="true"/>
+
+	<EntityContainer>
+		
+		<EntitySet Name="Parties" EntityType="Party">
+		</EntitySet>
+		<EntitySet Name="UserLogins" EntityType="UserLogin">
+			<NavigationPropertyBinding Path="Party" Target="Parties"/>
+		</EntitySet>
+
+	</EntityContainer>
+</ofbiz-edm>

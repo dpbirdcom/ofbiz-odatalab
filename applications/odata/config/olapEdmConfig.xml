@@ -1,0 +1,44 @@
+<ofbiz-edm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ImportGlobal="false">
+    <EntityType Name="DateDimension" AutoProperties="true"/>
+    <EntityType Name="CurrencyDimension" AutoProperties="true"/>
+    <EntityType Name="ProductDimension" AutoProperties="true"/>
+    <EntityType Name="SalesOrderItemFact">
+        <Property Name="orderId"/>
+        <Property Name="orderItemSeqId"/>
+        <Property Name="orderDateDimId"/>
+        <Property Name="productDimId"/>
+        <Property Name="origCurrencyDimId"/>
+        <Property Name="quantity"/>
+        <NavigationProperty Name="DateDimension" AutoBinding="true"/>
+        <NavigationProperty Name="CurrencyDimension" AutoBinding="true"/>
+        <NavigationProperty Name="ProductDimension" AutoBinding="true"/>
+    </EntityType>
+
+    <EntityContainer>
+        <EntitySet Name="SalesOrderItemFacts" EntityType="SalesOrderItemFact">
+        </EntitySet>
+        <EntitySet Name="DateDimensions" EntityType="DateDimension">
+        </EntitySet>
+        <EntitySet Name="CurrencyDimensions" EntityType="CurrencyDimension"/>
+        <EntitySet Name="ProductDimensions" EntityType="ProductDimension"/>
+    </EntityContainer>
+    <Annotations Target="com.dpbird.O3Container">
+        <Annotation Term="Aggregation.ApplySupported" />
+    </Annotations>
+    <Annotations Target="com.dpbird.SalesOrderItemFact">
+        <Annotation Term="Aggregation.ApplySupported" />
+        <Annotation Term="Aggregation.CustomAggregate" Qualifier="Budget" String="Edm.Decimal"/>
+    </Annotations>
+    <Annotations Target="com.dpbird.SalesOrderItemFact/orderDateDimId">
+        <Annotation Term="Aggregation.Groupable" />
+    </Annotations>
+    <Annotations Target="com.dpbird.SalesOrderItemFact/productDimId">
+        <Annotation Term="Aggregation.Groupable" />
+    </Annotations>
+    <Annotations Target="com.dpbird.SalesOrderItemFact/origCurrencyDimId">
+        <Annotation Term="Aggregation.Groupable" />
+    </Annotations>
+    <Annotations Target="com.dpbird.SalesOrderItemFact/quantity">
+        <Annotation Term="Aggregation.Aggregatable" />
+    </Annotations>
+</ofbiz-edm>

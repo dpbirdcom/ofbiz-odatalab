@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/services.xsd">
+    <description>Odata Services</description>
+    <vendor></vendor>
+    <version>1.0</version>
+
+    <service name="testEntityTypeInput" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testEntityTypeInput" auth="false">
+    		<description>用来测试输入参数是EntityType的odata action</description>
+    		<attribute name="productFeatureAppl" mode="IN" type="GenericValue" optional="false" />
+    		<attribute name="productFeatureId" mode="OUT" type="String" optional="false" />
+    	</service>
+
+    <service name="testActionReturn" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testActionReturn" auth="false">
+   		<description>如果service返回两个或以上的返回值，需要能够在edmConfig中指定哪个output为action的返回值</description>
+   		<attribute name="stringOne" mode="OUT" type="String" optional="false" />
+   		<attribute name="stringTwo" mode="OUT" type="String" optional="false" />
+   		<attribute name="decimalOne" mode="OUT" type="BigDecimal" optional="false" />
+   		<attribute name="decimalTwo" mode="OUT" type="BigDecimal" optional="false" />
+   	</service>
+
+    <service name="testActionPrimitive" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testActionPrimitive" auth="false">
+   		<description>如果service返回Primitive，测试Action的返回正确</description>
+   		<attribute name="theReturn" mode="OUT" type="String" optional="false" />
+   	</service>
+
+    <service name="testBoundActionPrimitive" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundActionPrimitive" auth="false">
+   		<description>如果service返回Primitive，测试Bound Action的返回正确</description>
+   		<attribute name="party" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="theReturn" mode="OUT" type="String" optional="false" />
+   	</service>
+
+    <service name="testBoundActionWithCollection" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundActionWithCollection" auth="false">
+   		<description>如果service有输入参数是GenericValue的List</description>
+   		<attribute name="parties" mode="IN" type="List" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="theReturn" mode="OUT" type="String" optional="false" />
+   	</service>
+
+    <service name="testActionPrimitiveCollection" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testActionPrimitiveCollection" auth="false">
+   		<description>如果service返回Primitive Collection，测试Action的返回正确</description>
+   		<attribute name="theReturn" mode="OUT" type="List" optional="false" />
+   	</service>
+
+    <service name="testActionComplexType" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testActionComplexType" auth="false">
+   		<description>如果service返回一个自定义的Class，测试Action正确返回对应的ComplexType</description>
+   		<attribute name="parentComplexType" mode="IN" type="com.dpbird.test.TestParentComplexType" optional="false" />
+   		<attribute name="theReturn" mode="OUT" type="com.dpbird.odata.test.TestComplexType" optional="false" />
+   	</service>
+
+    <service name="testBoundFunctionPrimitive" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundFunctionPrimitive" auth="false">
+   		<description>如果service返回Primitive，测试Bound Function的返回正确</description>
+   		<attribute name="product" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="partyId" mode="IN" type="String" optional="true" />
+   		<attribute name="price" mode="OUT" type="BigDecimal" optional="false" />
+   	</service>
+   	   	   	
+   	<service name="testBoundFunctionSuccess" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundFunctionSuccess" auth="false">
+   		<attribute name="product" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="otherParmMust" mode="IN" type="String" optional="true" />
+   		<attribute name="returnString" mode="OUT" type="String" optional="false" />
+   	</service>
+   	
+   	<service name="testBoundFunctionError" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundFunctionError" auth="false">
+   		<attribute name="product" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="otherParmMust" mode="IN" type="String" optional="true" />
+   		<attribute name="returnString" mode="OUT" type="String" optional="false" />
+   	</service>
+   	
+   	<service name="testBoundActionSuccess" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundActionSuccess" auth="false">
+   		<attribute name="product" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="otherParmMust" mode="IN" type="String" optional="false" />
+   		<attribute name="product" mode="OUT" type="GenericValue" optional="false" />
+   	</service>
+   	
+   	<service name="testBoundActionError" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundActionError" auth="false">
+   		<attribute name="product" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="String" optional="true" />
+   		<attribute name="otherParmMust" mode="IN" type="String" optional="true" />
+   		<attribute name="returnString" mode="OUT" type="String" optional="false" />
+   	</service>
+   	
+   	<service name="testComplexType" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testComplexType" auth="false">
+   		<attribute name="complexTypeParameter" mode="IN" type="com.dpbird.odata.test.TestComplexType" optional="false" />
+   		<attribute name="theReturn" mode="OUT" type="com.dpbird.odata.test.TestComplexType" optional="false" />
+   	</service>
+   	
+   	<service name="testBoundActionForParty" engine="java"
+    			location="com.dpbird.odata.services.TestServices"
+    			invoke="testBoundActionForParty" auth="false">
+    	<attribute name="party" mode="IN" type="GenericValue" optional="false" />
+   		<attribute name="otherParm" mode="IN" type="Timestamp" optional="true" />
+   		<attribute name="otherParmMust" mode="IN" type="Timestamp" optional="false" />
+   		<attribute name="theReturn" mode="OUT" type="Timestamp" optional="false" />
+   	</service>
+
+	<service name="testFindViewEntityFromCache" engine="java"
+			 location="com.dpbird.odata.services.TestServices"
+			 invoke="testFindViewEntityFromCache" auth="false">
+		<attribute name="productId" mode="IN" type="String" optional="false" />
+		<attribute name="productFeatureId" mode="IN" type="String" optional="false" />
+		<attribute name="fromDate" mode="IN" type="Timestamp" optional="false" />
+		<attribute name="viewEntity" mode="OUT" type="GenericValue" optional="false" />
+	</service>
+
+	<service name="testUpdateViewEntity" engine="java"
+			 location="com.dpbird.odata.services.TestServices"
+			 invoke="testUpdateViewEntity" auth="false">
+		<attribute name="productId" mode="IN" type="String" optional="false" />
+		<attribute name="productFeatureId" mode="IN" type="String" optional="false" />
+		<attribute name="fromDate" mode="IN" type="Timestamp" optional="false" />
+		<!-- 通过修改productFeatureApplTypeId、 sequenceNum这两个字段来测试-->
+		<attribute name="productFeatureApplTypeId" type="String" mode="IN" optional="true"/>
+		<attribute name="sequenceNum" type="Long" mode="IN" optional="true"/>
+	</service>
+
+	<service name="testWorkEffortAttributeTime" engine="java"
+			 location="com.dpbird.odata.services.TestServices"
+			 invoke="testWorkEffortAttributeTime" auth="false">
+		<attribute name="workEffortId" mode="IN" type="String" optional="false" />
+		<attribute name="attrNames" mode="IN" type="List" optional="false" />
+		<attribute name="attrValues" mode="IN" type="List" optional="false" />
+	</service>
+</services>

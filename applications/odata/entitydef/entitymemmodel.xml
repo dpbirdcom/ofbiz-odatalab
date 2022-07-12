@@ -1,0 +1,24 @@
+<entitymodel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/entitymodel.xsd">
+    <title>Entity of an Apache OFBiz Component</title>
+    <description>None</description>
+    <version>1.0</version>
+    <default-resource-name>ProductEntityLabels</default-resource-name>
+
+
+    <entity entity-name="DraftAdministrativeData" package-name="com.dpbird.draft">
+        <field name="draftUUID" type="id" /><!-- draftUUID会用作sapContextId -->
+        <field name="creationDateTime" type="date-time" />
+        <field name="createdByUser" type="id" />
+        <field name="lastChangeDateTime" type="date-time" />
+        <field name="lastChangedByUser" type="id" />
+        <field name="inProcessByUser" type="id" />
+        <field name="originEntityName" type="name" />
+        <field name="draftEntityName" type="name" />
+        <field name="parentDraftUUID" type="id" />
+        <field name="navigationProperty" type="name" />
+        <field name="entityType" type="name" />
+        <field name="entityKeyMap" type="long-varchar" />
+        <prim-key field="draftUUID"/>
+    </entity>
+</entitymodel>

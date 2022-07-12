@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/ofbiz-properties.xsd">
+    <property key="PaymentMethodType.description.EXT_ALIPAY">
+        <value xml:lang="en">Ali Pay</value>
+        <value xml:lang="zh">支付宝</value>
+    </property>
+    <property key="EnumType.Bool.Y">
+        <value xml:lang="en">Yes</value>
+        <value xml:lang="zh">是</value>
+    </property>
+    <property key="EnumType.Bool.N">
+        <value xml:lang="en">No</value>
+        <value xml:lang="zh">否</value>
+    </property>
+    <property key="EnumType.Gender.M">
+        <value xml:lang="en">Male</value>
+        <value xml:lang="zh">男</value>
+    </property>
+    <property key="EnumType.Gender.F">
+        <value xml:lang="en">Female</value>
+        <value xml:lang="zh">女</value>
+    </property>
+    <property key="EnumType.MaritalStatus.S">
+        <value xml:lang="en">Single</value>
+        <value xml:lang="zh">单身</value>
+    </property>
+    <property key="EnumType.MaritalStatus.M">
+        <value xml:lang="en">Married</value>
+        <value xml:lang="zh">已婚</value>
+    </property>
+    <property key="EnumType.MaritalStatus.P">
+        <value xml:lang="en">Separated</value>
+        <value xml:lang="zh">分居</value>
+    </property>
+    <property key="EnumType.MaritalStatus.D">
+        <value xml:lang="en">Divorced</value>
+        <value xml:lang="zh">离异</value>
+    </property>
+    <property key="EnumType.MaritalStatus.W">
+        <value xml:lang="en">Widow</value>
+        <value xml:lang="zh">丧偶</value>
+    </property>
+    <property key="EnumType.Priority.1">
+        <value xml:lang="en">High</value>
+        <value xml:lang="zh">高</value>
+    </property>
+    <property key="EnumType.Priority.2">
+        <value xml:lang="en">Medium</value>
+        <value xml:lang="zh">中</value>
+    </property>
+    <property key="EnumType.Priority.3">
+        <value xml:lang="en">Low</value>
+        <value xml:lang="zh">低</value>
+    </property>
+    <property key="StatusItem.description.OSP_NOT_PAID">
+        <value xml:lang="en">NotPaid</value>
+        <value xml:lang="zh">未付款</value>
+    </property>
+    <property key="StatusItem.description.OSP_PART_PAID">
+        <value xml:lang="en">PartiallyPaid</value>
+        <value xml:lang="zh">部分付款</value>
+    </property>
+    <property key="StatusItem.description.OSP_PAID">
+        <value xml:lang="en">Paid</value>
+        <value xml:lang="zh">已付款</value>
+    </property>
+    <property key="StatusItem.description.OSS_NOT_SHIPPED">
+        <value xml:lang="en">NotShipped</value>
+        <value xml:lang="zh">未发货</value>
+    </property>
+    <property key="StatusItem.description.OSS_PART_SHIPPED">
+        <value xml:lang="en">PartiallyShipped</value>
+        <value xml:lang="zh">部分发货</value>
+    </property>
+    <property key="StatusItem.description.OSS_SHIPPED">
+        <value xml:lang="en">Shipped</value>
+        <value xml:lang="zh">已发货</value>
+    </property>
+    <property key="StatusItem.description.OSMR_CREATED">
+        <value xml:lang="en">ToBePaid</value>
+        <value xml:lang="zh">待付款</value>
+    </property>
+    <property key="StatusItem.description.OSMR_PAID">
+        <value xml:lang="en">ToBeShipped</value>
+        <value xml:lang="zh">待发货</value>
+    </property>
+    <property key="StatusItem.description.OSMR_SHIPPED">
+        <value xml:lang="en">ToBeDelivered</value>
+        <value xml:lang="zh">待收货</value>
+    </property>
+    <property key="StatusItem.description.OSMR_COMPLETED">
+        <value xml:lang="en">Completed</value>
+        <value xml:lang="zh">已完成</value>
+    </property>
+    <property key="StatusItem.description.OSMR_CANCELLED">
+        <value xml:lang="en">Cancelled</value>
+        <value xml:lang="zh">已取消</value>
+    </property>
+
+</resource>

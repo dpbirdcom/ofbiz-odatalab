@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/ofbiz-properties.xsd">
+    <property key="OdataApplication">
+        <value xml:lang="en">Odata Application</value>
+        <value xml:lang="zh">Odata应用程序</value>
+        <value xml:lang="zh-TW">Odata應用程式</value>
+    </property>
+    <property key="OdataCompanyName">
+        <value xml:lang="en">OFBiz: Odata</value>
+        <value xml:lang="zh-TW">OFBiz: Odata</value>
+    </property>
+    <property key="OdataCompanySubtitle">
+        <value xml:lang="en">Part of the Apache OFBiz Family of Open Source Software</value>
+        <value xml:lang="it">Un modulo della famiglia di software open source Apache OFBiz</value>
+        <value xml:lang="zh">开源软件OFBiz的组成部分</value>
+        <value xml:lang="zh-TW">開源軟體OFBiz的組成部分</value>
+    </property>
+    <property key="OdataViewPermissionError">
+        <value xml:lang="en">You are not allowed to view this page.</value>
+        <value xml:lang="zh">不允许你浏览这个页面。</value>
+        <value xml:lang="zh-TW">不允許您檢視這個頁面.</value>
+    </property>
+
+	<!-- Order -->
+    <property key="OrderCreatedBy">
+        <value xml:lang="en">Created By</value>
+        <value xml:lang="zh">创建者</value>
+    </property>
+    <property key="OrderOriginFacilityId">
+        <value xml:lang="en">Facility</value>
+        <value xml:lang="zh">场所</value>
+    </property>
+    <property key="OrderProductStoreId">
+        <value xml:lang="en">Store</value>
+        <value xml:lang="zh">店铺</value>
+    </property>
+    <property key="OrderSalesChannelEnumId">
+        <value xml:lang="en">Sales Channel</value>
+        <value xml:lang="zh">销售渠道</value>
+    </property>
+    <property key="OrderStatusId">
+        <value xml:lang="en">Status</value>
+        <value xml:lang="zh">状态</value>
+    </property>
+    <property key="OrderVisitId">
+        <value xml:lang="en">Visit</value>
+        <value xml:lang="zh">访问</value>
+    </property>
+    <property key="OrderWebSiteId">
+        <value xml:lang="en">Website</value>
+        <value xml:lang="zh">网站</value>
+    </property>
+    <property key="OrderOrderTypeId">
+        <value xml:lang="en">Order Type</value>
+        <value xml:lang="zh">订单类型</value>
+    </property>
+    <property key="OrderFirstAttemptOrderId">
+        <value xml:lang="en">First Attempt</value>
+        <value xml:lang="zh">初次订单</value>
+    </property>
+    <property key="OrderTerminalId">
+        <value xml:lang="en">Terminal ID</value>
+        <value xml:lang="zh">终端</value>
+    </property>
+    <property key="OrderCurrencyUom">
+        <value xml:lang="en">Currency</value>
+        <value xml:lang="zh">货币</value>
+    </property>
+    <property key="OrderIsViewed">
+        <value xml:lang="en">Viewed</value>
+        <value xml:lang="zh">查看</value>
+    </property>
+    <property key="OrderTransactionId">
+        <value xml:lang="en">Transaction ID</value>
+        <value xml:lang="zh">交易ID</value>
+    </property>
+    <property key="OrderInvoicePerShipment">
+        <value xml:lang="en">Invoice Per Shipment</value>
+        <value xml:lang="zh">发票货运</value>
+    </property>
+    <property key="OrderSyncStatusId">
+        <value xml:lang="en">Sync Status</value>
+        <value xml:lang="zh">同步状态</value>
+    </property>
+    <property key="OrderAutoOrderShoppingListId">
+        <value xml:lang="en">Auto Shopping List</value>
+        <value xml:lang="zh">自动购物列表</value>
+    </property>
+    <property key="OrderNeedsInventoryIssuance">
+        <value xml:lang="en">Needs Issuance</value>
+        <value xml:lang="zh">需要库存交付</value>
+    </property>
+    <property key="OrderBillingAccountId">
+        <value xml:lang="en">Billing Account</value>
+        <value xml:lang="zh">账单账户</value>
+    </property>
+    <property key="OrderIsRushOrder">
+        <value xml:lang="en">Rush Order</value>
+        <value xml:lang="zh">紧急订单</value>
+    </property>
+    <property key="OrderPickSheetPrintedDate">
+        <value xml:lang="en">Pick Sheet Printed Date</value>
+        <value xml:lang="zh">拣货单打印时间</value>
+    </property>
+    <property key="OrderPriority">
+        <value xml:lang="en">Priority</value>
+        <value xml:lang="zh">优先级</value>
+    </property>
+    <property key="OrderOrderItemSeqId">
+        <value xml:lang="en">Item Seq ID</value>
+        <value xml:lang="zh">订单项序号</value>
+    </property>
+    <property key="OrderProductId">
+        <value xml:lang="en">Product</value>
+        <value xml:lang="zh">产品</value>
+    </property>
+    <property key="Enumeration.description.GENDER_M">
+        <value xml:lang="en">Male</value>
+        <value xml:lang="zh">男</value>
+    </property>
+    <property key="Enumeration.description.GENDER_F">
+        <value xml:lang="en">Female</value>
+        <value xml:lang="zh">女</value>
+    </property>
+</resource>

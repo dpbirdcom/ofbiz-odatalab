@@ -1,0 +1,129 @@
+<ofbiz-edm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+<!--	<EnumType Name="Bool">-->
+<!--		<Member Name="Y" Value="1"/>-->
+<!--		<Member Name="N" Value="0"/>-->
+<!--	</EnumType>-->
+<!--	<EnumType Name="Gender">-->
+<!--		<Member Name="M" Value="1"/>-->
+<!--		<Member Name="F" Value="2"/>-->
+<!--	</EnumType>-->
+<!--	<EnumType Name="MaritalStatus">-->
+<!--		<Member Name="S" Value="1"/>-->
+<!--		<Member Name="M" Value="2"/>-->
+<!--		<Member Name="P" Value="3"/>-->
+<!--		<Member Name="D" Value="4"/>-->
+<!--		<Member Name="W" Value="5"/>-->
+<!--	</EnumType>-->
+<!--	<EnumType Name="PartyStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=PARTY_STATUS" />-->
+	    
+	<EntityType Name="CustomMethod"/>
+	<EntityType Name="FacilityType"/>
+	<EntityType Name="Geo">
+		<NavigationProperty Name="GeoType" Type="GeoType"/>
+		<NavigationProperty Name="MainGeoAssoc" Type="GeoAssoc" IsCollection="true"/>
+		<NavigationProperty Name="AssocGeoAssoc" Type="GeoAssoc" IsCollection="true"/>
+	</EntityType>
+	<EntityType Name="GeoAssoc">
+        <NavigationProperty Name="MainGeo" Type="Geo"/>
+        <NavigationProperty Name="AssocGeo" Type="Geo"/>
+        <NavigationProperty Name="GeoAssocType" Type="GeoAssocType"/>
+	</EntityType>
+	<EntityType Name="GeoAssocType"/>
+	<EntityType Name="GeoType"/>
+	<EntityType Name="Internationalization"/>
+	<EntityType Name="Party" OfbizEntity="Party" hasDerivedEntity="true">
+<!--		<Property Name="statusId" Type="PartyStatus"/>-->
+        <NavigationProperty Name="PartyProfileDefault" Type="PartyProfileDefault" IsCollection="false"/>
+        <NavigationProperty Name="PartyIdentification" Type="PartyIdentification" IsCollection="true"/>
+        <NavigationProperty Name="PartyRole" Type="PartyRole" IsCollection="true"/>
+		<NavigationProperty Name="PartyRoleType" Type="RoleType" IsCollection="true"
+							MidEntity="PartyRole" FilterByDate="true"
+							CreateService="createPartyRole" RemoveService="deletePartyRole"/>
+        <NavigationProperty Name="ContactMechParty" Type="ContactMech" IsCollection="true" ContainsTarget="true"/>
+	</EntityType>
+	<EntityType Name="PartyGroup" BaseType="Party"/>
+	<EntityType Name="Person" BaseType="Party">
+		<!--	<EntityType Name="Person">-->
+		<NavigationProperty Name="UserLogin" Type="UserLogin" IsCollection="true"/>
+		<NavigationProperty Name="PartyContactMech" Type="PartyContactMech" IsCollection="true"/>
+		<NavigationProperty Name="PostalAddress" Type="PostalAddress" IsCollection="true"/>
+	</EntityType>
+	<!--	<EntityType Name="PartyGroup" />-->
+	<EntityType Name="PartyContactMech"/>
+	<EntityType Name="PartyContactMechPurpose"/>
+	<EntityType Name="PartyIdentification"/>
+	<EntityType Name="PartyProfileDefault"/>
+	<EntityType Name="PartyRole"/>
+	<EntityType Name="PartyType"/>
+	<EntityType Name="ContactMech" hasDerivedEntity="true"/>
+	<EntityType Name="PostalAddress" BaseType="ContactMech">
+        <NavigationProperty Name="CountryGeo" Type="Geo"/>
+        <NavigationProperty Name="StateProvinceGeo" Type="Geo"/>
+        <NavigationProperty Name="CountyGeo" Type="Geo"/>
+        <NavigationProperty Name="MunicipalityGeo" Type="Geo"/>
+        <NavigationProperty Name="CityGeo" Type="Geo"/>
+        <NavigationProperty Name="PostalCodeGeo" Type="Geo"/>
+	</EntityType>
+	<EntityType Name="TelecomNumber" BaseType="ContactMech"/>
+	<!-- <EntityType Name="ProductPriceType"/> -->
+	<EntityType Name="RoleType"/>
+	<EntityType Name="SecurityGroup"/>
+	<EntityType Name="TaxAuthority"/>
+	<EntityType Name="Uom">
+        <NavigationProperty Name="UomGroup" Type="UomGroup" IsCollection="true"/>
+	</EntityType>
+	<EntityType Name="UomType"/>
+	<EntityType Name="UomGroup">
+        <NavigationProperty Name="Uom" Type="Uom"/>
+	</EntityType>
+	<EntityType Name="UserLogin">
+        <NavigationProperty Name="Party" Type="Party"/>
+	</EntityType>
+	<EntityType Name="UserLoginAndPartyDetails"/>
+	<EntityType Name="UserLoginSecurityGroup"/>
+	
+	<EntityContainer>
+		
+		<EntitySet Name="ContactMechs" EntityType="ContactMech">
+		    <NavigationPropertyBinding Path="TelecomNumber" Target="TelecomNumbers"/>
+		</EntitySet>
+		<EntitySet Name="GeoAssocs" EntityType="GeoAssoc">
+		    <NavigationPropertyBinding Path="MainGeo" Target="Geos"/>
+		    <NavigationPropertyBinding Path="AssocGeo" Target="Geos"/>
+		    <NavigationPropertyBinding Path="GeoAssocType" Target="GeoAssocTypes"/>
+		</EntitySet>
+		<EntitySet Name="GeoAssocTypes" EntityType="GeoAssocType"/>
+		<EntitySet Name="Geos" EntityType="Geo">
+		    <NavigationPropertyBinding Path="MainGeoAssoc" Target="GeoAssocs"/>
+		    <NavigationPropertyBinding Path="AssocGeoAssoc" Target="GeoAssocs"/>
+		    <NavigationPropertyBinding Path="GeoType" Target="GeoAssocTypes"/>
+		</EntitySet>
+		<EntitySet Name="GeoTypes" EntityType="GeoType"/>
+		<EntitySet Name="Internationalizations" EntityType="Internationalization"/>
+		<EntitySet Name="Parties" EntityType="Party">
+		    <NavigationPropertyBinding Path="PartyIdentification" Target="PartyIdentifications"/>
+		    <NavigationPropertyBinding Path="PartyRole" Target="PartyRoles"/>
+		    <NavigationPropertyBinding Path="PartyRoleType" Target="RoleTypes"/>
+		    <NavigationPropertyBinding Path="ContactMechParty" Target="ContactMechs"/>
+		</EntitySet>
+		<EntitySet Name="PartyGroups" EntityType="PartyGroup">
+		    <NavigationPropertyBinding Path="Party" Target="Parties"/>
+		</EntitySet>
+		<EntitySet Name="PartyIdentifications" EntityType="PartyIdentification"/>
+		<EntitySet Name="PartyRoles" EntityType="PartyRole">
+		    <NavigationPropertyBinding Path="Party" Target="Parties"/>
+		</EntitySet>
+		<EntitySet Name="PostalAddresses" EntityType="PostalAddress"/>
+		<EntitySet Name="RoleTypes" EntityType="RoleType"/>
+		<EntitySet Name="SecurityGroups" EntityType="SecurityGroup"/>
+		<EntitySet Name="TelecomNumbers" EntityType="TelecomNumber"/>
+		<EntitySet Name="Uoms" EntityType="Uom"/>
+		<EntitySet Name="UomTypes" EntityType="UomType"/>
+		<EntitySet Name="UserLoginAndPartyDetailss" EntityType="UserLoginAndPartyDetails"/>
+		<EntitySet Name="UserLogins" EntityType="UserLogin"/>
+			
+<!-- 		<Singleton Name="Me" Type="UserLogin"/> -->
+
+	</EntityContainer>
+</ofbiz-edm>

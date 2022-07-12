@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/services.xsd">
+    <description>Odata Services</description>
+    <vendor></vendor>
+    <version>1.0</version>
+
+    <!-- services for odata -->
+    <service name="dpbird.createEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="createEntityData" auth="true">
+        <description>根据odata entity创建数据库数据</description>
+        <attribute name="edmEntitySet" type="org.apache.olingo.commons.api.edm.EdmEntitySet" mode="IN"/>
+        <attribute name="edmTypeFilter" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN" optional="true"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN" optional="true"/>
+        <attribute name="keyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="navKeyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="entityToWrite" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="rawServiceUri" type="String" mode="IN" optional="true"/>
+        <attribute name="oData" type="org.apache.olingo.server.api.OData" mode="IN" optional="true"/>
+        <attribute name="serviceMetadata" type="org.apache.olingo.server.api.ServiceMetadata" mode="IN" optional="true"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="sapContextId" type="String" mode="IN" optional="true"/>
+        <attribute name="createdEntity" type="org.apache.olingo.commons.api.data.Entity" mode="OUT"/>
+    </service>
+
+    <service name="dpbird.createRelatedEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="createRelatedEntityData" auth="true">
+        <description>根据odata entity创建数据库数据</description>
+        <attribute name="edmBindingTarget" type="org.apache.olingo.commons.api.edm.EdmBindingTarget" mode="IN"/>
+        <attribute name="edmTypeFilter" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN" optional="true"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN"/>
+        <attribute name="keyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="navKeyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="entityToWrite" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="rawServiceUri" type="String" mode="IN" optional="true"/>
+        <attribute name="oData" type="org.apache.olingo.server.api.OData" mode="IN" optional="true"/>
+        <attribute name="serviceMetadata" type="org.apache.olingo.server.api.ServiceMetadata" mode="IN" optional="true"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="sapContextId" type="String" mode="IN" optional="true"/>
+        <attribute name="httpServletRequest" type="javax.servlet.http.HttpServletRequest" mode="IN" optional="true"/>
+        <attribute name="createdEntity" type="org.apache.olingo.commons.api.data.Entity" mode="OUT"/>
+    </service>
+
+    <service name="dpbird.updateEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="updateEntityData" auth="true">
+        <description>根据odata entity更新数据库数据</description>
+        <attribute name="request" type="javax.servlet.http.HttpServletRequest" mode="IN" optional="true"/>
+        <attribute name="edmBindingTarget" type="org.apache.olingo.commons.api.edm.EdmBindingTarget" mode="IN"/>
+        <attribute name="edmTypeFilter" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN" optional="true"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN" optional="true"/>
+        <attribute name="keyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="navKeyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="entityToWrite" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="rawServiceUri" type="String" mode="IN" optional="true"/>
+        <attribute name="oData" type="org.apache.olingo.server.api.OData" mode="IN" optional="true"/>
+        <attribute name="serviceMetadata" type="org.apache.olingo.server.api.ServiceMetadata" mode="IN" optional="true"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="sapContextId" type="String" mode="IN" optional="true"/>
+        <attribute name="entity" type="com.dpbird.odata.edm.OdataOfbizEntity" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="dpbird.deleteEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="deleteEntityData" auth="true">
+        <description>删除odata entity数据库数据</description>
+        <attribute name="edmEntitySet" type="org.apache.olingo.commons.api.edm.EdmEntitySet" mode="IN"/>
+        <attribute name="edmTypeFilter" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN" optional="true"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN" optional="true"/>
+        <attribute name="keyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="navKeyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="rawServiceUri" type="String" mode="IN" optional="true"/>
+        <attribute name="oData" type="org.apache.olingo.server.api.OData" mode="IN" optional="true"/>
+        <attribute name="serviceMetadata" type="org.apache.olingo.server.api.ServiceMetadata" mode="IN" optional="true"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="sapContextId" type="String" mode="IN" optional="true"/>
+    </service>
+
+    <service name="dpbird.deleteRelatedEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="deleteRelatedEntityData" auth="true">
+        <description>根据odata entity创建数据库数据</description>
+        <attribute name="edmBindingTarget" type="org.apache.olingo.commons.api.edm.EdmBindingTarget" mode="IN"/>
+        <attribute name="edmTypeFilter" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN" optional="true"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN"/>
+        <attribute name="keyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="navKeyParams" type="List" mode="IN" optional="true"/>
+        <attribute name="rawServiceUri" type="String" mode="IN" optional="true"/>
+        <attribute name="oData" type="org.apache.olingo.server.api.OData" mode="IN" optional="true"/>
+        <attribute name="serviceMetadata" type="org.apache.olingo.server.api.ServiceMetadata" mode="IN" optional="true"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="sapContextId" type="Integer" mode="IN" optional="true"/>
+        <attribute name="httpServletRequest" type="javax.servlet.http.HttpServletRequest" mode="IN" optional="true"/>
+    </service>
+
+    <service name="dpbird.updateEntityToDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="updateEntityToDraft" auth="true">
+        <description>Update data in memory database</description>
+        <attribute name="originEntityName" type="String" mode="IN"/>
+        <attribute name="draftEntityName" type="String" mode="IN"/>
+        <attribute name="fieldMap" type="Map" mode="IN"/>
+        <attribute name="sapContextId" type="String" mode="IN"/>
+<!--        <attribute name="parentDraftUUID" type="String" mode="IN" optional="true"/>-->
+        <attribute name="draftGenericValue" type="GenericValue" mode="OUT"/>
+    </service>
+
+    <service name="dpbird.createEntityToDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="createEntityToDraft" auth="true">
+        <description>Create data in memory database</description>
+        <attribute name="originEntityName" type="String" mode="IN"/>
+        <attribute name="draftEntityName" type="String" mode="IN"/>
+        <attribute name="entityType" type="String" mode="IN"/>
+        <attribute name="navigationProperty" type="String" mode="IN" optional="true"/>
+        <attribute name="fieldMap" type="Map" mode="IN"/>
+        <attribute name="sapContextId" type="String" mode="IN"/>
+        <attribute name="draftGenericValue" type="GenericValue" mode="OUT"/>
+    </service>
+    <service name="dpbird.copyGenericValueToDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="copyGenericValueToDraft" auth="true">
+        <description>Copy data into memory database</description>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN"/>
+        <attribute name="request" type="javax.servlet.http.HttpServletRequest" mode="IN" optional="true"/>
+        <attribute name="originEntityName" type="String" mode="IN"/>
+        <attribute name="draftEntityName" type="String" mode="IN"/>
+<!--        <attribute name="entityCondition" type="org.apache.ofbiz.entity.condition.EntityCondition" mode="IN"/>-->
+        <attribute name="draftUUID" type="String" mode="IN" optional="true"/>
+        <attribute name="parentDraftUUID" type="String" mode="IN" optional="true"/>
+        <attribute name="originGenericValue" type="GenericValue" mode="IN"/>
+        <attribute name="draftGenericValues" type="List" mode="OUT"/>
+    </service>
+    <service name="dpbird.copyEntityToDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="copyEntityToDraft" auth="true">
+        <description>Copy data into memory database</description>
+        <attribute name="draftUUID" type="String" mode="IN" optional="true"/>
+        <attribute name="entity" type="com.dpbird.odata.edm.OdataOfbizEntity" mode="IN"/>
+        <attribute name="draftGenericValue" type="GenericValue" mode="OUT"/>
+    </service>
+
+    <service name="dpbird.deleteEntityFromDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="deleteEntityFromDraft" auth="true">
+        <description>Delete data in memory database</description>
+        <attribute name="originEntityName" type="String" mode="IN"/>
+        <attribute name="draftEntityName" type="String" mode="IN"/>
+        <attribute name="keyMap" type="Map" mode="IN"/>
+        <attribute name="sapContextId" type="String" mode="IN"/>
+        <attribute name="draftGenericValue" type="GenericValue" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionVoidService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionVoidService" auth="true">
+        <description>处理无返回值的Action</description>
+        <attribute name="request" type="org.apache.olingo.server.api.ODataRequest" mode="IN"/>
+        <attribute name="response" type="org.apache.olingo.server.api.ODataResponse" mode="IN"/>
+        <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+    </service>
+
+    <service name="dpbird.processActionEntityService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionEntityService" auth="true">
+        <description>处理返回值为entity的Action</description>
+        <attribute name="request" type="org.apache.olingo.server.api.ODataRequest" mode="IN"/>
+        <attribute name="response" type="org.apache.olingo.server.api.ODataResponse" mode="IN"/>
+        <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="queryOptions" type="Map" mode="IN"/>
+        <attribute name="entityResult" type="com.dpbird.odata.OFbizEntityActionResult" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionEntityCollectionService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionEntityCollectionService" auth="true">
+        <description>处理返回值为entityCollection的Action</description>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="parameters" type="Map" mode="IN"/>
+        <attribute name="odataContext" type="Map" mode="IN"/>
+        <attribute name="entityCollectionResult" type="Object" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionPrimitiveService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionPrimitiveService" auth="true">
+        <description>处理返回值为Primitive的Action</description>
+        <attribute name="request" type="org.apache.olingo.server.api.ODataRequest" mode="IN"/>
+        <attribute name="response" type="org.apache.olingo.server.api.ODataResponse" mode="IN"/>
+        <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="property" type="org.apache.olingo.commons.api.data.Property" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionPrimitiveCollectionService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionPrimitiveCollectionService" auth="true">
+        <description>处理返回值为PrimitiveCollection的Action</description>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="parameters" type="Map" mode="IN"/>
+        <attribute name="odataContext" type="Map" mode="IN"/>
+        <attribute name="property" type="org.apache.olingo.commons.api.data.Property" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionComplexService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionComplexService" auth="true">
+        <description>处理返回值为Complex的Action</description>
+        <attribute name="request" type="org.apache.olingo.server.api.ODataRequest" mode="IN"/>
+        <attribute name="response" type="org.apache.olingo.server.api.ODataResponse" mode="IN"/>
+        <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="property" type="org.apache.olingo.commons.api.data.Property" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.processActionComplexCollectionService" engine="java"
+             location="com.dpbird.odata.processor.OfbizActionProcessor" invoke="processActionComplexCollectionService" auth="true">
+        <description>处理返回值为ComplexCollection的Action</description>
+        <attribute name="request" type="org.apache.olingo.server.api.ODataRequest" mode="IN"/>
+        <attribute name="response" type="org.apache.olingo.server.api.ODataResponse" mode="IN"/>
+        <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
+        <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="property" type="org.apache.olingo.commons.api.data.Property" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="dpbird.saveViewEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="saveViewEntityData"
+             auth="true">
+        <description>持久化view-entity数据</description>
+        <attribute name="viewEntityName" type="String" mode="IN"/>
+        <attribute name="fieldMap" type="Map" mode="IN"/>
+        <attribute name="pkMap" type="Map" mode="OUT" optional="false"/>
+    </service>
+
+
+    <!-- end services for odata -->
+
+<!--    <service name="dpbird.loadDraftData" engine="java"-->
+<!--             location="com.dpbird.odata.services.OdataServices" invoke="loadDraftData" auth="true" transaction-timeout="7200">-->
+<!--        <description>在内存数据库创建一条数据副本</description>-->
+<!--        <attribute name="srcGenericValue" type="GenericValue" mode="IN"/>-->
+<!--    </service>-->
+<!--    <service name="dpbird.loadDraft" engine="java"-->
+<!--             location="com.dpbird.odata.services.OdataServices" invoke="loadDraft" auth="true"-->
+<!--             transaction-timeout="7200" require-new-transaction="true">-->
+<!--        <description>在内存数据库创建数据副本</description>-->
+<!--        <attribute name="srcEntity" type="String" mode="IN"/>-->
+<!--    </service>-->
+<!--    <service name="dpbird.clearDraft" engine="java"-->
+<!--             location="com.dpbird.odata.services.OdataServices" invoke="clearDraft" auth="true"-->
+<!--             transaction-timeout="7200" require-new-transaction="true">-->
+<!--        <description>在内存数据库创建数据副本</description>-->
+<!--        <attribute name="srcEntity" type="String" mode="IN"/>-->
+<!--    </service>-->
+</services>
