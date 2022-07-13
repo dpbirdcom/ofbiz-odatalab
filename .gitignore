@@ -3,7 +3,6 @@ build/
 applications/*/build
 framework/*/build
 framework/entity/config/entityengine.xml
-/plugins/
 runtime/git-rebase/*
 runtime/SvnInfo.ftl
 runtime/GitInfo.ftl
