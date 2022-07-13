@@ -1,8 +1,0 @@
-[submodule "plugins/basecamp"]
-	path = plugins/basecamp
-	url = https://codeup.aliyun.com/5f1938635fd102f22f6b853c/dpbird/basecamp.git
-	branch = master-dev
-[submodule "plugins/ui5"]
-	path = plugins/ui5
-	url = https://codeup.aliyun.com/5f1938635fd102f22f6b853c/dpbird/ui5.git
-	branch = master-dev
