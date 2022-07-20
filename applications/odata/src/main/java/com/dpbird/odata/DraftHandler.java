@@ -334,7 +334,11 @@ public class DraftHandler {
                 EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
                 entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
                 draftGenericValues = delegator.findList(navDraftEntityName, entityCondition, null, null, null, false);
+                if (UtilValidate.isNotEmpty(navKeyMap)) {
+                    draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, navKeyMap);
+                }
                 draftGenericValue = EntityUtil.getFirst(draftGenericValues);
+
             }
         } catch (GenericEntityException e) {
             e.printStackTrace();

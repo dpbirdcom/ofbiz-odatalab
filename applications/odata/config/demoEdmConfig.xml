@@ -377,6 +377,11 @@
 		<NavigationProperty Name="GoodIdentification"/>
 		<NavigationProperty Name="ProductFeatureAppl"/>
 		<NavigationProperty Name="ProductCategoryMember"/>
+		<NavigationProperty Name="MainProductAssoc"/>
+		<NavigationProperty Name="SupplierProduct"/>
+	</EntityType>
+	<EntityType Name="SupplierProduct" AutoProperties="true">
+		<NavigationProperty Name="Product" IsCollection="false"/>
 	</EntityType>
 	<EntityType Name="ProductContent" AutoProperties="true"/>
 	<EntityType Name="Content" AutoProperties="true"
@@ -450,7 +455,9 @@
 	</EntityType>
 	<EntityType Name="ProductFeatureType" AutoProperties="true"/>
 	<EntityType Name="ProductVirtualAndVariantInfo" AutoProperties="true"/>
-	<EntityType Name="ProductAssoc" AutoProperties="true"/>
+	<EntityType Name="ProductAssoc" AutoProperties="true">
+		<NavigationProperty Name="AssocProduct" AutoBinding="true"/>
+	</EntityType>
 	<EntityType Name="ProductStoreShipmentMeth" AutoProperties="true"/>
 	<EntityType Name="CarrierShipmentMethod" AutoProperties="true"/>
 	<EntityType Name="ProductFeatureGroup" AutoProperties="true"/>
@@ -463,7 +470,10 @@
 		<Property Name="paymentServiceTypeEnumId" Type="PaymentServiceTypeEnumeration"/>
 	</EntityType>
 	<EntityType Name="PaymentMethodType" AutoProperties="true"/>
-	<EntityType Name="StatusItem" AutoProperties="true"/>
+	<EntityType Name="StatusItem" AutoProperties="true">
+		<NavigationProperty Name="StatusType" AutoBinding="true"/>
+	</EntityType>
+	<EntityType Name="StatusType" AutoProperties="true"/>
 	<EntityType Name="PaymentGatewayConfig" AutoProperties="true"/>
 	<EntityType Name="OrderItemShipGrpInvRes" AutoAnnotations="true" AutoProperties="true">
 		<Property Name="reserveOrderEnumId" Type="ReserveOrderEnumeration"/>
@@ -1003,6 +1013,7 @@
 			<NavigationPropertyBinding Path="ProductStore" Target="ProductStores"/>
 		</EntitySet>
 		<EntitySet Name="WebSites" EntityType="WebSite"/>
+		<EntitySet Name="SupplierProducts" EntityType="SupplierProduct"/>
 		<EntitySet Name="OrderAttributes" EntityType="OrderAttribute"/>
 		<EntitySet Name="WebSitePathAliass" EntityType="WebSitePathAlias"/>
 		<EntitySet Name="PartyRoleAndPartyDetails" EntityType="PartyRoleAndPartyDetail"/>
@@ -1059,6 +1070,7 @@
 			<NavigationPropertyBinding Path="ToContentAssoc" Target="ContentAssocs"/>
 			<NavigationPropertyBinding Path="ProductContent" Target="ProductContents"/>
 		</EntitySet>
+		<EntitySet Name="StatusTypes" EntityType="StatusType"/>
 		<EntitySet Name="DataResources" EntityType="DataResource"/>
 		<EntitySet Name="ContentAttributes" EntityType="ContentAttribute"/>
 		<EntitySet Name="ContentAssocs" EntityType="ContentAssoc">

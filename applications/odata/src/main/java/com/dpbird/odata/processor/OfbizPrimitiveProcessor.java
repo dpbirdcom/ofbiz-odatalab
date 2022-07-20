@@ -1,8 +1,9 @@
-package  com.dpbird.odata.processor;
+package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.LocalDispatcher;
@@ -22,6 +23,7 @@ import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
 import org.apache.olingo.server.api.serializer.SerializerException;
 import org.apache.olingo.server.api.serializer.SerializerResult;
 import org.apache.olingo.server.api.uri.*;
+import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
@@ -123,6 +125,45 @@ public class OfbizPrimitiveProcessor implements PrimitiveProcessor {
 				try {
 					property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
 				} catch (ODataException e) {
+					throw new ODataApplicationException(e.getMessage(),
+							HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+				}
+			} else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
+				//查询子对象的单个字段 最多支持三段
+				try {
+            		//property
+					UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
+					edmPrimitiveType = (EdmPrimitiveType) primitiveProperty.getType();
+					//startEntity
+					UriResourceEntitySet startEntitySet = (UriResourceEntitySet) boundEntity;
+					EdmEntitySet startEdmEntitySet = startEntitySet.getEntitySet();
+					//nextNavigation
+					UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
+					EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
+					List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
+					Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
+
+					//如果是三段式查询property，startEdmEntitySet调整为第二段，edmNavigationProperty调整为第三段
+					if (resourcePaths.size() == 4) {
+						startEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
+						keyMap = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
+						//第二段不含主键，需要获取主键
+						if (UtilValidate.isEmpty(keyMap)) {
+							keyMap = Util.getNavigationKey(startEntitySet.getEntityType(), startKeyPredicates, resourceNavigation.getSegmentValue(), edmProvider, delegator);
+						}
+						UriResourceNavigation nextResourceNavigation = (UriResourceNavigation) resourcePaths.get(2);
+						edmNavigationProperty = nextResourceNavigation.getProperty();
+					}
+					Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+							"edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
+							"locale", locale);
+					Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
+							"edmNavigationProperty", edmNavigationProperty);
+					Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+					OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+					Entity relatedEntity = ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
+					property = relatedEntity.getProperty(primitiveProperty.getSegmentValue());
+				} catch (OfbizODataException e) {
 					throw new ODataApplicationException(e.getMessage(),
 							HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
 				}

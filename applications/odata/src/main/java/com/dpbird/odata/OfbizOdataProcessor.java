@@ -533,30 +533,37 @@ public class OfbizOdataProcessor {
         if (UtilValidate.isNotEmpty(applyOption) && Util.isAggregate(applyOption)) {
             EdmStructuredType edmStructuredType = applyOption.getEdmStructuredType();
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmStructuredType.getFullQualifiedName());
+            ModelEntity modelEntity = delegator.getModelEntity(ofbizCsdlEntityType.getOfbizEntity());
             if (dynamicViewHolder == null) {
                 dynamicViewHolder = new DynamicViewHolder(ofbizCsdlEntityType, edmProvider, delegator, dispatcher, userLogin);
             }
             DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
             Aggregate applyAggregate = Util.getApplyAggregate(applyOption);
-            List<AggregateExpression> expressions = applyAggregate.getExpressions();
-            for (AggregateExpression aggregateExpression : expressions) {
-                //聚合函数
+            for (AggregateExpression aggregateExpression : applyAggregate.getExpressions()) {
+                //聚合函数类型
                 AggregateExpression.StandardMethod standardMethod = aggregateExpression.getStandardMethod();
-                //expression 字段名称或者子对象名称
-                String expression = aggregateExpression.getExpression().toString();
-                expression = expression.substring(1, expression.length() - 1);
+                //返回字段别名
                 String expressionAlias = aggregateExpression.getAlias();
-                if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
-                    ModelEntity modelEntity = delegator.getModelEntity(ofbizCsdlEntityType.getOfbizEntity());
-                    List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
-                    if (relationKeyList.size() > 1) {
-                        throw new OfbizODataException("Multiple field association is not supported.");
+                if (UtilValidate.isNotEmpty(standardMethod)) {
+                    //expression 字段名称或者子对象名称
+                    String expression = aggregateExpression.getExpression().toString();
+                    expression = expression.substring(1, expression.length() - 1);
+                    if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
+                        List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
+                        if (relationKeyList.size() > 1) {
+                            throw new OfbizODataException("Multiple field association is not supported.");
+                        }
+                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relationKeyList.get(0), null, false, null, AGGREGATE_MAP.get(standardMethod));
+                    } else {
+                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
                     }
-                    for (String relKey : relationKeyList) {
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relKey, null, false, null, AGGREGATE_MAP.get(standardMethod));
+                } else if (Util.isAggregateCount(aggregateExpression)) {
+                    //这里处理aggregate的$count，使用统计主键数量的方式实现，多主键暂不支持
+                    List<String> pkFieldNames = modelEntity.getPkFieldNames();
+                    if (pkFieldNames.size() > 1) {
+                        throw new OfbizODataException("Count queries with multiple primary keys are not supported.");
                     }
-                } else {
-                    dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
+                    dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, modelEntity.getFirstPkFieldName(), null, false, null, "count");
                 }
                 if (aggregateSet == null) {
                     aggregateSet = new HashSet<>();
