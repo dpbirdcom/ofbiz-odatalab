@@ -507,8 +507,10 @@
 		<NavigationProperty Name="Product" AutoBinding="true"/>
 		<NavigationProperty Name="OrderHeader" AutoBinding="true"/>
 		<NavigationProperty Name="OrderAdjustment" AutoBinding="true" FilterByDate="false"/>
+		<NavigationProperty Name="OrderItemAttribute" AutoBinding="true"/>
 	</EntityType>
 	<EntityType Name="OrderRole" AutoProperties="true"/>
+	<EntityType Name="OrderItemAttribute" AutoProperties="true"/>
 	<EntityType Name="ProductPromo" AutoProperties="true"/>
 	<EntityType Name="ItemIssuance" AutoAnnotations="true" AutoProperties="true"/>
 	<EntityType Name="OrderItemChange" AutoProperties="true">
@@ -1055,6 +1057,7 @@
 			<NavigationPropertyBinding Path="FacilityContactMech" Target="FacilityContactMechs"/>
 		</EntitySet>
 		<EntitySet Name="OrderRoles" EntityType="OrderRole"></EntitySet>
+		<EntitySet Name="OrderItemAttributes" EntityType="OrderItemAttribute"></EntitySet>
 		<EntitySet Name="OrderAdjustments" EntityType="OrderAdjustment"></EntitySet>
 		<EntitySet Name="OrderAdjustments" EntityType="OrderAdjustment"></EntitySet>
 		<EntitySet Name="OrderAdjustmentTypes" EntityType="OrderAdjustmentType"></EntitySet>

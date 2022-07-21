@@ -275,6 +275,16 @@ public class Util {
 		return null;
 	}
 
+
+	public static Map<String, Object> getNavigationTargetKeyMap(EdmBindingTarget startEdmBindingTarget,
+															EdmNavigationProperty edmNavigationProperty, List<UriParameter> nextKeyPredicates) throws OfbizODataException {
+		EdmEntitySet navigationTargetEntitySet = getNavigationTargetEntitySet(startEdmBindingTarget, edmNavigationProperty);
+		if (UtilValidate.isEmpty(navigationTargetEntitySet) || UtilValidate.isEmpty(nextKeyPredicates)) {
+			return null;
+		}
+		return uriParametersToMap(nextKeyPredicates, navigationTargetEntitySet.getEntityType());
+	}
+
 	public static java.sql.Date getSqlDate(String dateStr){
 		return java.sql.Date.valueOf(dateStr);
 	}

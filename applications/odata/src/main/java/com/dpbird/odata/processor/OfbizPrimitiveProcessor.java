@@ -1,6 +1,7 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -9,6 +10,7 @@ import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.ex.ODataException;
@@ -27,6 +29,7 @@ import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -137,12 +140,15 @@ public class OfbizPrimitiveProcessor implements PrimitiveProcessor {
 					//startEntity
 					UriResourceEntitySet startEntitySet = (UriResourceEntitySet) boundEntity;
 					EdmEntitySet startEdmEntitySet = startEntitySet.getEntitySet();
+					List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
+					Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
 					//nextNavigation
 					UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
 					EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-					List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
-					Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
-
+					Map<String, Object> navKeyMap = null;
+					if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
+						navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, resourceNavigation.getKeyPredicates());
+					}
 					//如果是三段式查询property，startEdmEntitySet调整为第二段，edmNavigationProperty调整为第三段
 					if (resourcePaths.size() == 4) {
 						startEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
@@ -153,16 +159,16 @@ public class OfbizPrimitiveProcessor implements PrimitiveProcessor {
 						}
 						UriResourceNavigation nextResourceNavigation = (UriResourceNavigation) resourcePaths.get(2);
 						edmNavigationProperty = nextResourceNavigation.getProperty();
+						navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, nextResourceNavigation.getKeyPredicates());
 					}
 					Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
 							"edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
 							"locale", locale);
-					Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
-							"edmNavigationProperty", edmNavigationProperty);
 					Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+						Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
+								"edmNavigationProperty", edmNavigationProperty);
 					OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-					Entity relatedEntity = ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
-					property = relatedEntity.getProperty(primitiveProperty.getSegmentValue());
+					property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());
 				} catch (OfbizODataException e) {
 					throw new ODataApplicationException(e.getMessage(),
 							HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);

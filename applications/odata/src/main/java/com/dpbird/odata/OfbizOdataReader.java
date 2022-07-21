@@ -22,6 +22,7 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
@@ -249,6 +250,38 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+
+    public Property readRelatedEntityProperty(Map<String, Object> keyMap,
+                                   EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap,
+                                   String property) throws OfbizODataException {
+        Property resultProperty = null;
+        try {
+            if (navKeyMap == null) {
+                //one
+                Entity relatedEntity = getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
+                if (relatedEntity != null) {
+                    resultProperty = relatedEntity.getProperty(property);
+                }
+            } else {
+                //many
+                GenericValue genericValue = delegator.findOne(modelEntity.getEntityName(), keyMap, true);
+                EntityCollection relatedEntityCollection = findRelatedEntityCollection(genericValue, edmNavigationProperty, null);
+                for (Entity entity : relatedEntityCollection.getEntities()) {
+                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+                    GenericValue entityGv = ofbizEntity.getGenericValue();
+                    List<GenericValue> genericValueList = EntityUtil.filterByAnd(UtilMisc.toList(entityGv), navKeyMap);
+                    if (UtilValidate.isNotEmpty(genericValueList)) {
+                        resultProperty = entity.getProperty(property);
+                        break;
+                    }
+                }
+            }
+        } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+        return resultProperty;
     }
 
     // expand访问会先进入这里
