@@ -1,16 +1,17 @@
 package com.dpbird.odata.processor;
 
-import com.dpbird.odata.FunctionProcessor;
-import com.dpbird.odata.OfbizAppEdmProvider;
-import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.*;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.commons.api.edm.EdmEntitySet;
 import org.apache.olingo.commons.api.edm.EdmFunction;
+import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
@@ -23,6 +24,7 @@ import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
 import org.apache.olingo.server.api.serializer.SerializerException;
 import org.apache.olingo.server.api.serializer.SerializerResult;
 import org.apache.olingo.server.api.uri.*;
+import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -58,8 +60,8 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
 
         Debug.logInfo("readPrimitiveCollection =>", module);
         List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
-        Property property;
-        EdmPrimitiveType edmPrimitiveType;
+        Property property = null;
+        EdmPrimitiveType edmPrimitiveType = null;
         EdmFunction edmFunction;
         if (resourcePaths.size() == 1) {
             UriResource uriResource = resourcePaths.get(0);
@@ -71,28 +73,77 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
                 throw new ODataApplicationException("Only ImportFunction is supported",
                         HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ENGLISH);
             }
-        } else if (resourcePaths.size() >= 2 && resourcePaths.get(resourcePaths.size() - 1) instanceof UriResourceFunction) {
-            //第一个是bound的对象 最后一个是Action,如果长度 > 2就是有navigation对象
-            UriResourceNavigation uriResourceNavigation = null;
-            // 先只支持2段
-            if (resourcePaths.size() > 2) {
-                uriResourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
-            }
+        } else if (resourcePaths.size() >= 2) {
+            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
             UriResourcePartTyped boundEntity = (UriResourcePartTyped) resourcePaths.get(0);
-            UriResourceFunction uriResourceFunction = (UriResourceFunction) resourcePaths.get(resourcePaths.size() - 1);
-            edmFunction = uriResourceFunction.getFunction();
-            edmPrimitiveType = (EdmPrimitiveType) edmFunction.getReturnType().getType();
-            List<UriParameter> parameters = uriResourceFunction.getParameters();
-            try {
-                Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                        "locale", locale);
-                FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-                property = ofbizOdataReader.processBoundFunctionPrimitive(uriResourceFunction, parameters,
-                        boundEntity, uriResourceNavigation, uriInfo.getAliases());
-            } catch (OfbizODataException e) {
-                throw new ODataApplicationException(e.getMessage(),
-                        Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH, e.getODataErrorCode());
+            if (resourcePaths.get(resourcePaths.size() - 1) instanceof UriResourceFunction) {
+                //第一个是bound的对象 最后一个是Action,如果长度 > 2就是有navigation对象
+                UriResourceNavigation uriResourceNavigation = null;
+                // 先只支持2段
+                if (resourcePaths.size() > 2) {
+                    uriResourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
+                }
+                UriResourceFunction uriResourceFunction = (UriResourceFunction) resourcePaths.get(resourcePaths.size() - 1);
+                edmFunction = uriResourceFunction.getFunction();
+                edmPrimitiveType = (EdmPrimitiveType) edmFunction.getReturnType().getType();
+                List<UriParameter> parameters = uriResourceFunction.getParameters();
+                try {
+                    FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
+                    property = ofbizOdataReader.processBoundFunctionPrimitive(uriResourceFunction, parameters,
+                            boundEntity, uriResourceNavigation, uriInfo.getAliases());
+                } catch (OfbizODataException e) {
+                    throw new ODataApplicationException(e.getMessage(),
+                            Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH, e.getODataErrorCode());
+                }
+            } else if (resourcePaths.get(1) instanceof UriResourcePrimitiveProperty) {
+                UriResourcePrimitiveProperty uriResourcePrimitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(1);
+                edmPrimitiveType = (EdmPrimitiveType) uriResourcePrimitiveProperty.getType();
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
+                try {
+                    property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
+                } catch (ODataException e) {
+                    throw new ODataApplicationException(e.getMessage(),
+                            HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+                }
+            } else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
+                //查询子对象的单个字段 最多支持三段
+                try {
+                    //property
+                    UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
+                    edmPrimitiveType = (EdmPrimitiveType) primitiveProperty.getType();
+                    //startEntity
+                    UriResourceEntitySet startEntitySet = (UriResourceEntitySet) boundEntity;
+                    EdmEntitySet startEdmEntitySet = startEntitySet.getEntitySet();
+                    List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
+                    Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
+                    //nextNavigation
+                    UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
+                    EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
+                    Map<String, Object> navKeyMap = null;
+                    if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
+                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, resourceNavigation.getKeyPredicates());
+                    }
+                    //如果是三段式查询property，startEdmEntitySet调整为第二段，edmNavigationProperty调整为第三段
+                    if (resourcePaths.size() == 4) {
+                        startEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
+                        keyMap = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
+                        //第二段不含主键，需要获取主键
+                        if (UtilValidate.isEmpty(keyMap)) {
+                            keyMap = Util.getNavigationKey(startEntitySet.getEntityType(), startKeyPredicates, resourceNavigation.getSegmentValue(), edmProvider, delegator);
+                        }
+                        UriResourceNavigation nextResourceNavigation = (UriResourceNavigation) resourcePaths.get(2);
+                        edmNavigationProperty = nextResourceNavigation.getProperty();
+                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, nextResourceNavigation.getKeyPredicates());
+                    }
+                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
+                            "edmNavigationProperty", edmNavigationProperty);
+                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
+                    property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());
+                } catch (OfbizODataException e) {
+                    throw new ODataApplicationException(e.getMessage(),
+                            HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+                }
             }
         } else {
             throw new ODataApplicationException("Doesn't support resource has more than 2 parts",
