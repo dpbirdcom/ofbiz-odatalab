@@ -440,6 +440,10 @@ public class OfbizEntityProcessor implements EntityProcessor {
                 startEdmEntitySet = (EdmEntitySet) startEdmEntitySet.getRelatedBindingTarget(resourceParts.get(1).toString());
                 UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
                 keyMap = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
+                if (UtilValidate.isEmpty(keyMap)) {
+                    //第二段不含主键 查询获取第二段的主键
+                    keyMap = Util.getNavigationKey(uriResourceEntitySet.getEntityType(), uriResourceEntitySet.getKeyPredicates(), uriResourceNavigation.getSegmentValue(), edmProvider, delegator);
+                }
             }
 
             UriResource navSegment = resourceParts.get(segmentCount - 1);
@@ -454,7 +458,6 @@ public class OfbizEntityProcessor implements EntityProcessor {
                     responseEdmEntitySet = startEdmEntitySet;
                 }
                 List<UriParameter> navKeyPredicates = uriResourceNavigation.getKeyPredicates();
-
                 if (navKeyPredicates.isEmpty()) { // e.g. DemoService.svc/Products(1)/Category
                     Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                             "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,

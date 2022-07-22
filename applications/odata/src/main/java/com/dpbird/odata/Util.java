@@ -44,6 +44,7 @@ import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
+import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
 import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
@@ -272,6 +273,16 @@ public class Util {
 			return (EdmEntitySet) edmBindingTarget;
 		}
 		return null;
+	}
+
+
+	public static Map<String, Object> getNavigationTargetKeyMap(EdmBindingTarget startEdmBindingTarget,
+															EdmNavigationProperty edmNavigationProperty, List<UriParameter> nextKeyPredicates) throws OfbizODataException {
+		EdmEntitySet navigationTargetEntitySet = getNavigationTargetEntitySet(startEdmBindingTarget, edmNavigationProperty);
+		if (UtilValidate.isEmpty(navigationTargetEntitySet) || UtilValidate.isEmpty(nextKeyPredicates)) {
+			return null;
+		}
+		return uriParametersToMap(nextKeyPredicates, navigationTargetEntitySet.getEntityType());
 	}
 
 	public static java.sql.Date getSqlDate(String dateStr){
@@ -1814,6 +1825,15 @@ public class Util {
 					return isAggregate(groupBy.getApplyOption());
 				}
 			}
+		}
+		return false;
+	}
+
+
+	public static boolean isAggregateCount(AggregateExpression aggregateExpression) {
+		List<UriResource> path = aggregateExpression.getPath();
+		if (UtilValidate.isNotEmpty(path)) {
+			return "$count".equals(path.get(0).getSegmentValue());
 		}
 		return false;
 	}
