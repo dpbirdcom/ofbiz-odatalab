@@ -7,14 +7,18 @@ import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
@@ -361,28 +365,46 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
         if (UtilValidate.isNotEmpty(sapContextId)) {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
-
         List<UriResource> resourceParts = uriInfo.getUriResourceParts();
         if (!(resourceParts.get(0) instanceof UriResourceEntitySet)) {
             return;
         }
-        UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0); // first segment is the EntitySet
-        EdmEntitySet startEdmEntitySet = uriResourceEntitySet.getEntitySet();
-        Integer count = 0;
-
-        FilterOption filterOption = uriInfo.getFilterOption();
+        resourceParts = resourceParts.subList(0, resourceParts.size() - 1);
         Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                 "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                 "sapContextId", sapContextId, "locale", locale);
-        OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
+        Map<String, QueryOption> quernOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
+            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0); // first segment is the EntitySet
+        Integer count = 0;
+        EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
+        EntityCondition relCondition = null;
         try {
-            count = ofbizOdataReader.readEntitySetCount(startEdmEntitySet, filterOption, null);
-        } catch (ODataException e) {
-            e.printStackTrace();
+            if (resourceParts.size() > 1) {
+                Map<String, Object> resourceMap = Util.getEntityAndNavigationFromResource(resourceParts, odataContext);
+                if (UtilValidate.isEmpty(resourceMap)) {
+                    return;
+                }
+                //EntitySet
+                edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
+                Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
+                GenericValue genericValue = delegator.findOne(ofbizCsdlEntityType.getOfbizEntity(), keyMap, true);
+
+                //Navigation
+                EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
+                relCondition = Util.relationToCondition(genericValue, edmNavigationProperty.getName());
+                edmEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigationProperty);
+                if (edmEntitySet == null || relCondition == null){
+                    return;
+                }
+            }
+            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
+            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, quernOptions, edmParams);
+            count = ofbizOdataReader.readEntitySetCount(edmEntitySet, relCondition);
+        } catch (ODataException | GenericEntityException e) {
             throw new ODataApplicationException(e.getMessage(),
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
-
         String countStr = count.toString();
         InputStream countInputStream = new ByteArrayInputStream(countStr.getBytes());
         oDataResponse.setContent(countInputStream);

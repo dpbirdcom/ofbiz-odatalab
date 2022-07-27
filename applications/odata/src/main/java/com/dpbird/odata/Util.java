@@ -17,6 +17,7 @@ import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
+import org.apache.ofbiz.entity.condition.EntityExpr;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
@@ -1872,6 +1873,27 @@ public class Util {
 		return relKey;
 	}
 
+	//将一个relation转化为Condition
+	public static EntityCondition relationToCondition(GenericValue genericValue, String relationName) {
+		ModelEntity modelEntity = genericValue.getModelEntity();
+		ModelRelation relation = modelEntity.getRelation(relationName);
+		if (relation == null) {
+			return null;
+		}
+		List<ModelKeyMap> keyMaps = relation.getKeyMaps();
+		EntityCondition entityCondition = null;
+		for (ModelKeyMap keyMap : keyMaps) {
+			Object fieldValue = genericValue.get(keyMap.getFieldName());
+			if (fieldValue == null) {
+				//没有值, 说明没有关联数据
+				return null;
+			}
+			EntityCondition condition = EntityCondition.makeCondition(keyMap.getRelFieldName(), fieldValue);
+			entityCondition = appendCondition(entityCondition, condition);
+		}
+		return entityCondition;
+	}
+
 	public static Entity addEntitySetConditionToEntity(Delegator delegator, OfbizCsdlEntitySet navigationBindingEntitySet, Entity entityToWrite, GenericValue userLogin) {
 //		Map<String, Object> conditionMap = navigationBindingEntitySet.getConditionMap();
 		Map<String, Object> conditionMap = parseConditionMap(navigationBindingEntitySet.getConditionStr(), userLogin);
@@ -1989,6 +2011,38 @@ public class Util {
 		} else {
 			return EntityCondition.makeCondition(originalCondition, laterCondition);
 		}
+	}
+
+	/**
+	 * 解析一个多段式的resourceParts 确保每个元素是entitySet或者navigation
+	 *
+	 * @return 返回最终的Entity和Navigation
+	 */
+	public static Map<String, Object> getEntityAndNavigationFromResource(List<UriResource> resourceParts, Map<String, Object> odataContext) throws OfbizODataException {
+		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+		Delegator delegator = (Delegator) odataContext.get("delegator");
+		UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
+		EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
+		Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType());
+		if (resourceParts.size() == 1) {
+			return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap);
+		}
+		UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
+		EdmNavigationProperty edmNavigation = uriResourceNavigation.getProperty();
+		EdmEntitySet navigationEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigation);
+		Map<String, Object> navKeyMap = null;
+		if (navigationEntitySet != null) {
+			navKeyMap = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), navigationEntitySet.getEntityType());
+		}
+		if (resourceParts.size() > 2) {
+			for (int i = 2; i < resourceParts.size(); i++) {
+				//TODO: 更多的Navigation...
+//				UriResource uriResource = resourceParts.get(i);
+//				EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(uriResourceEntitySet.getEntitySet(), uriResourceNavigation.getProperty());
+			}
+		}
+		return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap, "edmNavigation", edmNavigation, "navKeyMap", navKeyMap);
+
 	}
 
 }

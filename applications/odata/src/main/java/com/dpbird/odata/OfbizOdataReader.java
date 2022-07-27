@@ -28,6 +28,7 @@ import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.IOException;
@@ -52,13 +53,33 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         }
     }
 
-    public Integer readEntitySetCount(EdmBindingTarget edmBindingTarget, FilterOption filterOption, ApplyOption applyOption)
+    public Integer readEntitySetCount(EdmBindingTarget edmBindingTarget, EntityCondition navCondition)
             throws ODataException {
         EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityNameToFind = OdataProcessorHelper.getEntityNameToFind(csdlEntityType, (String) odataContext.get("sapContextId"), edmProvider);
-        return OdataProcessorHelper.readEntitySetCount(odataContext, entityNameToFind,
-                filterOption, applyOption, isOdataView, csdlEntityType);
+        FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
+        if (filterOption != null) {
+            Expression filterExpression = filterOption.getExpression();
+            OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
+            filterExpression.accept(expressionVisitor);
+        }
+        if (navCondition != null) {
+            entityCondition = Util.appendCondition(entityCondition, navCondition);
+        }
+        try {
+            Long countLong;
+            if (dynamicViewEntity == null) {
+                countLong = EntityQuery.use(delegator).from(entityNameToFind).where(entityCondition).queryCount();
+            } else {
+                printDynamicView();
+                countLong = EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).queryCount();
+            }
+            return countLong.intValue();
+        } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+//        return OdataProcessorHelper.readEntitySetCount(odataContext, entityNameToFind, filterOption, csdlEntityType);
     }
 
     // 好像进入这个方法的，只能是EntitySet，不可能是Singleton
