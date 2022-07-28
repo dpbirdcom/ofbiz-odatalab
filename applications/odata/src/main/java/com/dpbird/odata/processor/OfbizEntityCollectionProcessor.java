@@ -374,12 +374,16 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                 "sapContextId", sapContextId, "locale", locale);
         Map<String, QueryOption> quernOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
-            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0); // first segment is the EntitySet
-        Integer count = 0;
+        UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0); // first segment is the EntitySet
         EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
-        EntityCondition relCondition = null;
+        Long count;
         try {
-            if (resourceParts.size() > 1) {
+            if (resourceParts.size() == 1) {
+                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, quernOptions, edmParams);
+                count = ofbizOdataReader.readEntitySetCount(edmEntitySet);
+            } else {
+                //多段式的查询 获取到最终要查询的数据
                 Map<String, Object> resourceMap = Util.getEntityAndNavigationFromResource(resourceParts, odataContext);
                 if (UtilValidate.isEmpty(resourceMap)) {
                     return;
@@ -389,18 +393,19 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
                 OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
                 GenericValue genericValue = delegator.findOne(ofbizCsdlEntityType.getOfbizEntity(), keyMap, true);
-
                 //Navigation
                 EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
-                relCondition = Util.relationToCondition(genericValue, edmNavigationProperty.getName());
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+                //可能不是原生的relation，先查询出数据，再根据这些数据去做查询和filter，返回最终的count
+                EntityCollection relatedEntityCollection = ofbizOdataReader.findRelatedEntityCollection(genericValue, edmNavigationProperty, null);
                 edmEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigationProperty);
-                if (edmEntitySet == null || relCondition == null){
+                if (edmEntitySet == null) {
                     return;
                 }
+                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
+                ofbizOdataReader = new OfbizOdataReader(odataContext, quernOptions, edmParams);
+                count = ofbizOdataReader.readRelatedEntityCount(edmEntitySet, relatedEntityCollection);
             }
-            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
-            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, quernOptions, edmParams);
-            count = ofbizOdataReader.readEntitySetCount(edmEntitySet, relCondition);
         } catch (ODataException | GenericEntityException e) {
             throw new ODataApplicationException(e.getMessage(),
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);

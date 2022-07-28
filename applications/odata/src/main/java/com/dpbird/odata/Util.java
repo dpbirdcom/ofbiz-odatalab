@@ -1,6 +1,7 @@
 package  com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
+import com.drew.lang.annotations.NotNull;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpEntity;
@@ -15,10 +16,7 @@ import org.apache.ofbiz.base.util.collections.ResourceBundleMapWrapper;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityConditionList;
-import org.apache.ofbiz.entity.condition.EntityExpr;
-import org.apache.ofbiz.entity.condition.EntityJoinOperator;
+import org.apache.ofbiz.entity.condition.*;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
@@ -44,6 +42,7 @@ import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.queryoption.OrderByItem;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
 import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
@@ -2021,12 +2020,14 @@ public class Util {
 	public static Map<String, Object> getEntityAndNavigationFromResource(List<UriResource> resourceParts, Map<String, Object> odataContext) throws OfbizODataException {
 		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
 		Delegator delegator = (Delegator) odataContext.get("delegator");
+		//first EntitySet
 		UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
 		EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
 		Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType());
 		if (resourceParts.size() == 1) {
 			return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap);
 		}
+		//first Navigation
 		UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
 		EdmNavigationProperty edmNavigation = uriResourceNavigation.getProperty();
 		EdmEntitySet navigationEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigation);
@@ -2035,14 +2036,58 @@ public class Util {
 			navKeyMap = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), navigationEntitySet.getEntityType());
 		}
 		if (resourceParts.size() > 2) {
+			//todo: 更多的Navigation
 			for (int i = 2; i < resourceParts.size(); i++) {
-				//TODO: 更多的Navigation...
-//				UriResource uriResource = resourceParts.get(i);
+				//获取下一个Navigation
+//				UriResourceNavigation nextUriNavigation = (UriResourceNavigation) resourceParts.get(i);
+//				EdmNavigationProperty nextEdmNavigation = nextUriNavigation.getProperty();
+//				EdmEntitySet nextEdmEntitySet = Util.getNavigationTargetEntitySet(navigationEntitySet, nextEdmNavigation);
+//				Map<String, Object> map = Util.uriParametersToMap(nextUriNavigation.getKeyPredicates(), nextEdmEntitySet.getEntityType());
 //				EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(uriResourceEntitySet.getEntitySet(), uriResourceNavigation.getProperty());
+
 			}
 		}
 		return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap, "edmNavigation", edmNavigation, "navKeyMap", navKeyMap);
 
+	}
+	//获取一个数据集合的查询条件
+	public static EntityCondition getGenericValuesQueryCond(EntityCollection entityCollection, boolean addPrefix) {
+		List<GenericValue> genericValueList = new ArrayList<>();
+		for (Entity entity : entityCollection) {
+			OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+			genericValueList.add(ofbizEntity.getGenericValue());
+		}
+		return getGenericValuesQueryCond(genericValueList, addPrefix);
+	}
+	//获取一个数据集合的查询条件
+	public static EntityCondition getGenericValuesQueryCond(List<GenericValue> genericValues, boolean addPrefix) {
+		if (UtilValidate.isEmpty(genericValues)) {
+			return null;
+		}
+		StringBuilder querySql = new StringBuilder();
+		ModelEntity modelEntity = genericValues.get(0).getModelEntity();
+		List<ModelField> pkFields = modelEntity.getPkFields();
+		List<String> pkNames = new ArrayList<>();
+		String prefix = addPrefix ? modelEntity.getEntityName() + "." : "";
+		for (ModelField modelField : pkFields) {
+			pkNames.add(prefix + modelField.getColName());
+		}
+		String fieldStr = pkNames.toString().replace("[", "(").replace("]", ")");
+		querySql.append(fieldStr); //columns
+		querySql.append(" IN ");
+
+		List<String> pkValues = new ArrayList<>();
+		for (GenericValue genericValue : genericValues) {
+			List<String> pkValue = new ArrayList<>();
+			for (ModelField modelField : pkFields) {
+				String value = genericValue.get(modelField.getName()).toString();
+				pkValue.add("'" + value + "'");
+			}
+			pkValues.add(pkValue.toString());
+		}
+		String valueStr = pkValues.toString().replaceAll("\\[", "(").replace("]", ")");
+		querySql.append(valueStr); //values
+		return EntityCondition.makeConditionWhere(querySql.toString());
 	}
 
 }
