@@ -2018,8 +2018,6 @@ public class Util {
 	 * @return 返回最终的Entity和Navigation
 	 */
 	public static Map<String, Object> getEntityAndNavigationFromResource(List<UriResource> resourceParts, Map<String, Object> odataContext) throws OfbizODataException {
-		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
-		Delegator delegator = (Delegator) odataContext.get("delegator");
 		//first EntitySet
 		UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
 		EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
@@ -2031,20 +2029,36 @@ public class Util {
 		UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
 		EdmNavigationProperty edmNavigation = uriResourceNavigation.getProperty();
 		EdmEntitySet navigationEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigation);
+		List<UriParameter> navKeyPredicates = uriResourceNavigation.getKeyPredicates();
 		Map<String, Object> navKeyMap = null;
-		if (navigationEntitySet != null) {
-			navKeyMap = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), navigationEntitySet.getEntityType());
+		if (UtilValidate.isNotEmpty(navKeyPredicates)) {
+			navKeyMap = Util.uriParametersToMap(navKeyPredicates, navigationEntitySet.getEntityType());
 		}
-		if (resourceParts.size() > 2) {
-			//todo: 更多的Navigation
-			for (int i = 2; i < resourceParts.size(); i++) {
-				//获取下一个Navigation
-//				UriResourceNavigation nextUriNavigation = (UriResourceNavigation) resourceParts.get(i);
-//				EdmNavigationProperty nextEdmNavigation = nextUriNavigation.getProperty();
-//				EdmEntitySet nextEdmEntitySet = Util.getNavigationTargetEntitySet(navigationEntitySet, nextEdmNavigation);
-//				Map<String, Object> map = Util.uriParametersToMap(nextUriNavigation.getKeyPredicates(), nextEdmEntitySet.getEntityType());
-//				EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(uriResourceEntitySet.getEntitySet(), uriResourceNavigation.getProperty());
 
+		//如果还有更多的Navigation 找到最终的进行返回
+		for (int i = 2; i < resourceParts.size(); i++) {
+			//获取navigation PrimaryKey
+			if (navKeyMap == null) {
+				Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
+						"edmNavigationProperty", edmNavigation);
+				Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+				OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+				OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigation, null);
+				navKeyMap = relatedEntity.getKeyMap();
+			}
+			if (UtilValidate.isEmpty(navKeyMap)) {
+				return null;
+			}
+
+			//获取到下一个Navigation，向后推移，把当前的做为最终的Navigation，把上一个Navigation作为EntitySet
+			edmEntitySet = navigationEntitySet;
+			keyMap = navKeyMap;
+			UriResourceNavigation nextUriNavigation = (UriResourceNavigation) resourceParts.get(i);
+			edmNavigation = nextUriNavigation.getProperty();
+			navigationEntitySet = Util.getNavigationTargetEntitySet(navigationEntitySet, edmNavigation);
+			navKeyMap = null;
+			if (UtilValidate.isNotEmpty(nextUriNavigation.getKeyPredicates())) {
+				navKeyMap = Util.uriParametersToMap(nextUriNavigation.getKeyPredicates(), navigationEntitySet.getEntityType());
 			}
 		}
 		return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap, "edmNavigation", edmNavigation, "navKeyMap", navKeyMap);
