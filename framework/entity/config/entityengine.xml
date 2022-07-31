@@ -55,12 +55,16 @@ access. For a detailed description see the core/docs/entityconfig.html file.
         <group-map group-name="org.apache.ofbiz" datasource-name="localderby"/>
         <group-map group-name="org.apache.ofbiz.olap" datasource-name="localderbyolap"/>
         <group-map group-name="org.apache.ofbiz.tenant" datasource-name="localderbytenant"/>
+        <group-map group-name="org.apache.ofbiz.memory" datasource-name="localderbymemory"/>
+        <group-map group-name="org.apache.ofbiz.stats" datasource-name="localderbystats"/>
     </delegator>
     <!-- May be used when you create a service that manages many data for massive imports, this for performance reason or to escape functional cases --> 
     <delegator name="default-no-eca" entity-model-reader="main" entity-group-reader="main" entity-eca-reader="main" entity-eca-enabled="false" distributed-cache-clear-enabled="false">
         <group-map group-name="org.apache.ofbiz" datasource-name="localderby"/>
         <group-map group-name="org.apache.ofbiz.olap" datasource-name="localderbyolap"/>
         <group-map group-name="org.apache.ofbiz.tenant" datasource-name="localderbytenant"/>
+        <group-map group-name="org.apache.ofbiz.memory" datasource-name="localderbymemory"/>
+        <group-map group-name="org.apache.ofbiz.stats" datasource-name="localderbystats"/>
     </delegator>
 
     <!-- Be sure that your default delegator (or the one you use) uses the same datasource for test. You must run "gradlew loadAll" before running "gradlew testIntegration" -->
@@ -68,6 +72,8 @@ access. For a detailed description see the core/docs/entityconfig.html file.
         <group-map group-name="org.apache.ofbiz" datasource-name="localderby"/>
         <group-map group-name="org.apache.ofbiz.olap" datasource-name="localderbyolap"/>
         <group-map group-name="org.apache.ofbiz.tenant" datasource-name="localderbytenant"/>
+        <group-map group-name="org.apache.ofbiz.memory" datasource-name="localderbymemory"/>
+        <group-map group-name="org.apache.ofbiz.stats" datasource-name="localderbystats"/>
     </delegator>
    
     <!-- need to at least define a name for each component to use -->
@@ -271,7 +277,73 @@ access. For a detailed description see the core/docs/entityconfig.html file.
             time-between-eviction-runs-millis="600000"/>
         <!-- <jndi-jdbc jndi-server-name="localjndi" jndi-name="java:/DerbyDataSource" isolation-level="ReadCommitted"/> -->
     </datasource>
-    
+    <datasource name="localderbymemory"
+                helper-class="org.apache.ofbiz.entity.datasource.GenericHelperDAO"
+                schema-name="OFBIZ"
+                field-type-name="derby"
+                check-on-start="true"
+                add-missing-on-start="true"
+                use-pk-constraint-names="false"
+                use-indices-unique="false"
+                alias-view-columns="false"
+                use-order-by-nulls="true"
+                offset-style="fetch">
+        <read-data reader-name="tenant"/>
+        <read-data reader-name="seed"/>
+        <read-data reader-name="seed-initial"/>
+        <read-data reader-name="demo"/>
+        <read-data reader-name="ext"/>
+        <read-data reader-name="ext-test"/>
+        <read-data reader-name="ext-demo"/>
+        <!-- beware use-indices-unique="false" is needed because of Derby bug with null values in a unique index -->
+        <inline-jdbc
+                jdbc-driver="org.apache.derby.jdbc.EmbeddedDriver"
+                jdbc-uri="jdbc:derby:memory:ofbizmemory;create=true"
+                jdbc-username="ofbiz"
+                jdbc-password-lookup="derby-ofbiz"
+                isolation-level="ReadCommitted"
+                pool-minsize="2"
+                pool-maxsize="250"
+                test-on-borrow="true"
+                pool-jdbc-test-stmt="values 1"
+                soft-min-evictable-idle-time-millis="600000"
+                time-between-eviction-runs-millis="600000"/>
+        <!-- <jndi-jdbc jndi-server-name="localjndi" jndi-name="java:/DerbyDataSource" isolation-level="ReadCommitted"/> -->
+    </datasource>
+    <datasource name="localderbystats"
+                helper-class="org.apache.ofbiz.entity.datasource.GenericHelperDAO"
+                schema-name="OFBIZ"
+                field-type-name="derby"
+                check-on-start="true"
+                add-missing-on-start="true"
+                use-pk-constraint-names="false"
+                use-indices-unique="false"
+                alias-view-columns="false"
+                use-order-by-nulls="true"
+                offset-style="fetch">
+        <read-data reader-name="tenant"/>
+        <read-data reader-name="seed"/>
+        <read-data reader-name="seed-initial"/>
+        <read-data reader-name="demo"/>
+        <read-data reader-name="ext"/>
+        <read-data reader-name="ext-test"/>
+        <read-data reader-name="ext-demo"/>
+        <!-- beware use-indices-unique="false" is needed because of Derby bug with null values in a unique index -->
+        <inline-jdbc
+                jdbc-driver="org.apache.derby.jdbc.EmbeddedDriver"
+                jdbc-uri="jdbc:derby:memory:ofbizstats;create=true"
+                jdbc-username="ofbiz"
+                jdbc-password-lookup="derby-ofbiz"
+                isolation-level="ReadCommitted"
+                pool-minsize="2"
+                pool-maxsize="250"
+                test-on-borrow="true"
+                pool-jdbc-test-stmt="values 1"
+                soft-min-evictable-idle-time-millis="600000"
+                time-between-eviction-runs-millis="600000"/>
+        <!-- <jndi-jdbc jndi-server-name="localjndi" jndi-name="java:/DerbyDataSource" isolation-level="ReadCommitted"/> -->
+    </datasource>
+
     <datasource name="localdaffodil"
             helper-class="org.apache.ofbiz.entity.datasource.GenericHelperDAO"
             field-type-name="daffodil"
