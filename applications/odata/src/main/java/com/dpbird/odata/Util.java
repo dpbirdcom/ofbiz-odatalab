@@ -2013,8 +2013,9 @@ public class Util {
 	}
 
 	/**
-	 * 解析一个多段式的resourceParts 确保每个元素是entitySet或者navigation
+	 * 解析一个多段式请求的UriResource
 	 *
+	 * @param resourceParts 所有要解析的UriResource，只能是Entity或Navigation
 	 * @return 返回最终的Entity和Navigation
 	 */
 	public static Map<String, Object> getEntityAndNavigationFromResource(List<UriResource> resourceParts, Map<String, Object> odataContext) throws OfbizODataException {

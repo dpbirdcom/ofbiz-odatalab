@@ -10,7 +10,6 @@ import org.apache.ofbiz.base.util.collections.PagedList;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.transaction.GenericTransactionException;
 import org.apache.ofbiz.entity.transaction.TransactionUtil;
@@ -22,7 +21,6 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
@@ -33,7 +31,10 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class OfbizOdataReader extends OfbizOdataProcessor {
     private DynamicViewEntity dynamicViewEntity = null;

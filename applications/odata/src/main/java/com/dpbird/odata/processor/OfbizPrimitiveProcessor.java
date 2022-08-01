@@ -131,14 +131,9 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
 
     }
 
-
     @Override
     public void readPrimitiveValue(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
         Property property = processReadPrimitive(uriInfo);
-//		final ContextURL contextURL = ContextURL.with().type(edmPrimitiveType).build();
-//		final PrimitiveSerializerOptions opts = PrimitiveSerializerOptions.with().contextURL(contextURL).build();
-//		final ODataSerializer serializer = odata.createSerializer(responseFormat);
-//		final SerializerResult serializerResult = serializer.primitive(serviceMetadata, edmPrimitiveType, property, opts);
         if (property != null && property.getValue() != null) {
             InputStream resultContent = new ByteArrayInputStream(property.getValue().toString().getBytes(StandardCharsets.UTF_8));
             response.setContent(resultContent);
@@ -182,35 +177,18 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
                     property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
                 } else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
-                    //Navigation Property 当前最多支持三段
                     //property
                     UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
-                    //startEntity
-                    UriResourceEntitySet startEntitySet = (UriResourceEntitySet) boundEntity;
-                    EdmEntitySet startEdmEntitySet = startEntitySet.getEntitySet();
-                    List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
-                    Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
-                    //nextNavigation
-                    UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
-                    EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                    Map<String, Object> navKeyMap = null;
-                    if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
-                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, resourceNavigation.getKeyPredicates());
-                    }
-                    //如果是三段式查询property，startEdmEntitySet调整为第二段，edmNavigationProperty调整为第三段
-                    if (resourcePaths.size() == 4) {
-                        startEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
-                        keyMap = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
-                        //第二段不含主键，需要获取主键
-                        if (UtilValidate.isEmpty(keyMap)) {
-                            keyMap = Util.getNavigationKey(startEntitySet.getEntityType(), startKeyPredicates, resourceNavigation.getSegmentValue(), edmProvider, delegator);
-                        }
-                        UriResourceNavigation nextResourceNavigation = (UriResourceNavigation) resourcePaths.get(2);
-                        edmNavigationProperty = nextResourceNavigation.getProperty();
-                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, nextResourceNavigation.getKeyPredicates());
-                    }
+                    List<UriResource> uriResources = resourcePaths.subList(0, resourcePaths.size() - 1);
+                    //Entity
+                    Map<String, Object> resourceMap = Util.getEntityAndNavigationFromResource(uriResources, odataContext);
+                    EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
+                    Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+                    //Navigation
+                    EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
+                    Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
                     Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
-                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
+                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
                             "edmNavigationProperty", edmNavigationProperty);
                     OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
                     property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());

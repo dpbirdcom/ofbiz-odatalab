@@ -373,7 +373,7 @@
 							CreateService="applyFeatureToProduct" RemoveService="removeFeatureFromProduct"/>
 		<NavigationProperty Name="ProductAttribute" AutoBinding="true" Handler="component://odata/groovyScripts/demo/Product/productAttribute.groovy"/>
 		<NavigationProperty Name="PrimaryProductCategory" Type="ProductCategory" Relations="PrimaryProductCategory" FilterByDate="false"/>
-		<NavigationProperty Name="ProductPrice"/>
+		<NavigationProperty Name="ProductPriceList" Type="ProductPrice" Relations="ProductPrice" IsCollection="true"/>
 		<NavigationProperty Name="GoodIdentification"/>
 		<NavigationProperty Name="ProductFeatureAppl"/>
 		<NavigationProperty Name="ProductCategoryMember"/>
@@ -404,8 +404,12 @@
 	<EntityType Name="ElectronicText" BaseType="DataResource" AutoProperties="true"/>
     <EntityType Name="ContentAttribute" AutoProperties="true"/>
 	<EntityType Name="ContentAssoc" AutoProperties="true"/>
+	<EntityType Name="ProductPriceType" AutoProperties="true"/>
+	<EntityType Name="ProductPriceChange" AutoProperties="true"/>
 	<EntityType Name="ProductPrice" AutoProperties="true">
 <!--		<Property Name="productPriceTypeId" Type="ProductPriceTypeEnum"/>-->
+		<NavigationProperty Name="ProductPriceType" AutoBinding="true"/>
+		<NavigationProperty Name="ProductPriceChange" AutoBinding="true"/>
 	</EntityType>
 	<EntityType Name="ProductPriceChange" AutoProperties="true"/>
 	<EntityType Name="ProductPricePurpose" AutoProperties="true"/>
@@ -965,6 +969,8 @@
 		<NavigationPropertyBinding Path="ProductPrice" Target="ProductPrices"/>
 		</EntitySet>
 		<EntitySet Name="PartyTypes" EntityType="PartyType"/>
+		<EntitySet Name="ProductPriceTypes" EntityType="ProductPriceType"/>
+		<EntitySet Name="ProductPriceChanges" EntityType="ProductPriceChange"/>
 		<EntitySet Name="ContactMechAttributes" EntityType="ContactMechAttribute"/>
 		<EntitySet Name="ContactMechAndAttrs" EntityType="ContactMechAndAttr" EntityCondition="contactMechTypeId=EMAIL_ADDRESS"/>
 		<EntitySet Name="PaymentGatewayConfigs" EntityType="PaymentGatewayConfig"/>
