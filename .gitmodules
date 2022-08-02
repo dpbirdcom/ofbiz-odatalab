@@ -1,0 +1,3 @@
+[submodule "plugins/gbms"]
+	path = plugins/gbms
+	url = https://gitee.com/cloudlakenet/gbms.git
