@@ -97,6 +97,16 @@ under the License.
         -->
 
         <!-- JMS Service Queue/Topic Configuration -->
+        <jms-service name="jciPointsReq" send-mode="all">
+            <server jndi-server-name="default"
+                    client-id="ofbizSender"
+                    jndi-name="topicConnectionFactory"
+                    topic-queue="jci.services.points.req"
+                    type="topic"
+                    username=""
+                    password=""
+                    listen="false"/>
+        </jms-service>
         <!--
         <jms-service name="serviceMessenger" send-mode="all">
             <server jndi-server-name="default"
