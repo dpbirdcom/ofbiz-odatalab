@@ -37,7 +37,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     private DynamicViewHolder dynamicViewHolder = null;
     private String lastAlias = null;
     UriResourceNavigation lambdaUriResourceNavigation = null;
-    public final static Map<BinaryOperatorKind, EntityComparisonOperator> COMPARISONOPERATORMAP = new HashMap<BinaryOperatorKind, EntityComparisonOperator>();
+    public final static Map<BinaryOperatorKind, EntityComparisonOperator> COMPARISONOPERATORMAP = new HashMap<>();
 
     static {
         COMPARISONOPERATORMAP.put(BinaryOperatorKind.EQ, EntityOperator.EQUALS);
@@ -117,11 +117,6 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
         } else if (left instanceof String) {
             EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
             String realLeft = (String) left;
-            //如果是length函数
-            if (realLeft.startsWith("LENGTH")) {
-                //最终sql的形状: where length(field) < value
-                return EntityCondition.makeConditionWhere(left + comparisonOperator.getCode() + right);
-            }
 //            if (lastAlias != null) {
 //                realLeft = lastAlias + left;
 //            }
@@ -132,7 +127,6 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                     rightValue = Util.readPrimitiveValue(edmProperty, (String) right);
                 }
             } catch (ODataException e) {
-                e.printStackTrace();
                 throw new ODataApplicationException(e.getMessage(),
                         HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
             }
@@ -144,13 +138,15 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                 try {
                     rightValue = Util.readPrimitiveValue((EdmProperty) left, (String) right);
                 } catch (ODataException e) {
-                    e.printStackTrace();
                     throw new ODataApplicationException(e.getMessage(),
                             HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
                 }
             }
             EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
             return EntityCondition.makeCondition(leftEdmProperty.getName(), comparisonOperator, rightValue == null ? GenericEntity.NULL_FIELD : rightValue);
+        } else if (left instanceof EntityFunction) {
+            //function的处理
+            return EntityCondition.makeCondition(left, COMPARISONOPERATORMAP.get(operator), right);
         } else if (UtilValidate.isEmpty(left)) {
             //lambda后面再跟普通条件会来第二次 这个时候left=null,但right已经是完整的条件,直接返回
             return right;
@@ -202,7 +198,6 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                 try {
                     valueParam2 = (String) Util.readPrimitiveValue(edmProperty, (String) parameters.get(1));
                 } catch (ODataException e) {
-                    e.printStackTrace();
                     throw new ODataApplicationException(e.getMessage(),
                             HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
                 }
@@ -214,18 +209,11 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                         HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
             }
         } else if (methodCall == MethodKind.LENGTH) {
-            //oData的length函数 TODO：length这个函数暂时不支持多段式和lambda
-            EdmProperty edmProperty = (EdmProperty) parameters.get(0);
-            String propertyName = edmProperty.getName();
-            //将字段名称转为大写加下划线 符合数据库格式
-            Matcher matcher = Pattern.compile("[A-Z]").matcher(propertyName);
-            StringBuffer sb = new StringBuffer();
-            while (matcher.find()) {
-                matcher.appendReplacement(sb, "_" + matcher.group(0));
-            }
-            //sql函数length, LENGTH(FIELD_NAME)
-            matcher.appendTail(sb);
-            return methodCall.name() + "(" + sb.toString().toUpperCase() + ")";
+            //Length
+            EdmProperty edmProperty = parameters.get(0) instanceof EdmProperty ?
+                    (EdmProperty) parameters.get(0) : (EdmProperty) dynamicViewHolder.edmPropertyMap.get(parameters.get(0));
+            String propertyName = parameters.get(0) instanceof EdmProperty ? edmProperty.getName() : (String) parameters.get(0);
+            return EntityFunction.LENGTH(EntityFunction.UPPER_FIELD(propertyName));
         }
         return null;
     }

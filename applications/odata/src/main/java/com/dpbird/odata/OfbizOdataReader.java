@@ -302,33 +302,21 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
 
     public Property readRelatedEntityProperty(Map<String, Object> keyMap,
                                    EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap,
-                                   String property) throws OfbizODataException {
-        Property resultProperty = null;
-        try {
-            if (navKeyMap == null) {
-                //one
-                Entity relatedEntity = getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
-                if (relatedEntity != null) {
-                    resultProperty = relatedEntity.getProperty(property);
-                }
-            } else {
-                //many
-                GenericValue genericValue = delegator.findOne(modelEntity.getEntityName(), keyMap, true);
-                EntityCollection relatedEntityCollection = findRelatedEntityCollection(genericValue, edmNavigationProperty, null);
-                for (Entity entity : relatedEntityCollection.getEntities()) {
-                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
-                    GenericValue entityGv = ofbizEntity.getGenericValue();
-                    List<GenericValue> genericValueList = EntityUtil.filterByAnd(UtilMisc.toList(entityGv), navKeyMap);
-                    if (UtilValidate.isNotEmpty(genericValueList)) {
-                        resultProperty = entity.getProperty(property);
-                        break;
-                    }
-                }
-            }
-        } catch (GenericEntityException e) {
-            throw new OfbizODataException(e.getMessage());
+                                   String propertyName) throws OfbizODataException {
+        Entity relatedEntity;
+        if (navKeyMap == null) {
+            //one
+            relatedEntity = getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
+        } else {
+            //many
+            EntityCollection relatedEntityCollection = findRelatedEntityCollectionByCondition(keyMap, edmNavigationProperty, EntityCondition.makeCondition(navKeyMap));
+            relatedEntity = relatedEntityCollection.getEntities().stream().findFirst().orElse(null);
         }
-        return resultProperty;
+        if (relatedEntity == null) {
+            throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigationProperty.getName());
+        }
+        return relatedEntity.getProperty(propertyName);
+
     }
 
     // expand访问会先进入这里
@@ -356,6 +344,24 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         }
 
         return findRelatedEntityCollection(keyMap, edmNavigationProperty, queryOptions, entity);
+    }
+
+    public EntityCollection findRelatedEntityCollectionByCondition(Map<String, Object> keyMap,
+                                                        EdmNavigationProperty edmNavigationProperty,
+                                                        EntityCondition queryCondition) throws OfbizODataException {
+        EntityCollection returnCollection = new EntityCollection();
+        //查询子对象数据
+        EntityCollection relatedEntityCollection = findRelatedEntityCollection(keyMap, edmNavigationProperty, null, null);
+        for (Entity entity : relatedEntityCollection) {
+            OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+            GenericValue entityGeneric = ofbizEntity.getGenericValue();
+            //只返回符合条件的数据
+            List<GenericValue> filterResult = EntityUtil.filterByCondition(UtilMisc.toList(entityGeneric), queryCondition);
+            if (UtilValidate.isNotEmpty(filterResult)) {
+                returnCollection.getEntities().add(entity);
+            }
+        }
+        return returnCollection;
     }
 
     // 两段式访问会直接进到这里

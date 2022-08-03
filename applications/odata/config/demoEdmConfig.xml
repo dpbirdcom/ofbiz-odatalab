@@ -379,6 +379,7 @@
 		<NavigationProperty Name="ProductCategoryMember"/>
 		<NavigationProperty Name="MainProductAssoc"/>
 		<NavigationProperty Name="SupplierProduct"/>
+		<NavigationProperty Name="ProductType"/>
 	</EntityType>
 	<EntityType Name="SupplierProduct" AutoProperties="true">
 		<NavigationProperty Name="Product" IsCollection="false"/>
@@ -414,6 +415,7 @@
 	<EntityType Name="ProductPriceChange" AutoProperties="true"/>
 	<EntityType Name="ProductPricePurpose" AutoProperties="true"/>
 	<EntityType Name="ProductStoreGroup" AutoProperties="true"/>
+	<EntityType Name="ProductType" AutoProperties="true"/>
 	<EntityType Name="ProductStore" AutoProperties="true">
 		<NavigationProperty Name="Party"/>
 	</EntityType>
@@ -1215,6 +1217,7 @@
 		<EntitySet Name="GoodIdentifications" EntityType="GoodIdentification"/>
 		<EntitySet Name="ElectronicTexts" EntityType="ElectronicText"/>
 		<EntitySet Name="ProductKeywords" EntityType="ProductKeyword"/>
+		<EntitySet Name="ProductTypes" EntityType="ProductType"/>
 		<EntitySet Name="People" EntityType="Person"/>
 		<EntitySet Name="Persons" EntityType="Person2"/>
 		<EntitySet Name="Parties" EntityType="Party">

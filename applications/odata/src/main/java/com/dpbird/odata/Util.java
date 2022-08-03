@@ -48,6 +48,7 @@ import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
 import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
+import org.apache.olingo.server.core.uri.queryoption.FilterOptionImpl;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -2039,18 +2040,27 @@ public class Util {
 		//如果还有更多的Navigation 找到最终的进行返回
 		for (int i = 2; i < resourceParts.size(); i++) {
 			//获取navigation PrimaryKey
+			Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
+					"edmNavigationProperty", edmNavigation);
+			Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
 			if (navKeyMap == null) {
-				Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
-						"edmNavigationProperty", edmNavigation);
-				Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
 				OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
 				OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigation, null);
+				if (UtilValidate.isEmpty(relatedEntity)) {
+					throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigation.getName());
+				}
 				navKeyMap = relatedEntity.getKeyMap();
+			} else {
+				//即使传递了子对象的主键，也要防止是一个错误的主键，要确认存在这个子对象再继续
+				OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+				EntityCollection relatedEntityCollection = ofbizOdataReader.findRelatedEntityCollectionByCondition(keyMap, edmNavigation, EntityCondition.makeCondition(navKeyMap));
+				if (UtilValidate.isEmpty(relatedEntityCollection.getEntities())) {
+					throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigation.getName() + navKeyMap);
+				}
 			}
 			if (UtilValidate.isEmpty(navKeyMap)) {
 				return null;
 			}
-
 			//获取到下一个Navigation，向后推移，把当前的做为最终的Navigation，把上一个Navigation作为EntitySet
 			edmEntitySet = navigationEntitySet;
 			keyMap = navKeyMap;
