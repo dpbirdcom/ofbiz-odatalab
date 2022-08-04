@@ -146,7 +146,11 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             return EntityCondition.makeCondition(leftEdmProperty.getName(), comparisonOperator, rightValue == null ? GenericEntity.NULL_FIELD : rightValue);
         } else if (left instanceof EntityFunction) {
             //function的处理
-            return EntityCondition.makeCondition(left, COMPARISONOPERATORMAP.get(operator), right);
+            String value = right.toString();
+            if (value.startsWith("'") && value.endsWith("'")) {
+                value = value.substring(1, value.length() - 1);
+            }
+            return EntityCondition.makeCondition(left, COMPARISONOPERATORMAP.get(operator), value);
         } else if (UtilValidate.isEmpty(left)) {
             //lambda后面再跟普通条件会来第二次 这个时候left=null,但right已经是完整的条件,直接返回
             return right;
@@ -208,12 +212,17 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                 throw new ODataApplicationException("Filter method needs two parameters of type Edm.String",
                         HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
             }
-        } else if (methodCall == MethodKind.LENGTH) {
-            //Length
+        } else if (methodCall == MethodKind.LENGTH || methodCall == MethodKind.TOUPPER || methodCall == MethodKind.TOLOWER) {
+            //length、toUpper、toLower
             EdmProperty edmProperty = parameters.get(0) instanceof EdmProperty ?
                     (EdmProperty) parameters.get(0) : (EdmProperty) dynamicViewHolder.edmPropertyMap.get(parameters.get(0));
             String propertyName = parameters.get(0) instanceof EdmProperty ? edmProperty.getName() : (String) parameters.get(0);
-            return EntityFunction.LENGTH(EntityFunction.UPPER_FIELD(propertyName));
+            EntityFunction<String> entityFunction = EntityFunction.UPPER_FIELD(propertyName);
+            return methodCall == MethodKind.LENGTH ?
+                    EntityFunction.LENGTH(entityFunction) : methodCall == MethodKind.TOUPPER ?
+                    EntityFunction.UPPER(entityFunction) : EntityFunction.LOWER(entityFunction);
+        } else if (methodCall == MethodKind.SUBSTRING) {
+
         }
         return null;
     }
