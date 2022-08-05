@@ -196,7 +196,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
                 }
             } catch (OfbizODataException e) {
-                throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+                throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
             }
         }
 
