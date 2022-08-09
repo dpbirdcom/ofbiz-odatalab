@@ -404,6 +404,7 @@
 		<NavigationProperty Name="ImageDataResource" />
 		<NavigationProperty Name="VideoDataResource" />
 		<NavigationProperty Name="AudioDataResource" />
+		<NavigationProperty Name="OtherDataResource" />
     </EntityType>
 	<EntityType Name="ElectronicText" BaseType="DataResource" AutoProperties="true"/>
     <EntityType Name="ContentAttribute" AutoProperties="true"/>
@@ -594,7 +595,11 @@
 
 	<EntityType Name="AudioDataResource" AutoProperties="true" HasStream="true">
 		<Property Name="audioData" MimeType="audio/mp3"/>
-<!--		<Property Name="audioData" MimeType="audio/mpeg"/>-->
+		<NavigationProperty Name="DataResource"/>
+	</EntityType>
+
+	<EntityType Name="OtherDataResource" AutoProperties="true" HasStream="true">
+		<Property Name="dataResourceContent" MimeType="application/pdf"/>
 		<NavigationProperty Name="DataResource"/>
 	</EntityType>
 
@@ -1127,6 +1132,7 @@
 		<EntitySet Name="ImageDataResources" EntityType="ImageDataResource"/>
 		<EntitySet Name="VideoDataResources" EntityType="VideoDataResource"/>
 		<EntitySet Name="AudioDataResources" EntityType="AudioDataResource"/>
+		<EntitySet Name="OtherDataResources" EntityType="OtherDataResource"/>
 		<EntitySet Name="Products" EntityType="Product">
 			<Annotation Term="Capabilities.UpdateRestrictions">
 				<Record Type="Capabilities.UpdateRestrictionsType">

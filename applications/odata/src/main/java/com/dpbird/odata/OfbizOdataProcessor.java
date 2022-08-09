@@ -6,8 +6,6 @@ import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntityException;
-import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityComparisonOperator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
@@ -15,10 +13,8 @@ import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.entity.util.EntityFindOptions;
-import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -26,13 +22,15 @@ import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ServiceMetadata;
-import org.apache.olingo.server.api.uri.*;
+import org.apache.olingo.server.api.uri.UriInfoResource;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.UriResourceNavigation;
+import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
 import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
@@ -634,7 +632,7 @@ public class OfbizOdataProcessor {
                         OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(lastCsdlEntityType.getOfbizEntity(), lastCsdlEntityType.getHandlerClass(), lastCsdlEntityType.isAutoProperties(),
                                 false, false, lastCsdlEntityType.isFilterByDate(), lastCsdlEntityType.getDraftEntityName(), lastCsdlEntityType.getAttrEntityName(),
                                 lastCsdlEntityType.getAttrNumericEntityName(), lastCsdlEntityType.getAttrDateEntityName(), false, lastCsdlEntityType.getEntityCondition(),
-                                lastCsdlEntityType.getLabelPrefix(), null, lastCsdlEntityType.isGroupBy());
+                                lastCsdlEntityType.getLabelPrefix(), null, lastCsdlEntityType.isGroupBy(), lastCsdlEntityType.hasStream());
                         newCsdlEntity.setName(lastEntityAlias);
                         newCsdlEntity.setProperties(lastCsdlEntityType.getProperties());
                         //多段式的Attribute字段排序
