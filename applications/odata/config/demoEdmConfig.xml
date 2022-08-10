@@ -401,6 +401,10 @@
 	</EntityType>
 	<EntityType Name="DataResource" hasDerivedEntity="true" AutoProperties="true">
         <Property Name="statusId" Type="ContentStatus"/>
+		<NavigationProperty Name="ImageDataResource" />
+		<NavigationProperty Name="VideoDataResource" />
+		<NavigationProperty Name="AudioDataResource" />
+		<NavigationProperty Name="OtherDataResource" />
     </EntityType>
 	<EntityType Name="ElectronicText" BaseType="DataResource" AutoProperties="true"/>
     <EntityType Name="ContentAttribute" AutoProperties="true"/>
@@ -578,6 +582,26 @@
 	<EntityType Name="OrderAttribute" AutoProperties="true"/>
 	<EntityType Name="UserPreference" AutoProperties="true"/>
 	<EntityType Name="PartyGroup" BaseType="Party" AutoProperties="true"/>
+
+	<EntityType Name="ImageDataResource" AutoProperties="true" HasStream="true">
+		<Property Name="imageData" MimeType="image/jpeg"/>
+		<NavigationProperty Name="DataResource"/>
+	</EntityType>
+
+	<EntityType Name="VideoDataResource" AutoProperties="true" HasStream="true">
+		<Property Name="videoData" MimeType="video/mp4"/>
+		<NavigationProperty Name="DataResource"/>
+	</EntityType>
+
+	<EntityType Name="AudioDataResource" AutoProperties="true" HasStream="true">
+		<Property Name="audioData" MimeType="audio/mp3"/>
+		<NavigationProperty Name="DataResource"/>
+	</EntityType>
+
+	<EntityType Name="OtherDataResource" AutoProperties="true" HasStream="true">
+		<Property Name="dataResourceContent" MimeType="application/pdf"/>
+		<NavigationProperty Name="DataResource"/>
+	</EntityType>
 
 	<Action Name="ProductEditAction" IsBound="true" EntitySetPath="product">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
@@ -1105,6 +1129,10 @@
 			<NavigationPropertyBinding Path="GeoType" Target="GeoAssocTypes"/>
 		</EntitySet>
 		<EntitySet Name="GeoTypes" EntityType="GeoType"/>
+		<EntitySet Name="ImageDataResources" EntityType="ImageDataResource"/>
+		<EntitySet Name="VideoDataResources" EntityType="VideoDataResource"/>
+		<EntitySet Name="AudioDataResources" EntityType="AudioDataResource"/>
+		<EntitySet Name="OtherDataResources" EntityType="OtherDataResource"/>
 		<EntitySet Name="Products" EntityType="Product">
 			<Annotation Term="Capabilities.UpdateRestrictions">
 				<Record Type="Capabilities.UpdateRestrictionsType">

@@ -8,6 +8,7 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
 import com.dpbird.odata.Util;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 
 public class OfbizCsdlEntityType extends CsdlEntityType {
@@ -38,7 +39,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
 	public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum, boolean autoId,
 							   boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
-							   EntityCondition entityCondition, String labelPrefix, String searchOption, boolean groupBy) {
+							   EntityCondition entityCondition, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
 		super();
 		this.ofbizEntity = ofbizEntity;
 		this.handlerClass = handlerClass;
@@ -59,6 +60,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 		this.terms = null;
 		this.searchOption = searchOption;
 		this.groupBy = groupBy;
+		this.setHasStream(hasStream);
 	}
 
 	public List<String> getReferencedEntitySet() {
@@ -244,5 +246,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
 	public void setGroupBy(boolean groupBy) {
 		this.groupBy = groupBy;
+	}
+
+	public CsdlProperty getStreamProperty() {
+		for (CsdlProperty property : properties) {
+			if (property.getMimeType() != null) {
+				return property;
+			}
+		}
+		return null;
 	}
 }

@@ -319,6 +319,69 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
 
     }
 
+    /**
+     * 解析一个多段式请求的UriResource
+     *
+     * @param resourceParts 所有要解析的UriResource，只能是Entity或Navigation
+     * @return 返回最终的Entity和Navigation
+     */
+    public static Map<String, Object> getEntityAndNavigationFromResource(List<UriResource> resourceParts, Map<String, Object> odataContext) throws OfbizODataException {
+        //first EntitySet
+        UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
+        EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
+        Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType());
+        if (resourceParts.size() == 1) {
+            return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap);
+        }
+        //first Navigation
+        UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
+        EdmNavigationProperty edmNavigation = uriResourceNavigation.getProperty();
+        EdmEntitySet navigationEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigation);
+        List<UriParameter> navKeyPredicates = uriResourceNavigation.getKeyPredicates();
+        Map<String, Object> navKeyMap = null;
+        if (UtilValidate.isNotEmpty(navKeyPredicates)) {
+            navKeyMap = Util.uriParametersToMap(navKeyPredicates, navigationEntitySet.getEntityType());
+        }
+
+        //如果还有更多的Navigation 找到最终的进行返回
+        for (int i = 2; i < resourceParts.size(); i++) {
+            //获取navigation PrimaryKey
+            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
+                    "edmNavigationProperty", edmNavigation);
+            Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+            if (navKeyMap == null) {
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+                OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigation, null);
+                if (UtilValidate.isEmpty(relatedEntity)) {
+                    throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigation.getName());
+                }
+                navKeyMap = relatedEntity.getKeyMap();
+            } else {
+                //即使传递了子对象的主键，也要防止是一个错误的主键，要确认存在这个子对象再继续
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+                EntityCollection relatedEntityCollection = ofbizOdataReader.findRelatedEntityCollectionByCondition(keyMap, edmNavigation, EntityCondition.makeCondition(navKeyMap));
+                if (UtilValidate.isEmpty(relatedEntityCollection.getEntities())) {
+                    throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigation.getName() + navKeyMap);
+                }
+            }
+            if (UtilValidate.isEmpty(navKeyMap)) {
+                return null;
+            }
+            //获取到下一个Navigation，向后推移，把当前的做为最终的Navigation，把上一个Navigation作为EntitySet
+            edmEntitySet = navigationEntitySet;
+            keyMap = navKeyMap;
+            UriResourceNavigation nextUriNavigation = (UriResourceNavigation) resourceParts.get(i);
+            edmNavigation = nextUriNavigation.getProperty();
+            navigationEntitySet = Util.getNavigationTargetEntitySet(navigationEntitySet, edmNavigation);
+            navKeyMap = null;
+            if (UtilValidate.isNotEmpty(nextUriNavigation.getKeyPredicates())) {
+                navKeyMap = Util.uriParametersToMap(nextUriNavigation.getKeyPredicates(), navigationEntitySet.getEntityType());
+            }
+        }
+        return UtilMisc.toMap("edmEntitySet", edmEntitySet, "keyMap", keyMap, "edmNavigation", edmNavigation, "navKeyMap", navKeyMap);
+
+    }
+
     // expand访问会先进入这里
     public EntityCollection findRelatedEntityCollection(Entity entity,
                                                         EdmNavigationProperty edmNavigationProperty,

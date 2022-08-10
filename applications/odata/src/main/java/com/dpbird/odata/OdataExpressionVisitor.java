@@ -24,8 +24,6 @@ import org.apache.olingo.server.api.uri.queryoption.expression.*;
 import org.apache.olingo.server.core.uri.UriResourcePrimitivePropertyImpl;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     public static final String module = OdataExpressionVisitor.class.getName();
@@ -221,8 +219,6 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             return methodCall == MethodKind.LENGTH ?
                     EntityFunction.LENGTH(entityFunction) : methodCall == MethodKind.TOUPPER ?
                     EntityFunction.UPPER(entityFunction) : EntityFunction.LOWER(entityFunction);
-        } else if (methodCall == MethodKind.SUBSTRING) {
-
         }
         return null;
     }
@@ -442,7 +438,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     private OfbizCsdlEntityType cloneCsdlEntityType(OfbizCsdlEntityType ofbizCsdlEntityType) {
         OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(ofbizCsdlEntityType.getOfbizEntity(), ofbizCsdlEntityType.getHandlerClass(), ofbizCsdlEntityType.isAutoProperties(),
                 false, false, ofbizCsdlEntityType.isFilterByDate(), ofbizCsdlEntityType.getDraftEntityName(), ofbizCsdlEntityType.getAttrEntityName(), ofbizCsdlEntityType.getAttrNumericEntityName(),
-                ofbizCsdlEntityType.getAttrDateEntityName(), false, ofbizCsdlEntityType.getEntityCondition(), ofbizCsdlEntityType.getLabelPrefix(), null, ofbizCsdlEntityType.isGroupBy());
+                ofbizCsdlEntityType.getAttrDateEntityName(), false, ofbizCsdlEntityType.getEntityCondition(), ofbizCsdlEntityType.getLabelPrefix(), null, ofbizCsdlEntityType.isGroupBy(), ofbizCsdlEntityType.hasStream());
         newCsdlEntity.setName(lastAlias);
         newCsdlEntity.setProperties(ofbizCsdlEntityType.getProperties());
         return newCsdlEntity;

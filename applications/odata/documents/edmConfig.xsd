@@ -51,6 +51,7 @@
       <xs:attribute name="AttrNumericEntityName" type="xs:NCName"/>
       <xs:attribute name="AutoAnnotations" type="xs:boolean"/>
       <xs:attribute name="AutoProperties" type="xs:boolean"/>
+      <xs:attribute name="HasStream" type="xs:boolean"/>
       <xs:attribute name="BaseType" type="xs:NCName"/>
       <xs:attribute name="EntityCondition"/>
       <xs:attribute name="GroupBy" type="xs:boolean"/>
@@ -204,6 +205,7 @@
       <xs:attribute name="RelAlias" type="xs:NCName"/>
       <xs:attribute name="Scale" type="xs:integer"/>
       <xs:attribute name="Type" type="xs:NCName"/>
+      <xs:attribute name="MimeType" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="Text">
