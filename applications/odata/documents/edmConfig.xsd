@@ -2,7 +2,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="ofbiz-edm">
     <xs:complexType>
-      <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
         <xs:choice maxOccurs="unbounded">
           <xs:element ref="Action"/>
           <xs:element ref="ComplexType"/>
@@ -12,7 +12,7 @@
           <xs:element ref="view-entity"/>
         </xs:choice>
         <xs:element ref="EntityContainer" />
-      </xs:sequence>
+      </xs:choice>
       <xs:attribute name="ImportGlobal" use="required" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
@@ -80,8 +80,17 @@
       <xs:attribute name="Relations" use="required"/>
     </xs:complexType>
   </xs:element>
+  <xs:element name="ReferentialConstraint">
+    <xs:complexType>
+      <xs:attribute name="Property" use="required" type="xs:NCName"/>
+      <xs:attribute name="ReferencedProperty" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="NavigationProperty">
     <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferentialConstraint"/>
+      </xs:sequence>
       <xs:attribute name="AutoBinding" type="xs:boolean"/>
       <xs:attribute name="ContainsTarget" type="xs:boolean"/>
       <xs:attribute name="CreateService" type="xs:NCName"/>
@@ -248,10 +257,10 @@
   </xs:element>
   <xs:element name="HeaderInfo">
     <xs:complexType>
-      <xs:sequence>
+      <xs:choice>
         <xs:element minOccurs="0" ref="Title"/>
         <xs:element minOccurs="0" ref="Description"/>
-      </xs:sequence>
+      </xs:choice>
       <xs:attribute name="TypeName"/>
       <xs:attribute name="TypeNamePlural"/>
       <xs:attribute name="ImageUrl"/>
@@ -266,10 +275,10 @@
   </xs:element>
   <xs:element name="LineItem">
     <xs:complexType>
-      <xs:sequence>
+      <xs:choice>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
-      </xs:sequence>
+      </xs:choice>
       <xs:attribute name="Qualifier" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
@@ -289,10 +298,10 @@
   </xs:element>
   <xs:element name="Property">
     <xs:complexType>
-      <xs:sequence>
+      <xs:all>
         <xs:element minOccurs="0" ref="Text"/>
         <xs:element minOccurs="0" ref="ValueList"/>
-      </xs:sequence>
+      </xs:all>
       <xs:attribute name="Field" type="xs:NCName"/>
       <xs:attribute name="IsAttribute" type="xs:boolean"/>
       <xs:attribute name="IsCollection" type="xs:boolean"/>
@@ -348,15 +357,16 @@
   </xs:element>
   <xs:element name="view-entity">
     <xs:complexType>
-      <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
         <xs:element maxOccurs="unbounded" ref="member-entity"/>
-        <xs:element ref="alias-all"/>
+        <xs:element maxOccurs="unbounded" ref="alias-all"/>
         <xs:element maxOccurs="unbounded" ref="alias"/>
         <xs:element maxOccurs="unbounded" ref="view-link"/>
         <xs:element maxOccurs="unbounded" ref="relation"/>
-      </xs:sequence>
+      </xs:choice>
       <xs:attribute name="entity-name" use="required" type="xs:NCName"/>
       <xs:attribute name="package-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="never-cache" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="member-entity">
@@ -368,12 +378,14 @@
   <xs:element name="alias-all">
     <xs:complexType>
       <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="group-by" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="alias">
     <xs:complexType>
       <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
       <xs:attribute name="field" use="required" type="xs:NCName"/>
+      <xs:attribute name="prim-key" type="xs:boolean"/>
       <xs:attribute name="name" use="required" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
@@ -385,7 +397,7 @@
       </xs:sequence>
       <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
       <xs:attribute name="rel-entity-alias" use="required" type="xs:NCName"/>
-      <xs:attribute name="rel-optional" use="required" type="xs:boolean"/>
+      <xs:attribute name="rel-optional" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="entity-condition">
