@@ -726,27 +726,45 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                     "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                     "locale", locale);
-            Property property = null;
-            CsdlProperty streamCsdlProperty = null;
+            Property property;
+            CsdlProperty streamCsdlProperty;
             if (resourceParts.size() == 1) {
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
-                List<UriParameter> keyPredicates = uriResourceEntitySet.getKeyPredicates();
-                Map<String, Object> keyMap = Util.uriParametersToMap(keyPredicates, uriResourceEntitySet.getEntityType());
-                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet());
-                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceEntitySet.getEntityType().getFullQualifiedName());
+                EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
+                Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
+                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
                 //根据定义查询媒体数据字段
                 streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
-                if (streamCsdlProperty != null) {
-                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
-                    Entity responseEntity = ofbizOdataReader.readEntityData(keyMap, null);
-                    property = responseEntity.getProperty(streamCsdlProperty.getName());
-                } else {
+                if (streamCsdlProperty == null) {
                     throw new ODataApplicationException("The media stream field is not defined.", HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
                 }
+                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet());
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
+                Entity responseEntity = ofbizOdataReader.readEntityData(keyMap, null);
+                property = responseEntity.getProperty(streamCsdlProperty.getName());
             } else {
-                //todo: 多段式查询媒体数据
+                //多段式查询媒体数据
+                Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(resourceParts, odataContext);
+                //Entity
+                EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
+                Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+                //Navigation
+                EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
+                Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
+                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
+                //根据定义的字段查询媒体数据
+                streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
+                if (streamCsdlProperty == null) {
+                    throw new ODataApplicationException("The media stream field is not defined.", HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
+                }
+                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
+                        "edmNavigationProperty", edmNavigationProperty);
+                Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+                property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, streamCsdlProperty.getName());
             }
             if (property != null && property.getValue() != null) {
+                //将媒体数据响应到客户端 根据字段的MimeType设定ContentType
                 byte[] bytes = (byte[]) property.getValue();
                 response.setHeader(HttpHeader.CONTENT_TYPE, streamCsdlProperty.getMimeType());
                 response.setContent(new ByteArrayInputStream(bytes));

@@ -9,8 +9,9 @@
           <xs:element ref="EntityType"/>
           <xs:element ref="EnumType"/>
           <xs:element ref="Function"/>
+          <xs:element ref="view-entity"/>
         </xs:choice>
-        <xs:element ref="EntityContainer"/>
+        <xs:element ref="EntityContainer" />
       </xs:sequence>
       <xs:attribute name="ImportGlobal" use="required" type="xs:boolean"/>
     </xs:complexType>
@@ -26,6 +27,7 @@
       <xs:attribute name="IsService" type="xs:boolean"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
       <xs:attribute name="OfbizService"/>
+      <xs:attribute name="StickySession" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="ComplexType">
@@ -42,23 +44,33 @@
       <xs:sequence>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
           <xs:element ref="Property"/>
+          <xs:element ref="SemanticKey"/>
           <xs:element ref="RelAlias"/>
+          <xs:element ref="Key"/>
+          <xs:element ref="HeaderInfo"/>
+          <xs:element ref="LineItem"/>
+          <xs:element ref="FieldGroup"/>
+          <xs:element ref="SelectionFields"/>
         </xs:choice>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
       </xs:sequence>
+      <xs:attribute name="AutoId" type="xs:boolean"/>
+      <xs:attribute name="OfbizEntity" type="xs:NCName"/>
+      <xs:attribute name="DraftEntityName" type="xs:NCName"/>
       <xs:attribute name="AttrDateEntityName" type="xs:NCName"/>
       <xs:attribute name="AttrEntityName" type="xs:NCName"/>
       <xs:attribute name="AttrNumericEntityName" type="xs:NCName"/>
       <xs:attribute name="AutoAnnotations" type="xs:boolean"/>
       <xs:attribute name="AutoProperties" type="xs:boolean"/>
+      <xs:attribute name="AutoNavigations" type="xs:boolean"/>
       <xs:attribute name="HasStream" type="xs:boolean"/>
       <xs:attribute name="BaseType" type="xs:NCName"/>
       <xs:attribute name="EntityCondition"/>
       <xs:attribute name="GroupBy" type="xs:boolean"/>
       <xs:attribute name="Handler" type="xs:anyURI"/>
       <xs:attribute name="LabelPrefix" type="xs:NCName"/>
+      <xs:attribute name="InMemory" type="xs:boolean"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
-      <xs:attribute name="OfbizEntity" type="xs:NCName"/>
       <xs:attribute name="SearchOption"/>
       <xs:attribute name="hasDerivedEntity" type="xs:boolean"/>
     </xs:complexType>
@@ -78,6 +90,7 @@
       <xs:attribute name="Handler" type="xs:anyURI"/>
       <xs:attribute name="IsCollection" type="xs:boolean"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
+      <xs:attribute name="Partner" type="xs:NCName"/>
       <xs:attribute name="Relations"/>
       <xs:attribute name="RemoveService" type="xs:NCName"/>
       <xs:attribute name="Type" type="xs:NCName"/>
@@ -188,10 +201,98 @@
       <xs:attribute name="Type" use="required" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
+  <xs:element name="Key">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="PropertyRef"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SemanticKey">
+    <xs:complexType>
+      <xs:attribute name="PropertyPath" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ValueList">
+    <xs:complexType>
+      <xs:attribute name="CollectionPath" type="xs:NCName"/>
+      <xs:attribute name="WithFixedValues" type="xs:boolean"/>
+      <xs:attribute name="ParameterDisplayOnly" type="xs:NCName"/>
+      <xs:attribute name="Label" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Title">
+    <xs:complexType>
+      <xs:attribute name="Path" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Description">
+    <xs:complexType>
+      <xs:attribute name="Path" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DataField">
+    <xs:complexType>
+      <xs:attribute name="Values" />
+      <xs:attribute name="Importance" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DataFieldForAction">
+    <xs:complexType>
+      <xs:attribute name="Label" />
+      <xs:attribute name="Action" type="xs:NCName"/>
+      <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+      <xs:attribute name="Criticality" type="xs:NCName"/>
+      <xs:attribute name="Inline" type="xs:boolean"/>
+      <xs:attribute name="Importance" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="HeaderInfo">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="Title"/>
+        <xs:element minOccurs="0" ref="Description"/>
+      </xs:sequence>
+      <xs:attribute name="TypeName"/>
+      <xs:attribute name="TypeNamePlural"/>
+      <xs:attribute name="ImageUrl"/>
+      <xs:attribute name="TypeImageUrl"/>
+      <xs:attribute name="Initials"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SelectionFields">
+    <xs:complexType>
+      <xs:attribute name="PropertyPath"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LineItem">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+      </xs:sequence>
+      <xs:attribute name="Qualifier" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="FieldGroup">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
+      </xs:sequence>
+      <xs:attribute name="Qualifier" type="xs:NCName"/>
+      <xs:attribute name="Label"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PropertyRef">
+    <xs:complexType>
+      <xs:attribute name="Name" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="Property">
     <xs:complexType>
       <xs:sequence>
         <xs:element minOccurs="0" ref="Text"/>
+        <xs:element minOccurs="0" ref="ValueList"/>
       </xs:sequence>
       <xs:attribute name="Field" type="xs:NCName"/>
       <xs:attribute name="IsAttribute" type="xs:boolean"/>
@@ -199,28 +300,38 @@
       <xs:attribute name="IsDateAttribute" type="xs:boolean"/>
       <xs:attribute name="IsNumericAttribute" type="xs:boolean"/>
       <xs:attribute name="Label" type="xs:NCName"/>
+      <xs:attribute name="Computed" type="xs:boolean"/>
+      <xs:attribute name="Immutable" type="xs:boolean"/>
+      <xs:attribute name="IsImageURL" type="xs:boolean"/>
+      <xs:attribute name="MultiLineText" type="xs:boolean"/>
+      <xs:attribute name="ExcludeFromNavigationContext" type="xs:boolean"/>
+      <xs:attribute name="Hidden" type="xs:boolean"/>
+      <xs:attribute name="HiddenFilter" type="xs:boolean"/>
+      <xs:attribute name="SemanticObject" type="xs:NCName"/>
+      <xs:attribute name="FieldControl" type="xs:NCName"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
       <xs:attribute name="Nullable" type="xs:boolean"/>
       <xs:attribute name="Precision" type="xs:integer"/>
       <xs:attribute name="RelAlias" type="xs:NCName"/>
       <xs:attribute name="Scale" type="xs:integer"/>
       <xs:attribute name="Type" type="xs:NCName"/>
-      <xs:attribute name="MimeType" type="xs:NCName"/>
+      <xs:attribute name="MimeType" type="xs:anyURI"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="Text">
     <xs:complexType>
       <xs:attribute name="Path" use="required"/>
       <xs:attribute name="TextArrangement" use="required" type="xs:NCName"/>
+      <xs:attribute name="Computed" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="Parameter">
     <xs:complexType>
       <xs:attribute name="IsCollection" type="xs:boolean"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
-      <xs:attribute name="Nullable" use="required" type="xs:boolean"/>
-      <xs:attribute name="Precision" type="xs:integer"/>
       <xs:attribute name="Type" use="required" type="xs:NCName"/>
+      <xs:attribute name="Nullable" type="xs:boolean"/>
+      <xs:attribute name="Precision" type="xs:integer"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="ReturnType">
@@ -234,6 +345,78 @@
     <xs:complexType>
       <xs:attribute name="Path" use="required" type="xs:NCName"/>
       <xs:attribute name="Target" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="view-entity">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="member-entity"/>
+        <xs:element ref="alias-all"/>
+        <xs:element maxOccurs="unbounded" ref="alias"/>
+        <xs:element maxOccurs="unbounded" ref="view-link"/>
+        <xs:element maxOccurs="unbounded" ref="relation"/>
+      </xs:sequence>
+      <xs:attribute name="entity-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="package-name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="member-entity">
+    <xs:complexType>
+      <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="entity-name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="alias-all">
+    <xs:complexType>
+      <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="alias">
+    <xs:complexType>
+      <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="field" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="view-link">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="key-map"/>
+        <xs:element ref="entity-condition"/>
+      </xs:sequence>
+      <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="rel-entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="rel-optional" use="required" type="xs:boolean"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="entity-condition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="condition-expr"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="condition-expr">
+    <xs:complexType>
+      <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
+      <xs:attribute name="field-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="value" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="relation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="key-map"/>
+      </xs:sequence>
+      <xs:attribute name="rel-entity-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="title" type="xs:NCName"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="key-map">
+    <xs:complexType>
+      <xs:attribute name="field-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="rel-field-name" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
 </xs:schema>

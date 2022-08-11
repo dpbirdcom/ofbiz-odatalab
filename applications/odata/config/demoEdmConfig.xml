@@ -1,4 +1,4 @@
-<ofbiz-edm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ImportGlobal="false">
+<ofbiz-edm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://dev.odatalab.com/dtds/edmconfig.xsd" ImportGlobal="false">
 	<EnumType Name="Gender">
 		<Member Name="M" Value="1"/>
 		<Member Name="F" Value="2"/>
