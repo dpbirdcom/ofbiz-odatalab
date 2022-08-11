@@ -236,14 +236,8 @@ public class OfbizComplexProcessor implements ComplexProcessor, ComplexCollectio
                 "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                 "locale", locale);
         FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-        // 这个function是ofbiz的service
-        if (ofbizCsdlFunction.isService()) {
-            property = ofbizOdataReader.readFunctionImportComplex(uriResourceFunction);
-        } else {
-            // 这个function是某个java class的method
-            List<UriParameter> parameters = uriResourceFunction.getParameters();
-            property = ofbizOdataReader.processFunctionComplexMethod(httpServletRequest, edmFunction, ofbizMethod, parameters);
-        }
+        List<UriParameter> parameters = uriResourceFunction.getParameters();
+        property = ofbizOdataReader.processFunctionComplexMethod(httpServletRequest, edmFunction, ofbizMethod, parameters);
         if (property == null) {
             throw new ODataApplicationException("No property found", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ENGLISH);
         } else {

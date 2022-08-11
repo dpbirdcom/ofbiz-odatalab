@@ -5,18 +5,16 @@ import org.apache.olingo.commons.api.edm.provider.CsdlAction;
 public class OfbizCsdlAction extends CsdlAction {
 	private String ofbizMethod;
 	private String returnName;
-	private boolean isService = false;
 	private boolean stickySession = false;
 	private boolean entityAction = false; // 比如create entity，update entity，delete entity
 	
 	public OfbizCsdlAction() {
 		super();
 	}
-	public OfbizCsdlAction(String ofbizMethod, String returnName, boolean isService, boolean stickySession) {
+	public OfbizCsdlAction(String ofbizMethod, String returnName, boolean stickySession) {
 		super();
 		this.ofbizMethod = ofbizMethod;
 		this.returnName = returnName;
-		this.isService = isService;
 		this.stickySession = stickySession;
 	}
 	public String getOfbizMethod() {
@@ -30,12 +28,6 @@ public class OfbizCsdlAction extends CsdlAction {
 	}
 	public void setReturnName(String returnName) {
 		this.returnName = returnName;
-	}
-	public boolean isService() {
-		return isService;
-	}
-	public void setService(boolean isService) {
-		this.isService = isService;
 	}
 
 	public void setStickySession(boolean stickySession) {

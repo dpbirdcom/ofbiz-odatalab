@@ -24,7 +24,6 @@
       </xs:sequence>
       <xs:attribute name="EntitySetPath" type="xs:NCName"/>
       <xs:attribute name="IsBound" type="xs:boolean"/>
-      <xs:attribute name="IsService" type="xs:boolean"/>
       <xs:attribute name="Name" use="required" type="xs:NCName"/>
       <xs:attribute name="OfbizService"/>
       <xs:attribute name="StickySession" type="xs:boolean"/>

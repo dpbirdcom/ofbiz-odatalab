@@ -611,7 +611,7 @@
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
 		<ReturnType Type="Product"/>
 	</Action>
-	<Action Name="DiscardAction" IsService="false">
+	<Action Name="DiscardAction" >
 	</Action>
 
 	<Action Name="testImportActionVoid" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportActionVoid">
@@ -716,17 +716,17 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="TestObjectOne" IsCollection="true"/>
 	</Action>
-	<Action Name="testChangeSetBoundSetAction" IsBound="true" IsService="false" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetAction">
+	<Action Name="testChangeSetBoundSetAction" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetAction">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false" />
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false" />
 		<ReturnType Type="Product"/>
 	</Action>
-	<Action Name="testChangeSetBoundSetActionOne" IsBound="true" IsService="false" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetActionOne">
+	<Action Name="testChangeSetBoundSetActionOne" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetActionOne">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false" />
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false" />
 		<ReturnType Type="Product"/>
 	</Action>
-	<Action Name="testChangeSetBoundSetActionTwo" IsBound="true" IsService="false" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetActionTwo">
+	<Action Name="testChangeSetBoundSetActionTwo" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testChangeSetBoundSetActionTwo">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false" />
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false" />
 		<ReturnType Type="Product"/>
