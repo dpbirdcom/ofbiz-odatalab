@@ -13,7 +13,7 @@
                 </xs:choice>
                 <xs:element ref="EntityContainer"/>
             </xs:choice>
-            <xs:attribute name="ImportGlobal" use="required" type="xs:boolean"/>
+            <xs:attribute name="ImportGlobal" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Action">
@@ -41,20 +41,18 @@
     </xs:element>
     <xs:element name="EntityType">
         <xs:complexType>
-            <xs:sequence>
-                <xs:choice minOccurs="0" maxOccurs="unbounded">
-                    <xs:element ref="Property"/>
-                    <xs:element ref="SemanticKey"/>
-                    <xs:element ref="RelAlias"/>
-                    <xs:element ref="Key"/>
-                    <xs:element ref="HeaderInfo"/>
-                    <xs:element ref="LineItem"/>
-                    <xs:element ref="FieldGroup"/>
-                    <xs:element ref="SelectionFields"/>
-                    <xs:element ref="Exclude"/>
-                </xs:choice>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="Property"/>
+                <xs:element ref="SemanticKey"/>
+                <xs:element ref="RelAlias"/>
+                <xs:element ref="Key"/>
+                <xs:element ref="HeaderInfo"/>
+                <xs:element ref="LineItem"/>
+                <xs:element ref="FieldGroup"/>
+                <xs:element ref="SelectionFields"/>
+                <xs:element ref="Exclude"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
-            </xs:sequence>
+            </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
             <xs:attribute name="DraftEntityName" type="xs:NCName"/>
@@ -227,7 +225,7 @@
         <xs:complexType>
             <xs:attribute name="CollectionPath" type="xs:NCName"/>
             <xs:attribute name="WithFixedValues" type="xs:boolean"/>
-            <xs:attribute name="ParameterDisplayOnly" type="xs:NCName"/>
+            <xs:attribute name="ParameterDisplayOnly"/>
             <xs:attribute name="Label"/>
         </xs:complexType>
     </xs:element>
@@ -259,10 +257,10 @@
     </xs:element>
     <xs:element name="HeaderInfo">
         <xs:complexType>
-            <xs:choice>
+            <xs:all>
                 <xs:element minOccurs="0" ref="Title"/>
                 <xs:element minOccurs="0" ref="Description"/>
-            </xs:choice>
+            </xs:all>
             <xs:attribute name="TypeName"/>
             <xs:attribute name="TypeNamePlural"/>
             <xs:attribute name="ImageUrl"/>
@@ -277,7 +275,7 @@
     </xs:element>
     <xs:element name="LineItem">
         <xs:complexType>
-            <xs:choice>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
             </xs:choice>
@@ -402,8 +400,8 @@
     <xs:element name="view-link">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="key-map"/>
-                <xs:element ref="entity-condition"/>
+                <xs:element minOccurs="1" maxOccurs="unbounded" ref="key-map"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="entity-condition"/>
             </xs:sequence>
             <xs:attribute name="entity-alias" use="required" type="xs:NCName"/>
             <xs:attribute name="rel-entity-alias" use="required" type="xs:NCName"/>
