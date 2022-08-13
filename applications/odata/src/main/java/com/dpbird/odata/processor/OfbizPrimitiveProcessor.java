@@ -3,7 +3,6 @@ package com.dpbird.odata.processor;
 import com.dpbird.odata.*;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.LocalDispatcher;
@@ -16,9 +15,11 @@ import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.*;
-import org.apache.olingo.server.api.deserializer.ODataDeserializer;
 import org.apache.olingo.server.api.processor.PrimitiveValueProcessor;
-import org.apache.olingo.server.api.serializer.*;
+import org.apache.olingo.server.api.serializer.ODataSerializer;
+import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
+import org.apache.olingo.server.api.serializer.SerializerException;
+import org.apache.olingo.server.api.serializer.SerializerResult;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
@@ -181,7 +182,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
                     List<UriResource> uriResources = resourcePaths.subList(0, resourcePaths.size() - 1);
                     //Entity
-                    Map<String, Object> resourceMap = Util.getEntityAndNavigationFromResource(uriResources, odataContext);
+                    Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(uriResources, odataContext);
                     EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
                     Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
                     //Navigation
@@ -196,7 +197,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
                 }
             } catch (OfbizODataException e) {
-                throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+                throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
             }
         }
 

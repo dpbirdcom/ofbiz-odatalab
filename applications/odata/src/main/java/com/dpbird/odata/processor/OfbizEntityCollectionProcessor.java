@@ -9,16 +9,12 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
-import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
@@ -384,7 +380,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 count = ofbizOdataReader.readEntitySetCount(edmEntitySet);
             } else {
                 //多段式的查询 获取到最终要查询的数据
-                Map<String, Object> resourceMap = Util.getEntityAndNavigationFromResource(resourceParts, odataContext);
+                Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(resourceParts, odataContext);
                 if (UtilValidate.isEmpty(resourceMap)) {
                     return;
                 }
