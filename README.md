@@ -3,7 +3,7 @@ ODataLab is an OData service built on Apache OFBiz
 
 ## Quick Start
 + Prepare OFBiz<br>./gradlew cleanAll
-+ Load seed data<br>./gradlew "ofbiz --load-data readers=seed,seed-initial,ext"
++ Load seed data<br>./gradlew "ofbiz --load-data readers=seed,ext"
 + Load test data if you just test<br>./gradlew "ofbiz --load-data readers=test"
 + Load jindi data if you working on jindi project<br>./gradlew "ofbiz --load-data readers=jindi"
 + Load jingdong data if you working on jingdong project<br>./gradlew "ofbiz --load-data readers=jingdong"
