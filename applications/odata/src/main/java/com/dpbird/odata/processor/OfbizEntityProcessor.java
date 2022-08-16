@@ -3,26 +3,24 @@ package com.dpbird.odata.processor;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
-import com.google.gson.JsonObject;
-import net.sf.json.JSONObject;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
-import org.apache.ofbiz.service.ModelService;
-import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.ContextURL.Suffix;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
@@ -30,20 +28,25 @@ import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerResult;
+import org.apache.olingo.server.api.deserializer.FixedFormatDeserializer;
 import org.apache.olingo.server.api.deserializer.ODataDeserializer;
 import org.apache.olingo.server.api.processor.MediaEntityProcessor;
-import org.apache.olingo.server.api.serializer.*;
+import org.apache.olingo.server.api.serializer.EntitySerializerOptions;
+import org.apache.olingo.server.api.serializer.ODataSerializer;
+import org.apache.olingo.server.api.serializer.SerializerException;
+import org.apache.olingo.server.api.serializer.SerializerResult;
 import org.apache.olingo.server.api.uri.*;
-import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
+import org.apache.olingo.server.api.uri.queryoption.QueryOption;
+import org.apache.olingo.server.api.uri.queryoption.SelectOption;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class OfbizEntityProcessor implements MediaEntityProcessor {
 
@@ -783,40 +786,57 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void createMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
         try {
+            //URIResource
             List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
             UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
             EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
             EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceEntitySet.getEntityType().getFullQualifiedName());
 
+            //解析媒体文件对象
+            ServletFileUpload servletUpload = new ServletFileUpload(new DiskFileItemFactory());
+            List<FileItem> fileItems = servletUpload.parseRequest(httpServletRequest);
+            FixedFormatDeserializer formatDeserializer = odata.createFixedFormatDeserializer();
             //媒体数据
-            final byte[] mediaContent = odata.createFixedFormatDeserializer().binary(request.getBody());
-            //URL参数
-            Map<String, Object> urlParamMap = new HashMap<>();
-            uriInfo.getCustomQueryOptions().forEach(arg -> urlParamMap.put(arg.getName(), arg.getText()));
-            //创建实体
+            List<byte[]> mediaCollection = new ArrayList<>();
+            Map<String, Object> paramMap = new HashMap<>();
+            for (FileItem fileItem : fileItems) {
+                if (fileItem.isFormField()) {
+                    //form表单的普通字段
+                    paramMap.put(fileItem.getFieldName(), fileItem.getString());
+                } else {
+                    //媒体
+                    mediaCollection.add(formatDeserializer.binary(fileItem.getInputStream()));
+                }
+            }
+            Debug.logInfo("Media size = " + mediaCollection.size(), module);
+            Debug.logInfo("Media form data: " + paramMap, module);
+            //todo: 暂时只能上传一个文件
+            // 客户端同时上传多个文件时如何分配普通字段? 如何响应访问地址?
+            if (mediaCollection.size() != 1) {
+                throw new ODataApplicationException("The number of media must be 1.",
+                        HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+            }
+            //创建
             CsdlProperty streamProperty = ofbizCsdlEntityType.getStreamProperty();
-            Map<String, Object> fieldMap = new HashMap<>(urlParamMap);
-            fieldMap.put(streamProperty.getName(), mediaContent);
-            Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, fieldMap);
-            Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", uriResourceEntitySet.getEntitySet(),
+            paramMap.put(streamProperty.getName(), mediaCollection.get(0));
+            Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, paramMap);
+            Map<String, Object> serviceParams = UtilMisc.toMap("edmEntitySet", uriResourceEntitySet.getEntitySet(),
                     "entityToWrite", entityToWrite, "edmProvider", edmProvider,"userLogin", userLogin);
-            //create
-            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createMediaEntityData", serviceParms);
+            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createMediaEntityData", serviceParams);
             OdataOfbizEntity createdEntity = (OdataOfbizEntity) serviceResult.get("createdEntity");
 
-            //return: 媒体数据访问地址
-            StringBuilder mediaUri = new StringBuilder(request.getRawBaseUri());
+            //返回已创建媒体的访问地址
             URI uri = Util.createId(edmEntitySet.getName(), edmEntityType, ofbizCsdlEntityType, createdEntity.getGenericValue());
-            mediaUri.append("/").append(uri).append("/$value");
+            StringBuilder mediaUri = new StringBuilder(request.getRawBaseUri()).append("/").append(uri).append("/$value");
             //如果请求参数带有app也响应回去
-            if (urlParamMap.containsKey("app")) {
-                mediaUri.append("?app=").append(urlParamMap.get("app"));
+            if (httpServletRequest.getParameter("app") != null) {
+                mediaUri.append("?app=").append(httpServletRequest.getParameter("app"));
             }
             final InputStream responseContent = odata.createFixedFormatSerializer().binary(mediaUri.toString().getBytes());
             response.setContent(responseContent);
             response.setStatusCode(HttpStatusCode.CREATED.getStatusCode());
-        } catch (OfbizODataException | GeneralException e) {
+        } catch (OfbizODataException | GeneralException | FileUploadException | IOException e) {
             throw new ODataApplicationException(e.getMessage(),
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
@@ -824,7 +844,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 
     @Override
     public void updateMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
-
+        Debug.log(">>>>>>>>>>>>>>>>>> get media Upd Req");
     }
 
     @Override
