@@ -239,6 +239,14 @@ under the License.
         <attribute name="pkMap" type="Map" mode="OUT" optional="false"/>
     </service>
 
+    <service name="dpbird.createMediaEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="createMediaEntityData" auth="true">
+        <description>创建媒体数据实体</description>
+        <attribute name="edmEntitySet" type="org.apache.olingo.commons.api.edm.EdmEntitySet" mode="IN"/>
+        <attribute name="entityToWrite" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="createdEntity" type="org.apache.olingo.commons.api.data.Entity" mode="OUT"/>
+    </service>
 
     <!-- end services for odata -->
 

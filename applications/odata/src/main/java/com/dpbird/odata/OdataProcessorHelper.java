@@ -927,7 +927,7 @@ public class OdataProcessorHelper {
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
                                                   EdmEntityType edmEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
                                                   OfbizAppEdmProvider edmProvider, GenericValue userLogin, OData odata, ServiceMetadata serviceMetadata)
-            throws OfbizODataException, ODataApplicationException {
+            throws OfbizODataException {
         GenericValue newGenericValue = null;
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
@@ -973,8 +973,8 @@ public class OdataProcessorHelper {
         }
 
         if (newGenericValue == null) {
-            throw new ODataApplicationException("new entity was not created",
-                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
+            throw new OfbizODataException("new entity was not created",
+                    HttpStatusCode.INTERNAL_SERVER_ERROR.toString());
         }
         return newGenericValue;
     }
