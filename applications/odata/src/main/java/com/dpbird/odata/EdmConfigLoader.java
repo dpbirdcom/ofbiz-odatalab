@@ -1434,7 +1434,6 @@ public class EdmConfigLoader {
             ofbizService = actionElement.getAttribute("OfbizService");
         }
         boolean isBound = UtilValidate.isNotEmpty(actionElement.getAttribute("IsBound")) && "true".equals(actionElement.getAttribute("IsBound"));
-        boolean isService = UtilValidate.isNotEmpty(actionElement.getAttribute("IsService")) && "true".equals(actionElement.getAttribute("IsService"));
         boolean stickySession = UtilValidate.isNotEmpty(actionElement.getAttribute("StickySession")) && "true".equals(actionElement.getAttribute("StickySession"));
         boolean isEntityAction = UtilValidate.isNotEmpty(actionElement.getAttribute("IsEntityAction")) && "true".equals(actionElement.getAttribute("IsEntityAction"));
         String entitySetPath = "".equals(actionElement.getAttribute("EntitySetPath")) ? null : actionElement.getAttribute("EntitySetPath");
@@ -1453,7 +1452,7 @@ public class EdmConfigLoader {
             }
         }
         return createAction(fullQualifiedName, parameters, csdlReturnType,
-                isBound, ofbizService, isService, isEntityAction, stickySession, entitySetPath);
+                isBound, ofbizService, isEntityAction, stickySession, entitySetPath);
     }
 
     private static CsdlParameter loadParameterFromElement(Element parameterElement) {
@@ -1508,7 +1507,7 @@ public class EdmConfigLoader {
 
     private static OfbizCsdlAction createAction(final FullQualifiedName actionName,
                                                 List<CsdlParameter> parameters, CsdlReturnType csdlReturnType, boolean isBound,
-                                                String ofbizMethod, boolean isService, boolean isEntityAction,
+                                                String ofbizMethod, boolean isEntityAction,
                                                 boolean stickySession, String entitySetPath) {
         final OfbizCsdlAction csdlAction = new OfbizCsdlAction();
         try {
@@ -1522,7 +1521,6 @@ public class EdmConfigLoader {
                 csdlAction.setReturnType(csdlReturnType);
             }
             csdlAction.setOfbizMethod(ofbizMethod);
-            csdlAction.setService(isService);
             csdlAction.setStickySession(stickySession);
             csdlAction.setEntityAction(isEntityAction);
             csdlAction.setEntitySetPath(entitySetPath);

@@ -27,8 +27,6 @@ import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.UriParameter;
 import org.apache.olingo.server.api.uri.queryoption.*;
-import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
-import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,8 +41,6 @@ import java.util.*;
 public class OdataProcessorHelper {
 
     public static final String module = OdataProcessorHelper.class.getName();
-
-    public static final String DRAFT_SUFFIX = "Draft";
 
     public static String getDraftEntity(OfbizAppEdmProvider edmProvider, EdmEntityType edmEntityType)
             throws OfbizODataException {
@@ -157,45 +153,6 @@ public class OdataProcessorHelper {
         if (singletonObject == null)
             throw new OfbizODataException(HttpStatusCode.NOT_FOUND.getStatusCode() + "", "The value of Singleton is null");
         return singletonObject;
-    }
-
-    // public Integer readEntitySetCount(EdmEntityType edmEntityType, FilterOption filterOption, ApplyOption applyOption) {
-    public static Integer readEntitySetCount(Map<String, Object> odataContext, String findEntityName,
-                                             FilterOption filterOption, ApplyOption applyOption, boolean isOdataView, OfbizCsdlEntityType csdlEntityType)
-            throws ODataException {
-        Delegator delegator = (Delegator) odataContext.get("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
-        GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
-        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
-        Long countLong = 0L;
-
-        try {
-            EntityCondition entityCondition = null;
-            DynamicViewHolder dynamicViewHolder = null;
-            if (filterOption != null) {
-                Expression filterExpression = filterOption.getExpression();
-                OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
-                entityCondition = (EntityCondition) filterExpression.accept(expressionVisitor);
-                dynamicViewHolder = expressionVisitor.getDynamicViewHolder();
-            }
-            if (applyOption == null) {
-                countLong = delegator.findCountByCondition(findEntityName, entityCondition, null, null);
-            } else {
-                countLong = countWithDynamicView(findEntityName, dynamicViewHolder, entityCondition, applyOption);
-            }
-
-        } catch (GenericEntityException | ExpressionVisitException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage());
-        }
-        // ofbiz的count是long，但是odata的count是Integer，所以要转换
-        return countLong.intValue();
-
-    }
-
-    private static Long countWithDynamicView(String entityName, DynamicViewHolder dynamicViewHolder, EntityCondition entityCondition, ApplyOption applyOption) {
-        // TODO: need more work to do here
-        return 1L;
     }
 
     public static Object callFunctionActionMethod(Map<String, Object> oDataContext, String classMethod,
@@ -970,7 +927,7 @@ public class OdataProcessorHelper {
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
                                                   EdmEntityType edmEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
                                                   OfbizAppEdmProvider edmProvider, GenericValue userLogin, OData odata, ServiceMetadata serviceMetadata)
-            throws OfbizODataException, ODataApplicationException {
+            throws OfbizODataException {
         GenericValue newGenericValue = null;
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
@@ -1016,8 +973,8 @@ public class OdataProcessorHelper {
         }
 
         if (newGenericValue == null) {
-            throw new ODataApplicationException("new entity was not created",
-                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
+            throw new OfbizODataException("new entity was not created",
+                    HttpStatusCode.INTERNAL_SERVER_ERROR.toString());
         }
         return newGenericValue;
     }
@@ -1787,7 +1744,7 @@ public class OdataProcessorHelper {
                     createService = "dpbird.saveViewEntityData";
                     serviceParams = UtilMisc.toMap("viewEntityName", entityName, "fieldMap", createEntityMap, "userLogin", userLogin);
                 } else {
-                    return null;
+                    throw e;
                 }
             }
             createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);

@@ -1022,11 +1022,7 @@ public class OfbizActionProcessor
                 }
                 String ofbizMethod = ofbizCsdlAction.getOfbizMethod();
                 String returnName = ofbizCsdlAction.getReturnName();
-                if (ofbizCsdlAction.isService()) { // 这个action是ofbiz的servcie
-                    property = ofbizOdataWriter.processActionPrimitiveCollection(ofbizMethod, parameters, returnName);
-                } else { // 这个action是某个java class的method
-                    property = ofbizOdataWriter.processActionPrimitiveMethod(httpServletRequest, ofbizMethod, parameters);
-                }
+                property = ofbizOdataWriter.processActionPrimitiveMethod(httpServletRequest, ofbizMethod, parameters);
             } catch (ODataException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode()),e.getMessage());
             }

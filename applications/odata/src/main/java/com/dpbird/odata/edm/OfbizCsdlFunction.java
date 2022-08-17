@@ -5,16 +5,14 @@ import org.apache.olingo.commons.api.edm.provider.CsdlFunction;
 public class OfbizCsdlFunction extends CsdlFunction {
 	private String ofbizMethod;
 	private String returnName;
-	private boolean isService = false;
 
 	public OfbizCsdlFunction() {
 		super();
 	}
-	public OfbizCsdlFunction(String ofbizMethod, String returnName, boolean isService) {
+	public OfbizCsdlFunction(String ofbizMethod, String returnName) {
 		super();
 		this.ofbizMethod = ofbizMethod;
 		this.returnName = returnName;
-		this.isService = isService;
 	}
 	
 	public String getOfbizMethod() {
@@ -28,12 +26,6 @@ public class OfbizCsdlFunction extends CsdlFunction {
 	}
 	public void setReturnName(String returnName) {
 		this.returnName = returnName;
-	}
-	public boolean isService() {
-		return isService;
-	}
-	public void setService(boolean isService) {
-		this.isService = isService;
 	}
 
 }

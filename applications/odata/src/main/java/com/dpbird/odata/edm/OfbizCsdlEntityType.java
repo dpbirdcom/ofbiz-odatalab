@@ -60,7 +60,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 		this.terms = null;
 		this.searchOption = searchOption;
 		this.groupBy = groupBy;
-		this.setHasStream(hasStream);
+		setHasStream(hasStream);
 	}
 
 	public List<String> getReferencedEntitySet() {
@@ -249,11 +249,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 	}
 
 	public CsdlProperty getStreamProperty() {
-		for (CsdlProperty property : properties) {
-			if (property.getMimeType() != null) {
-				return property;
-			}
-		}
-		return null;
+		return properties.stream().filter(p -> p.getMimeType() != null).findFirst().orElse(null);
 	}
 }

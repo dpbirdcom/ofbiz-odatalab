@@ -22,6 +22,7 @@ import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityContainer;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationPropertyBinding;
 import org.apache.olingo.commons.api.ex.ODataException;
@@ -1025,6 +1026,29 @@ public class ProcessorServices {
 			}
 			return fieldKepMap;
 		}
+	}
+
+	public static Map<String, Object> createMediaEntityData(DispatchContext dctx, Map<String, Object> context)
+			throws OfbizODataException {
+		LocalDispatcher dispatcher = dctx.getDispatcher();
+		Delegator delegator = dispatcher.getDelegator();
+		Locale locale = (Locale) context.get("locale");
+		GenericValue userLogin = (GenericValue) context.get("userLogin");
+		EdmEntitySet edmEntitySet = (EdmEntitySet) context.get("edmEntitySet");
+		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) context.get("edmProvider");
+		Entity entityToWrite = (Entity) context.get("entityToWrite");
+
+		//create
+		Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+				"edmProvider", edmProvider,	"userLogin", userLogin, "locale", locale);
+		Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet, "entityToWrite", entityToWrite);
+		OfbizOdataWriter ofbizOdataWriter = new OfbizOdataWriter(odataContext, null, edmParams);
+		Entity createdEntity = ofbizOdataWriter.createEntityData(entityToWrite);
+
+		//return
+		Map<String, Object> result = ServiceUtil.returnSuccess();
+		result.put("createdEntity", createdEntity);
+		return result;
 	}
 
 }

@@ -112,7 +112,7 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 		}
 	}
 
-	public OdataOfbizEntity createEntityData(Entity entityToWrite) throws OfbizODataException, ODataApplicationException {
+	public OdataOfbizEntity createEntityData(Entity entityToWrite) throws OfbizODataException {
 		OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, edmBindingTarget.getName());
 		String entitySetHandler = csdlEntitySet.getHandler();
 		EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
@@ -168,11 +168,6 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 			}
 		} catch(GenericServiceException e){
 			throw new OfbizODataException(e.getMessage());
-		}
-
-		if (newGenericValue == null) {
-			throw new ODataApplicationException("new entity was not created",
-					HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
 		}
 
 		/*********** end create genericValue ******************************/
