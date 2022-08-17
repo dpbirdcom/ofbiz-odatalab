@@ -811,8 +811,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             }
             Debug.logInfo("Media size = " + mediaCollection.size(), module);
             Debug.logInfo("Media form data: " + paramMap, module);
-            //todo: 暂时只能上传一个文件
-            // 客户端同时上传多个文件时如何分配普通字段? 如何响应访问地址?
+            //只允许单个上传
             if (mediaCollection.size() != 1) {
                 throw new ODataApplicationException("The number of media must be 1.",
                         HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
