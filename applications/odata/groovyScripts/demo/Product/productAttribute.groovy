@@ -1,5 +1,4 @@
 import com.dpbird.odata.edm.OdataOfbizEntity
-import com.dpbird.basecamp.util.BasecampUtils;
 import org.apache.ofbiz.entity.GenericValue;
 import com.dpbird.odata.Util;
 import org.apache.ofbiz.base.util.*;

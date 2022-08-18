@@ -10,7 +10,6 @@ import org.apache.olingo.commons.api.data.Entity
 import org.apache.olingo.commons.api.data.Property
 import org.apache.olingo.commons.api.data.ValueType
 import com.dpbird.odata.edm.OdataOfbizEntity
-import com.dpbird.basecamp.util.BasecampUtils;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.entity.util.EntityUtil
