@@ -118,6 +118,26 @@ under the License.
                     password=""
                     listen="true"/>
         </jms-service>
+        <jms-service name="draculaPointsReq" send-mode="all">
+            <server jndi-server-name="default"
+                    client-id="ofbizDraculaSender"
+                    jndi-name="topicConnectionFactory"
+                    topic-queue="dracula.services.points.req"
+                    type="topic"
+                    username=""
+                    password=""
+                    listen="false"/>
+        </jms-service>
+        <jms-service name="draculaPointsRes" send-mode="all">
+            <server jndi-server-name="default"
+                    client-id="ofbizDraculaReceiver"
+                    jndi-name="topicConnectionFactory"
+                    topic-queue="dracula.services.points.res"
+                    type="topic"
+                    username=""
+                    password=""
+                    listen="true"/>
+        </jms-service>
         <!--
         <jms-service name="serviceMessenger" send-mode="all">
             <server jndi-server-name="default"
