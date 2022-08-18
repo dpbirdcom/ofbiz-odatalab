@@ -784,7 +784,9 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     }
 
     @Override
-    public void createMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
+    public void createMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo,
+                                  ContentType requestFormat, ContentType responseFormat)
+            throws ODataApplicationException, ODataLibraryException {
         try {
             //URIResource
             List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
@@ -814,26 +816,30 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             //只允许单个上传
             if (mediaCollection.size() != 1) {
                 throw new ODataApplicationException("The number of media must be 1.",
-                        HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
             }
             //创建
             CsdlProperty streamProperty = ofbizCsdlEntityType.getStreamProperty();
             paramMap.put(streamProperty.getName(), mediaCollection.get(0));
             Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, paramMap);
             Map<String, Object> serviceParams = UtilMisc.toMap("edmEntitySet", uriResourceEntitySet.getEntitySet(),
-                    "entityToWrite", entityToWrite, "edmProvider", edmProvider,"userLogin", userLogin);
+                    "entityToWrite", entityToWrite, "edmProvider", edmProvider, "userLogin", userLogin);
             Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createMediaEntityData", serviceParams);
             OdataOfbizEntity createdEntity = (OdataOfbizEntity) serviceResult.get("createdEntity");
-
+            URI entityId = createdEntity.getId();
+            if (entityId == null) {
+                entityId = Util.createId(edmEntitySet.getName(), edmEntityType, ofbizCsdlEntityType, createdEntity.getGenericValue());
+            }
             //返回已创建媒体的访问地址
-            URI uri = Util.createId(edmEntitySet.getName(), edmEntityType, ofbizCsdlEntityType, createdEntity.getGenericValue());
-            StringBuilder mediaUri = new StringBuilder(request.getRawBaseUri()).append("/").append(uri).append("/$value");
+            String location = "/" + entityId + "/$value";
+            StringBuilder mediaUri = new StringBuilder(request.getRawBaseUri() + location);
             //如果请求参数带有app也响应回去
             if (httpServletRequest.getParameter("app") != null) {
                 mediaUri.append("?app=").append(httpServletRequest.getParameter("app"));
             }
             final InputStream responseContent = odata.createFixedFormatSerializer().binary(mediaUri.toString().getBytes());
             response.setContent(responseContent);
+            response.setHeader("Location", location);
             response.setStatusCode(HttpStatusCode.CREATED.getStatusCode());
         } catch (OfbizODataException | GeneralException | FileUploadException | IOException e) {
             throw new ODataApplicationException(e.getMessage(),
@@ -843,7 +849,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 
     @Override
     public void updateMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
-        Debug.log(">>>>>>>>>>>>>>>>>> get media Upd Req");
+
     }
 
     @Override

@@ -40,6 +40,9 @@
         </xs:complexType>
     </xs:element>
     <xs:element name="EntityType">
+        <xs:annotation>
+            <xs:documentation>Definition of entity</xs:documentation>
+        </xs:annotation>
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="Property"/>
