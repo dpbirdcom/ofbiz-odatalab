@@ -12,6 +12,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.condition.EntityFieldMap;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
@@ -142,16 +143,10 @@ public class DraftHandler {
         if (UtilValidate.isNotEmpty(relatedConditionMap)) {
             fieldMap.putAll(relatedConditionMap);
         }
-        //在这里补全seqId主键
+        //补充seqId
         OfbizCsdlEntityType navOfbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-        ModelEntity navModelEntity = delegator.getModelEntity(navOfbizCsdlEntityType.getOfbizEntity());
-        ModelEntity navDraftModelEntity = delegator.getModelEntity(navOfbizCsdlEntityType.getDraftEntityName());
-        for (String pkFieldName : navModelEntity.getPkFieldNames()) {
-            if (pkFieldName.endsWith("SeqId") && navDraftModelEntity.isField(pkFieldName) && UtilValidate.isEmpty(fieldMap.get("SeqId"))){
-                String nextSeqId = delegator.getNextSeqId(navOfbizCsdlEntityType.getOfbizEntity());
-                fieldMap.put(pkFieldName, nextSeqId);
-            }
-        }
+        addDraftNextSeqId(navOfbizCsdlEntityType, fieldMap);
+
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", nestedEntityName,
                 "fieldMap", fieldMap, "sapContextId", this.sapContextId,
                 "draftEntityName", nestedDraftEntityName,
@@ -566,6 +561,30 @@ public class DraftHandler {
             return ((SkipOption) queryOptions.get("skipOption")).getValue();
         }
         return 0;
+    }
+
+    private void addDraftNextSeqId(OfbizCsdlEntityType ofbizCsdlEntityType, Map<String, Object> fieldMap) {
+        //位数
+        final int numericPadding = 5;
+        //递增数
+        final int incrementBy = 1;
+        ModelEntity modelEntity = delegator.getModelEntity(ofbizCsdlEntityType.getOfbizEntity());
+        ModelEntity modelDraftEntity = delegator.getModelEntity(ofbizCsdlEntityType.getDraftEntityName());
+        Map<String, Object> pkMap = new HashMap<>();
+        //获取seqId以外的主键
+        for (String pkFieldName : modelEntity.getPkFieldNames()) {
+            if (!pkFieldName.endsWith("SeqId")) {
+                pkMap.put(pkFieldName, fieldMap.get(pkFieldName));
+            }
+        }
+        //获取下一个seqId 添加到fieldMap
+        for (String pkFieldName : modelEntity.getPkFieldNames()) {
+            if (pkFieldName.endsWith("SeqId") && modelDraftEntity.isField(pkFieldName) && UtilValidate.isEmpty(fieldMap.get("SeqId"))) {
+                GenericValue genericValue = delegator.makeValue(modelDraftEntity.getEntityName(), pkMap);
+                delegator.setNextSubSeqId(genericValue, pkFieldName, numericPadding, incrementBy);
+                fieldMap.put(pkFieldName, genericValue.get(pkFieldName));
+            }
+        }
     }
 
     private List<GenericValue> filterAdminDataListByMatchingSapContextId(List<GenericValue> draftAdminDataList) throws GenericEntityException {
