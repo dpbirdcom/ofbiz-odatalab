@@ -217,26 +217,6 @@ public class AppOdataEvents {
         return "success";
     }
 
-    // ugly, will fix it later
-    private static InputStream getFileInputStream(String filePath) {
-        String baseCampConfigPath = System.getProperty("ofbiz.home") + "/plugins/basecamp/config/";
-        File f = new File(baseCampConfigPath + filePath);
-        try {
-            return new FileInputStream(f);
-        } catch (FileNotFoundException e) {
-            Debug.logInfo("------- didn't find file " + baseCampConfigPath + filePath, module);
-            String odataConfigPath = System.getProperty("ofbiz.home") + "/plugins/odata/config/";
-            Debug.logInfo("------- openning file " + odataConfigPath + filePath, module);
-            File f1 = new File(odataConfigPath + filePath);
-            try {
-                return new FileInputStream(f1);
-            } catch (FileNotFoundException e1) {
-                e1.printStackTrace();
-            }
-        }
-        return null;
-    }
-
     public static String getcsrftoken(HttpServletRequest request, HttpServletResponse response) {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");

@@ -202,14 +202,6 @@ public class OfbizMapOdata {
      */
     public static final String GRADLEW_CREATE_TENANT = "gradlew createTenant -PtenantId=TENANT_ID -PtenantName=\"YOUR_TENANT_NAME\" -PdomainName=DOMAIN -PtenantReaders=seed,seed-initial -PdbPlatform=M -PdbIp=DB_IP -PdbUser=DB_USER -PdbPassword=DB_PASSWORD";
 
-    /**
-     * Local DbIp/{@value}
-     */
-    public static final String LOCAL_DB_IP = "127.0.0.1";
-
-    public static final String GROOVY_PATH = "plugins/basecamp/groovyScripts/";
-
-
 //	public static final Map<String, ScheduleFacade> SCHEDULE_SERVICE = new HashMap<String, ScheduleFacade>() {
 //		{
 //			put("updateProductPrice", new ScheduleFacade("updateProductPrice",new String[]{"ProductPrice"}));
