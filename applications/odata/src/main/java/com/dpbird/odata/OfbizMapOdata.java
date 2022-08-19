@@ -51,7 +51,7 @@ public class OfbizMapOdata {
             put("url", EdmPrimitiveTypeKind.String);
             put("numeric", EdmPrimitiveTypeKind.Int64);
             put("blob", EdmPrimitiveTypeKind.Binary);
-            put("byte-array", EdmPrimitiveTypeKind.Binary);
+            put("byte-array", EdmPrimitiveTypeKind.Stream);
             put("object", EdmPrimitiveTypeKind.Binary);
             put("time", EdmPrimitiveTypeKind.TimeOfDay);
             put("email", EdmPrimitiveTypeKind.String);
