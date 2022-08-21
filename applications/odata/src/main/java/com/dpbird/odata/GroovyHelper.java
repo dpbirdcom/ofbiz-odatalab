@@ -56,7 +56,7 @@ public class GroovyHelper {
         }
     }
 
-    public List<GenericValue> getNavigationData(String location, GenericValue genericValue,
+    public List<GenericValue> getNavigationData(String location, GenericValue genericValue, String navigationPropertyName,
                                                 Map<String, QueryOption> queryOptions, boolean filterByDate,
                                                 List<String> orderBy) throws OfbizODataException, MissingMethodExceptionNoStack {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
@@ -64,6 +64,7 @@ public class GroovyHelper {
         params.put("filterByDate", filterByDate);
         params.put("orderBy", orderBy);
         params.put("queryOptions", queryOptions);
+        params.put("navigationPropertyName", navigationPropertyName);
         return (List<GenericValue>) runScript(location, "getNavigationData");
     }
 

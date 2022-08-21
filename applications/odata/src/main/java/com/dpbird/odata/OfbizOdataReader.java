@@ -270,7 +270,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (UtilValidate.isNotEmpty(csdlNavigationProperty.getHandler())) {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
-                genericValues = groovyHelper.getNavigationData(handler, genericValue, queryOptions, filterByDate, null);
+                genericValues = groovyHelper.getNavigationData(handler, genericValue, navigationPropertyName, queryOptions, filterByDate, null);
             } else {
                 EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
                 genericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, relAlias, filterByDate);
@@ -485,7 +485,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
                 try { // 有可能定义了handler，但是没有定义getNavigationData方法
-                    genericValues = groovyHelper.getNavigationData(handler, genericValue, queryOptions, filterByDate, null);
+                    genericValues = groovyHelper.getNavigationData(handler, genericValue, navigationPropertyName, queryOptions, filterByDate, null);
                 } catch (MissingMethodExceptionNoStack e) {
                     Debug.logInfo(e.getMessage(), module);
                     EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();

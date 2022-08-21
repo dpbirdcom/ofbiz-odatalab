@@ -393,9 +393,6 @@ public class EdmConfigLoader {
         if (csdlProperty.isImageUrl()) {
             csdlAnnotationList.add(createAnnotationBool("UI.IsImageURL", "true", null));
         }
-        if (csdlProperty.isExcludeFromNavigationContext()) {
-            csdlAnnotationList.add(createAnnotationBool("UI.ExcludeFromNavigationContext", "true", null));
-        }
         if (UtilValidate.isNotEmpty(csdlProperty.getLabel())) {
             csdlAnnotationList.add(createAnnotationString("Common.Label", csdlProperty.getLabel(), null));
         }
@@ -1279,8 +1276,6 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(excludeFromNavigationContext)) {
             property.setExcludeFromNavigationContext(Boolean.valueOf(excludeFromNavigationContext));
-        } else {
-            property.setExcludeFromNavigationContext(true);
         }
         if (UtilValidate.isNotEmpty(isAttribute)) {
             property.setAttribute(Boolean.valueOf(isAttribute));
