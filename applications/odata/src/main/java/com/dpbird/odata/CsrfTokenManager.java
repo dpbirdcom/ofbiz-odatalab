@@ -81,7 +81,7 @@ public class CsrfTokenManager {
      */
     public static String checkCsrfToken(HttpServletRequest request, HttpServletResponse response) {
         String csrfToken = request.getHeader(CSRF_TOKEN);
-        if (csrfToken == null || "fetch".equals(csrfToken)) return "success";
+        if (csrfToken == null || "fetch".equalsIgnoreCase(csrfToken)) return "success";
 
         GenericValue userLogin = csrfTokens.get(csrfToken);
         if (userLogin != null) {
