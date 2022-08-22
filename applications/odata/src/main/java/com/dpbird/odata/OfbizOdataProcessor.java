@@ -162,7 +162,10 @@ public class OfbizOdataProcessor {
             }
         }
         EntityCondition entitySetCondition = null;
-        if (UtilValidate.isNotEmpty(edmParams) && edmParams.get("edmBindingTarget") != null) {
+        //检查是否是多段式的apply查询 如果是就不添加主对象的EntitySetCondition
+        List<UriResource> uriResourceParts = (List<UriResource>) odataContext.get("uriResourceParts");
+        boolean isMultistageApply = Util.isMultistageApply(uriResourceParts, (ApplyOption) queryOptions.get("applyOption"));
+        if (UtilValidate.isNotEmpty(edmParams) && edmParams.get("edmBindingTarget") != null && !isMultistageApply) {
             EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
             if (edmBindingTarget instanceof EdmEntitySet) { // 只有entitySet时才会有entitySetCondition
                 OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) this.edmProvider.getEntityContainer()
@@ -226,7 +229,6 @@ public class OfbizOdataProcessor {
                 } else {
                     entitySetCondition = Util.parseEntityCondition(csdlEntitySet.getConditionStr(), userLogin);
                 }
-
             }
         }
         if (entitySetCondition != null) {

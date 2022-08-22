@@ -849,7 +849,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 returnCondition = Util.appendCondition(returnCondition, EntityCondition.makeCondition(relKeyMap.getRelFieldName(), relValue));
             }
         } catch (GenericEntityException e) {
-            e.printStackTrace();
+            Debug.logError(e.getMessage(), module);
         }
         return returnCondition;
     }

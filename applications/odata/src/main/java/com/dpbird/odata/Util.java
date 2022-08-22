@@ -1838,6 +1838,13 @@ public class Util {
 		return false;
 	}
 
+	public static boolean isMultistageApply(List<UriResource> uriResourceParts, ApplyOption applyOption) {
+		if (UtilValidate.isEmpty(uriResourceParts) || UtilValidate.isEmpty(applyOption)) {
+			return false;
+		}
+		return uriResourceParts.size() > 1 && isGroupBy(applyOption);
+	}
+
 	//从Apply中获取Aggregate
 	public static Aggregate getApplyAggregate(ApplyOption applyOption) {
 		Aggregate aggregate = null;
