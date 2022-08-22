@@ -18,11 +18,9 @@ import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelRelation;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.ofbiz.service.GenericServiceException;
@@ -1838,11 +1836,11 @@ public class Util {
 		return false;
 	}
 
-	public static boolean isMultistageApply(List<UriResource> uriResourceParts, ApplyOption applyOption) {
-		if (UtilValidate.isEmpty(uriResourceParts) || UtilValidate.isEmpty(applyOption)) {
+	public static boolean isMultistageApply(List<UriResource> uriResourceParts, Map<String, QueryOption> queryOptions) {
+		if (UtilValidate.isEmpty(uriResourceParts) || UtilValidate.isEmpty(queryOptions) || !queryOptions.containsKey("applyOption")) {
 			return false;
 		}
-		return uriResourceParts.size() > 1 && isGroupBy(applyOption);
+		return uriResourceParts.size() > 1 && isGroupBy((ApplyOption) queryOptions.get("applyOption"));
 	}
 
 	//从Apply中获取Aggregate
@@ -2057,6 +2055,26 @@ public class Util {
 		String valueStr = pkValues.toString().replaceAll("\\[", "(").replace("]", ")");
 		querySql.append(valueStr); //values
 		return EntityCondition.makeConditionWhere(querySql.toString());
+	}
+
+	/**
+	 * @param entityName 实体名称
+	 * @param groupBy	分组字段
+	 * @param functionField	计算字段
+	 * @param function  函数类型
+	 * @param byAnd     查询条件
+	 */
+	public static List<GenericValue> findByFunction(Delegator delegator, String entityName, String groupBy,
+													String functionField, String function, Map<String, Object> byAnd) throws GenericEntityException {
+		DynamicViewEntity dynamicViewEntity = new DynamicViewEntity();
+		dynamicViewEntity.addMemberEntity(entityName, entityName);
+		if (groupBy != null) {
+			dynamicViewEntity.addAlias(entityName, groupBy, groupBy, null, false, true, null);
+		}
+		if (functionField != null) {
+			dynamicViewEntity.addAlias(entityName, functionField, functionField, null, false, false, function);
+		}
+		return EntityQuery.use(delegator).from(dynamicViewEntity).where(byAnd).queryList();
 	}
 
 }
