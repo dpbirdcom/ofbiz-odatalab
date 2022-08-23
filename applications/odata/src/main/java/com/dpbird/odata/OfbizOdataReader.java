@@ -225,7 +225,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
 
     }
 
-    private OdataOfbizEntity makeEntityFromGv(GenericValue genericValue) throws OfbizODataException {
+    public OdataOfbizEntity makeEntityFromGv(GenericValue genericValue) throws OfbizODataException {
         OdataOfbizEntity rowEntity = null;
         if (edmParams.get("edmBindingTarget") != null) {
             rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
@@ -243,23 +243,25 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                                    Map<String, QueryOption> queryOptions) throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
-        GenericValue genericValue;
+        OdataOfbizEntity ofbizEntity;
         try {
-            genericValue = delegator.findOne(entityName, keyMap, true);
+            GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
             if (genericValue == null) {
                 throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + entityName);
             }
+            ofbizEntity = makeEntityFromGv(genericValue);
+            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                    null, UtilMisc.toList(ofbizEntity), locale, userLogin);
         } catch (GenericEntityException e) {
-            e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        return getRelatedEntity(genericValue, edmNavigationProperty, queryOptions);
+        return getRelatedEntity(ofbizEntity, edmNavigationProperty, queryOptions);
     }
 
-    private Entity getRelatedEntity(GenericValue genericValue,
+    private Entity getRelatedEntity(Entity entity,
                                     EdmNavigationProperty edmNavigationProperty,
                                     Map<String, QueryOption> queryOptions) throws OfbizODataException {
-
+        GenericValue genericValue = ((OdataOfbizEntity) entity).getGenericValue();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String navigationPropertyName = edmNavigationProperty.getName();
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
@@ -270,7 +272,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (UtilValidate.isNotEmpty(csdlNavigationProperty.getHandler())) {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
-                genericValues = groovyHelper.getNavigationData(handler, genericValue, navigationPropertyName, queryOptions, filterByDate, null);
+                genericValues = groovyHelper.getNavigationData(handler, entity, navigationPropertyName, queryOptions, filterByDate, null);
             } else {
                 EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
                 genericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, relAlias, filterByDate);
@@ -280,19 +282,18 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 return null;
             }
             OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-            OdataOfbizEntity entity;
-            entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, relatedGenericValue, locale);
+            OdataOfbizEntity relEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, relatedGenericValue, locale);
             SelectOption selectOption = null;
             if (UtilValidate.isNotEmpty(queryOptions)) {
                 selectOption = (SelectOption) queryOptions.get("selectOption");
             }
             OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                    UtilMisc.toMap("selectOption", selectOption), UtilMisc.toList(entity), locale, userLogin);
+                    UtilMisc.toMap("selectOption", selectOption), UtilMisc.toList(relEntity), locale, userLogin);
             EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
             if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, navEdmEntityType);
+                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) relEntity, navEdmEntityType);
             }
-            return entity;
+            return relEntity;
         } catch (ODataException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
@@ -439,28 +440,17 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         try {
             Debug.logInfo("keyMap = " + keyMap, module);
             Debug.logInfo("navigationProperty = " + edmNavigationProperty.getName(), module);
-            if (entity != null) {
-                genericValue = ((OdataOfbizEntity) entity).getGenericValue();
-            }
-            if (genericValue == null) {
+            if (entity == null) {
                 genericValue = delegator.findOne(entityName, keyMap, false);
+                entity = makeEntityFromGv(genericValue);
             }
-            // 有些对象在数据库中是不存在的,比如购物车的促销项
-            if (genericValue == null) {
-                genericValue = delegator.makeValue(entityName);
-                if (entity != null) {
-                    for (Property property : entity.getProperties()) {
-                        if (genericValue.getModelEntity().getAllFieldNames().contains(property.getName())) {
-                            genericValue.set(property.getName(), property.getValue());
-                        }
-                    }
-                }
-            }
+            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                    null, UtilMisc.toList(entity), locale, userLogin);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        return findRelatedEntityCollection(genericValue, edmNavigationProperty, queryOptions);
+        return findRelatedEntityCollection(entity, edmNavigationProperty, queryOptions);
     }
 
     public EntityCollection findSingletonRelatedEntityCollection(EdmSingleton edmSingleton,
@@ -468,13 +458,15 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                                                                  Map<String, QueryOption> queryOptions) throws OfbizODataException {
         GenericValue genericValue = (GenericValue) OdataProcessorHelper.readSingletonObject(dispatcher, edmProvider,
                 edmSingleton.getName(), httpServletRequest, userLogin);
-        return findRelatedEntityCollection(genericValue, edmNavigationProperty, queryOptions);
+        return findRelatedEntityCollection(makeEntityFromGv(genericValue), edmNavigationProperty, queryOptions);
     }
 
-    public EntityCollection findRelatedEntityCollection(GenericValue genericValue,
+    public EntityCollection findRelatedEntityCollection(Entity entity,
                                                         EdmNavigationProperty edmNavigationProperty,
                                                         Map<String, QueryOption> queryOptions) throws OfbizODataException {
         int listTotalCount = 0;
+        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+        GenericValue genericValue = ofbizEntity.getGenericValue();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String navigationPropertyName = edmNavigationProperty.getName();
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
@@ -485,7 +477,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
                 try { // 有可能定义了handler，但是没有定义getNavigationData方法
-                    genericValues = groovyHelper.getNavigationData(handler, genericValue, navigationPropertyName, queryOptions, filterByDate, null);
+                    genericValues = groovyHelper.getNavigationData(handler, entity, navigationPropertyName, queryOptions, filterByDate, null);
                 } catch (MissingMethodExceptionNoStack e) {
                     Debug.logInfo(e.getMessage(), module);
                     EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
@@ -496,7 +488,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
                 List<String> relations = relAlias.getRelations();
                 genericValues = getGenericValuesFromRelations(genericValue, relAlias, relations, filterByDate);
-
             }
             if (UtilValidate.isNotEmpty(genericValues)) {
                 int topValue = getTopOption(queryOptions);
@@ -567,8 +558,8 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             }
             EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
             if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-                for (Entity entity : entityList) {
-                    addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, navEdmEntityType);
+                for (Entity en : entityList) {
+                    addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) en, navEdmEntityType);
                 }
             }
             return entityCollection;
@@ -734,13 +725,14 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + entityName);
         }
         entity = makeEntityFromGv(genericValue);
+        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                queryOptions, UtilMisc.toList(entity), locale, userLogin);
+
         if (queryOptions != null) {
             if (queryOptions.get("expandOption") != null) {
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, this.edmEntityType);
             }
         }
-        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                queryOptions, UtilMisc.toList(entity), locale, userLogin);
         entity.setKeyMap(keyMap);
         return entity;
     }
