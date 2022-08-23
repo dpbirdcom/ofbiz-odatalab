@@ -64,6 +64,7 @@ public class Util {
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 	public static final String DATE_TIME_FORMAT_GMT = "yyyy-MM-dd'T'HH:mm:ss.SSS Z";
 	public static final String ODATA_PROPERTIES = "odata.properties";
+	public static final String ODATA_LAB_PROPERTIES = "odatalab.properties";
 //	private static ResourceBundleMapWrapper uiLabelMap = null;
 	private static Map<Locale, ResourceBundleMapWrapper> uiLabelLocaleMap = new HashMap<>();
 
@@ -1799,6 +1800,9 @@ public class Util {
 	public static String getEntityActionService(String entityName, String action, Delegator delegator) throws OfbizODataException {
 		String property = "service." + entityName + "." + action;
 		String serviceName = EntityUtilProperties.getPropertyValue(ODATA_PROPERTIES, property, delegator);
+		if (UtilValidate.isEmpty(serviceName)) {
+			serviceName = EntityUtilProperties.getPropertyValue(ODATA_LAB_PROPERTIES, property, delegator);
+		}
 		if (UtilValidate.isEmpty(serviceName)) {
 			Map<String, String> entityActions = OfbizMapOdata.CREATE_SERVICE_MAP.get(entityName);
 			if (UtilValidate.isNotEmpty(entityActions)) {
