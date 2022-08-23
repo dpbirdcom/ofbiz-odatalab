@@ -12,7 +12,7 @@ import org.apache.ofbiz.entity.util.EntityUtil
 import org.apache.ofbiz.party.party.PartyHelper
 import org.apache.ofbiz.entity.util.EntityQuery
 
-module = "Enumeration.groovy";
+module = "Product.groovy";
 
 def getNavigationData(Map<String, Object> context) {
     OdataOfbizEntity entity =  (OdataOfbizEntity) context.parameters.entity;
