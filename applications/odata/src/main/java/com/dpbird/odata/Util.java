@@ -1030,12 +1030,16 @@ public class Util {
 		return delegator.findOne(edmEntityType.getName(), pkMap, true);
 	}
 
-	public static GenericValue entityToGenericValue(Delegator delegator, OdataOfbizEntity entity, String entityName) throws GenericEntityException {
+	public static GenericValue entityToGenericValue(Delegator delegator, OdataOfbizEntity entity, String entityName) throws OfbizODataException {
 		if (entity.getGenericValue() != null) {
 			return entity.getGenericValue();
 		}
 		Map<String, Object> pkMap = Util.retrievePkFromEntity(delegator, entityName, entity);
-		return delegator.findOne(entityName, pkMap, true);
+		try {
+			return delegator.findOne(entityName, pkMap, true);
+		} catch (GenericEntityException e) {
+			throw new OfbizODataException(e.getMessage());
+		}
 	}
 
 	public static GenericValue entityToGenericValue(Delegator delegator, Entity entity) {
@@ -1211,7 +1215,7 @@ public class Util {
 		GenericValue genericValue = null;
 		try {
 			genericValue = entityToGenericValue(delegator, entity, entityName);
-		} catch (GenericEntityException e) {
+		} catch (OfbizODataException e) {
 			e.printStackTrace();
 		}
 

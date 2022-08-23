@@ -467,6 +467,10 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         int listTotalCount = 0;
         OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
         GenericValue genericValue = ofbizEntity.getGenericValue();
+        if (genericValue == null) {
+            //如果是singleton 可能没有GenericValue
+            genericValue = Util.entityToGenericValue(delegator, ofbizEntity, modelEntity.getEntityName());
+        }
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String navigationPropertyName = edmNavigationProperty.getName();
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
