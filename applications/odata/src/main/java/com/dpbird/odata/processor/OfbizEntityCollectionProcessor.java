@@ -1,6 +1,7 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import org.apache.ofbiz.base.util.Debug;
@@ -393,7 +394,8 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
                 //可能不是原生的relation，先查询出数据，再根据这些数据去做查询和filter，返回最终的count
-                EntityCollection relatedEntityCollection = ofbizOdataReader.findRelatedEntityCollection(genericValue, edmNavigationProperty, null);
+                OdataOfbizEntity ofbizEntity = ofbizOdataReader.makeEntityFromGv(genericValue);
+                EntityCollection relatedEntityCollection = ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, null);
                 edmEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigationProperty);
                 if (edmEntitySet == null) {
                     return;

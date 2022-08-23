@@ -18,11 +18,9 @@ import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelRelation;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.ofbiz.service.GenericServiceException;
@@ -66,6 +64,7 @@ public class Util {
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 	public static final String DATE_TIME_FORMAT_GMT = "yyyy-MM-dd'T'HH:mm:ss.SSS Z";
 	public static final String ODATA_PROPERTIES = "odata.properties";
+	public static final String ODATA_LAB_PROPERTIES = "odatalab.properties";
 //	private static ResourceBundleMapWrapper uiLabelMap = null;
 	private static Map<Locale, ResourceBundleMapWrapper> uiLabelLocaleMap = new HashMap<>();
 
@@ -1031,12 +1030,16 @@ public class Util {
 		return delegator.findOne(edmEntityType.getName(), pkMap, true);
 	}
 
-	public static GenericValue entityToGenericValue(Delegator delegator, OdataOfbizEntity entity, String entityName) throws GenericEntityException {
+	public static GenericValue entityToGenericValue(Delegator delegator, OdataOfbizEntity entity, String entityName) throws OfbizODataException {
 		if (entity.getGenericValue() != null) {
 			return entity.getGenericValue();
 		}
 		Map<String, Object> pkMap = Util.retrievePkFromEntity(delegator, entityName, entity);
-		return delegator.findOne(entityName, pkMap, true);
+		try {
+			return delegator.findOne(entityName, pkMap, true);
+		} catch (GenericEntityException e) {
+			throw new OfbizODataException(e.getMessage());
+		}
 	}
 
 	public static GenericValue entityToGenericValue(Delegator delegator, Entity entity) {
@@ -1212,7 +1215,7 @@ public class Util {
 		GenericValue genericValue = null;
 		try {
 			genericValue = entityToGenericValue(delegator, entity, entityName);
-		} catch (GenericEntityException e) {
+		} catch (OfbizODataException e) {
 			e.printStackTrace();
 		}
 
@@ -1802,6 +1805,9 @@ public class Util {
 		String property = "service." + entityName + "." + action;
 		String serviceName = EntityUtilProperties.getPropertyValue(ODATA_PROPERTIES, property, delegator);
 		if (UtilValidate.isEmpty(serviceName)) {
+			serviceName = EntityUtilProperties.getPropertyValue(ODATA_LAB_PROPERTIES, property, delegator);
+		}
+		if (UtilValidate.isEmpty(serviceName)) {
 			Map<String, String> entityActions = OfbizMapOdata.CREATE_SERVICE_MAP.get(entityName);
 			if (UtilValidate.isNotEmpty(entityActions)) {
 				serviceName = entityActions.get(action);
@@ -1836,6 +1842,13 @@ public class Util {
 			return "$count".equals(path.get(0).getSegmentValue());
 		}
 		return false;
+	}
+
+	public static boolean isMultistageApply(List<UriResource> uriResourceParts, Map<String, QueryOption> queryOptions) {
+		if (UtilValidate.isEmpty(uriResourceParts) || UtilValidate.isEmpty(queryOptions) || !queryOptions.containsKey("applyOption")) {
+			return false;
+		}
+		return uriResourceParts.size() > 1 && isGroupBy((ApplyOption) queryOptions.get("applyOption"));
 	}
 
 	//从Apply中获取Aggregate
@@ -2050,6 +2063,26 @@ public class Util {
 		String valueStr = pkValues.toString().replaceAll("\\[", "(").replace("]", ")");
 		querySql.append(valueStr); //values
 		return EntityCondition.makeConditionWhere(querySql.toString());
+	}
+
+	/**
+	 * @param entityName 实体名称
+	 * @param groupBy	分组字段
+	 * @param functionField	计算字段
+	 * @param function  函数类型
+	 * @param byAnd     查询条件
+	 */
+	public static List<GenericValue> findByFunction(Delegator delegator, String entityName, String groupBy,
+													String functionField, String function, Map<String, Object> byAnd) throws GenericEntityException {
+		DynamicViewEntity dynamicViewEntity = new DynamicViewEntity();
+		dynamicViewEntity.addMemberEntity(entityName, entityName);
+		if (groupBy != null) {
+			dynamicViewEntity.addAlias(entityName, groupBy, groupBy, null, false, true, null);
+		}
+		if (functionField != null) {
+			dynamicViewEntity.addAlias(entityName, functionField, functionField, null, false, false, function);
+		}
+		return EntityQuery.use(delegator).from(dynamicViewEntity).where(byAnd).queryList();
 	}
 
 }
