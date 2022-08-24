@@ -15,7 +15,8 @@ import org.apache.ofbiz.entity.util.EntityQuery
 module = "Enumeration.groovy";
 
 def getNavigationData(Map<String, Object> context) {
-    genericValue = context.parameters.genericValue;
+    OdataOfbizEntity entity =  (OdataOfbizEntity) context.parameters.entity;
+    GenericValue genericValue = entity.getGenericValue();
     enumerations = delegator.findByAnd("Enumeration", [enumTypeId: genericValue.getString("enumTypeId")], null, false);
     if (enumerations != null) {
         return enumerations;

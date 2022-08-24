@@ -393,6 +393,9 @@ public class EdmConfigLoader {
         if (csdlProperty.isImageUrl()) {
             csdlAnnotationList.add(createAnnotationBool("UI.IsImageURL", "true", null));
         }
+        if (csdlProperty.isExcludeFromNavigationContext()) {
+            csdlAnnotationList.add(createAnnotationBool("UI.ExcludeFromNavigationContext", "true", null));
+        }
         if (UtilValidate.isNotEmpty(csdlProperty.getLabel())) {
             csdlAnnotationList.add(createAnnotationString("Common.Label", csdlProperty.getLabel(), null));
         }

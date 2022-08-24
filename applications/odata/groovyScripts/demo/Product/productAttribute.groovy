@@ -12,10 +12,11 @@ import org.apache.ofbiz.entity.util.EntityUtil
 import org.apache.ofbiz.party.party.PartyHelper
 import org.apache.ofbiz.entity.util.EntityQuery
 
-module = "Enumeration.groovy";
+module = "Product.groovy";
 
 def getNavigationData(Map<String, Object> context) {
-    genericValue = context.parameters.genericValue;
+    OdataOfbizEntity entity =  (OdataOfbizEntity) context.parameters.entity;
+    GenericValue genericValue = entity.getGenericValue();
     List<GenericValue> attributes = delegator.findByAnd("ProductAttribute", [productId: genericValue.getString("productId"),attrType: "TEST_TYPE"], null, false);
     if (attributes != null) {
         return attributes;
