@@ -435,7 +435,17 @@
 	<EntityType Name="FacilityContactMechPurpose" AutoProperties="true"/>
 	<EntityType Name="FacilityContactMech" AutoProperties="true"/>
 	<EntityType Name="CustomMethod" AutoProperties="true"/>
-	<EntityType Name="Facility" AutoProperties="true"/>
+	<EntityType Name="Facility" AutoProperties="true"
+				Handler="component://odata/groovyScripts/demo/Facility/generateEntityListFields.groovy">
+		<!-- 测试使用语义化字段去做Navigation -->
+		<Property Name="semanticProductId1" Type="String"/>
+		<Property Name="semanticProductId2" Type="String"/>
+		<Property Name="semanticPartyId1" Type="String"/>
+		<NavigationProperty Name="Product" Type="Product" AutoBinding="true" IsCollection="true"
+							Handler="component://odata/groovyScripts/demo/Facility/Product.groovy"/>
+		<NavigationProperty Name="Party" Type="Party" AutoBinding="true" IsCollection="false"
+							Handler="component://odata/groovyScripts/demo/Facility/Party.groovy"/>
+	</EntityType>
 	<EntityType Name="TaxAuthority" AutoProperties="true"/>
 	<EntityType Name="GlAccountOrganization" AutoProperties="true"/>
 	<EntityType Name="PartyAcctgPreference" AutoProperties="true"/>

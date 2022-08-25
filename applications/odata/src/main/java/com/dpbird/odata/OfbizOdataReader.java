@@ -443,9 +443,9 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (entity == null) {
                 genericValue = delegator.findOne(entityName, keyMap, false);
                 entity = makeEntityFromGv(genericValue);
+                OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                        null, UtilMisc.toList(entity), locale, userLogin);
             }
-            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                    null, UtilMisc.toList(entity), locale, userLogin);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
