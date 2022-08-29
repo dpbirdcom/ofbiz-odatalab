@@ -3,6 +3,7 @@ package com.dpbird.odata;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.util.EntityListIterator;
 import org.apache.ofbiz.entity.util.EntityQuery;
@@ -83,26 +84,15 @@ public class OdataEntityQuery extends EntityQuery {
      *
      * @param fieldName The field name to evaluate
      * @param function  Function Type. must be: min, max, sum, avg, count or count-distinct
+     * @param alias The alias of the field used to return data
      * @return this
      */
-    public OdataEntityQuery function(String fieldName, String function) {
+    public OdataEntityQuery function(String fieldName, String function, String alias) {
         initDynamicView();
-        String functionField = fieldName + function;
-        dynamicViewEntity.addAlias(entityName, functionField, fieldName, null, false, false, function);
-        fieldsToSelect.add(functionField);
+        dynamicViewEntity.addAlias(entityName, alias, fieldName, null, false, false, function);
+        fieldsToSelect.add(alias);
         super.from(dynamicViewEntity);
         super.select(fieldsToSelect);
-        return this;
-    }
-
-    /**
-     * Using function queries
-     *
-     * @param functionMap The key is the field name and the value is the function type
-     * @return this
-     */
-    public OdataEntityQuery function(Map<String, String> functionMap) {
-        functionMap.forEach(this::function);
         return this;
     }
 

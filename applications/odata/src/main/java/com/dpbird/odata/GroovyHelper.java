@@ -12,6 +12,7 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.apache.olingo.server.api.uri.queryoption.SelectOption;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
@@ -56,7 +57,7 @@ public class GroovyHelper {
         }
     }
 
-    public List<GenericValue> getNavigationData(String location, Entity entity, String navigationPropertyName,
+    public List<GenericValue> getNavigationData(String location, Entity entity, EdmNavigationProperty edmNavigationProperty,
                                                 Map<String, QueryOption> queryOptions, boolean filterByDate,
                                                 List<String> orderBy) throws OfbizODataException, MissingMethodExceptionNoStack {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
@@ -64,7 +65,7 @@ public class GroovyHelper {
         params.put("filterByDate", filterByDate);
         params.put("orderBy", orderBy);
         params.put("queryOptions", queryOptions);
-        params.put("navigationPropertyName", navigationPropertyName);
+        params.put("edmNavigationProperty", edmNavigationProperty);
         return (List<GenericValue>) runScript(location, "getNavigationData");
     }
 

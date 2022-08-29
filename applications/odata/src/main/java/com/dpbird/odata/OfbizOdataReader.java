@@ -21,6 +21,7 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
@@ -272,7 +273,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (UtilValidate.isNotEmpty(csdlNavigationProperty.getHandler())) {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
-                genericValues = groovyHelper.getNavigationData(handler, entity, navigationPropertyName, queryOptions, filterByDate, null);
+                genericValues = groovyHelper.getNavigationData(handler, entity, edmNavigationProperty, queryOptions, filterByDate, null);
             } else {
                 EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
                 genericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, relAlias, filterByDate);
@@ -436,6 +437,8 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                                                         Entity entity) throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
+        OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
+
         GenericValue genericValue = null;
         try {
             Debug.logInfo("keyMap = " + keyMap, module);
@@ -443,8 +446,11 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (entity == null) {
                 genericValue = delegator.findOne(entityName, keyMap, false);
                 entity = makeEntityFromGv(genericValue);
-                OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                        null, UtilMisc.toList(entity), locale, userLogin);
+                //这里只有通过语义化字段做Navigation时才需要添加，如果不是就没必要
+                if (ofbizCsdlNavigationProperty.getHandler() != null) {
+                    OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                            null, UtilMisc.toList(entity), locale, userLogin);
+                }
             }
         } catch (GenericEntityException e) {
             e.printStackTrace();
@@ -481,7 +487,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
                 try { // 有可能定义了handler，但是没有定义getNavigationData方法
-                    genericValues = groovyHelper.getNavigationData(handler, entity, navigationPropertyName, queryOptions, filterByDate, null);
+                    genericValues = groovyHelper.getNavigationData(handler, entity, edmNavigationProperty, queryOptions, filterByDate, null);
                 } catch (MissingMethodExceptionNoStack e) {
                     Debug.logInfo(e.getMessage(), module);
                     EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
