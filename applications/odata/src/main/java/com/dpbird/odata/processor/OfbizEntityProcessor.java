@@ -203,13 +203,18 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void deleteEntity(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo)
             throws ODataApplicationException, ODataLibraryException {
+        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
         if (UtilValidate.isNotEmpty(sapContextId)) {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
-
+        //check If-Match
+        boolean ifMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, (UriResourceEntitySet) resourceParts.get(0));
+        if (!ifMatch) {
+            HttpStatusCode preconditionFailed = HttpStatusCode.PRECONDITION_FAILED;
+            throw new ODataApplicationException(preconditionFailed.getInfo(), preconditionFailed.getStatusCode(), locale);
+        }
         // 1. Retrieve the entity set which belongs to the requested entity
-        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
         int segmentCount = resourceParts.size();
         UriResourcePartTyped uriResourcePartTyped = (UriResourcePartTyped) resourceParts.get(0);
         EdmBindingTarget edmBindingTarget;
@@ -684,6 +689,12 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         List<UriParameter> keyPredicates = uriResourceEntitySet.getKeyPredicates();
         OdataOfbizEntity updatedEntity;
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
+        //check If-Match
+        boolean ifMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
+        if (!ifMatch) {
+            HttpStatusCode preconditionFailed = HttpStatusCode.PRECONDITION_FAILED;
+            throw new ODataApplicationException(preconditionFailed.getInfo(), preconditionFailed.getStatusCode(), locale);
+        }
         Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
                 "keyParams", keyPredicates, "entityToWrite", requestEntity, "rawServiceUri", oDataRequest.getRawBaseUri(),
                 "oData", odata, "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,

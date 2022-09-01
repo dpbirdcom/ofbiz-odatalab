@@ -2085,4 +2085,52 @@ public class Util {
 		return EntityQuery.use(delegator).from(dynamicViewEntity).where(byAnd).queryList();
 	}
 
+	/**
+	 * 使用lastUpdatedStamp生成一个ETag
+	 */
+	public static String getGenericValueETag(GenericValue genericValue) {
+		String odataEtag = null;
+		if (genericValue.containsKey("lastUpdatedStamp")) {
+			Timestamp lastUpdatedStamp = genericValue.getTimestamp("lastUpdatedStamp");
+			if (UtilValidate.isNotEmpty(lastUpdatedStamp)) {
+				odataEtag = String.valueOf(lastUpdatedStamp.getTime());
+			}
+		}
+		return odataEtag;
+	}
+
+	/**
+	 * 检查If-Match包含的ETag是否跟数据库匹配
+	 *
+	 * @return 检查通过返回true
+	 */
+	public static boolean checkIfMatch(Delegator delegator, OfbizAppEdmProvider edmProvider, ODataRequest oDataRequest, UriResourceEntitySet resourceEntitySet) {
+		//当前请求不带有ETag
+		if (oDataRequest.getHeader("If-Match") == null && oDataRequest.getHeader("If-None-Match") == null) {
+			return true;
+		}
+		try {
+			//获取当前数据库中的ETag
+			EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
+			OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+			Map<String, Object> primaryKey = uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType);
+			GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
+					.select("lastUpdatedStamp").cache(true).queryOne();
+			String currETag = getGenericValueETag(genericValue);
+
+			if (oDataRequest.getHeader("If-Match") != null) {
+				//匹配返回true
+				String ifMatch = oDataRequest.getHeader("If-Match");
+				return ifMatch.equals(currETag);
+			} else {
+				//不匹配返回true
+				String ifMatch = oDataRequest.getHeader("If-None-Match");
+				return !ifMatch.equals(currETag);
+			}
+		} catch (GenericEntityException | OfbizODataException e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+
 }

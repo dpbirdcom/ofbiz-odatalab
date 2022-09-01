@@ -363,6 +363,8 @@ public class OdataProcessorHelper {
                     property.setValue(ValueType.PRIMITIVE, newPropertyValue);
                 }
             }
+            //添加ETag
+            e1.setETag(Util.getGenericValueETag(genericValue));
             return e1;
         } catch (Exception e) {
             e.printStackTrace();
