@@ -767,6 +767,11 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Edm.String"/>
 	</Function>
+	<Function Name="testBoundSetFunctionOdataQuery" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionOdataQuery">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Function>
 	<Function Name="testBoundSetFunctionPrimitiveCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionPrimitiveCollection">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>

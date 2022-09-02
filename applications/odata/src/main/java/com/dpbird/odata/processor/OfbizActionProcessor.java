@@ -95,6 +95,8 @@ public class OfbizActionProcessor
                 .getAction();
         OfbizCsdlAction csdlAction = null;
         List<CsdlAction> csdlActions = null;
+        //check If-Match
+        checkActionIfMatch(uriInfo, request);
         try {
             csdlActions = edmProvider.getActions(edmAction.getFullQualifiedName());
             if (UtilValidate.isNotEmpty(csdlActions)) {
@@ -297,6 +299,9 @@ public class OfbizActionProcessor
             throw new ODataApplicationException("The content type has not been set in the request.",
                     HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ROOT);
         }
+        final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
         Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
         SelectOption selectOption = (SelectOption) queryOptions.get("selectOption");
         ExpandOption expandOption = (ExpandOption) queryOptions.get("expandOption");
@@ -306,7 +311,6 @@ public class OfbizActionProcessor
                 "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                 "sapContextId", sapContextId, "locale", locale);
         final ODataDeserializer deserializer = odata.createDeserializer(contentType);
-        final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
         Object invokeResult;
         if (resourcePaths.size() > 1) {
             // BoundAction
@@ -454,6 +458,8 @@ public class OfbizActionProcessor
             throws ODataApplicationException, ODataLibraryException {
 
         Debug.logInfo("------------------------------------------------------------ in processActionEntity", module);
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
         final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
         int resourcePathSize = resourcePaths.size();
         Map<String, QueryOption> queryOptions = getQuernOptions(uriInfo);
@@ -617,6 +623,8 @@ public class OfbizActionProcessor
         int resourcePathSize = resourcePaths.size();
         final EdmAction edmAction = ((UriResourceAction) resourcePaths.get(resourcePathSize - 1))
                 .getAction();
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
         try {
             Map<String, Object> processResult = dispatcher.runSync("dpbird.processActionPrimitiveService", UtilMisc.toMap("request", oDataRequest,
                     "response", oDataResponse, "requestFormat", requestFormat, "resourcePaths", resourcePaths,"userLogin", userLogin));
@@ -694,6 +702,8 @@ public class OfbizActionProcessor
                                                ContentType requestFormat, ContentType contentType)
             throws ODataApplicationException, ODataLibraryException {
         Debug.logInfo("------------------------------------------------------------ in processActionComplexCollection", module);
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
         final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
         int resourcePathSize = resourcePaths.size();
         final EdmAction edmAction = ((UriResourceAction) resourcePaths.get(resourcePathSize - 1)).getAction();
@@ -779,6 +789,8 @@ public class OfbizActionProcessor
                                      ContentType requestFormat, ContentType contentType)
             throws ODataApplicationException, ODataLibraryException {
         Debug.logInfo("------------------------------------------------------------ in processActionComplex", module);
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
         final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
         int resourcePathSize = resourcePaths.size();
         final EdmAction edmAction = ((UriResourceAction) resourcePaths.get(resourcePathSize - 1)).getAction();
@@ -858,6 +870,8 @@ public class OfbizActionProcessor
                                                  ContentType contentType, ContentType responseFormat)
             throws ODataApplicationException, ODataLibraryException {
         Debug.logInfo("------------------------------------------------------------ in processActionPrimitiveCollection", module);
+        //check If-Match
+        checkActionIfMatch(uriInfo, oDataRequest);
 
         // Get the action from the resource path
         Map<String, Parameter> parameters;
@@ -1064,6 +1078,19 @@ public class OfbizActionProcessor
         Map<String, Object> resultMap = ServiceUtil.returnSuccess();
         resultMap.put("property", property);
         return resultMap;
+    }
+
+    private void checkActionIfMatch(UriInfo uriInfo, ODataRequest oDataRequest) throws ODataApplicationException {
+        List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
+        //如果是BoundSetAction，检查If-Match
+        if(uriResourceParts.get(0) instanceof UriResourceEntitySet) {
+            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+            boolean checkIfMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
+            if (!checkIfMatch) {
+                throw new ODataApplicationException(HttpStatusCode.PRECONDITION_FAILED.getInfo(),
+                        HttpStatusCode.PRECONDITION_FAILED.getStatusCode(), locale);
+            }
+        }
     }
 
 }

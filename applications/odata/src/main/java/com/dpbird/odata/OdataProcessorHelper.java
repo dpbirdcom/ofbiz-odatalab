@@ -280,17 +280,14 @@ public class OdataProcessorHelper {
             while (fieldIterator.hasNext()) {
                 ModelField field = fieldIterator.next();
                 String fieldName = field.getName();
-                // 如果这个field在edmEntityType中没有定义，那就跳过
-                if (csdlEntityType.getProperty(fieldName) == null) {
-                    continue;
-                }
-                if (automaticFieldNames.contains(fieldName)) {
+                //edmConfig未定义、stamp公共字段、空值、二进制数据，跳过
+                if (csdlEntityType.getProperty(fieldName) == null ||
+                        automaticFieldNames.contains(fieldName) ||
+                        genericValue.get(fieldName) == null ||
+                        "byte-array".equals(field.getType())) {
                     continue;
                 }
                 Object fieldValue = genericValue.get(fieldName);
-                if (fieldValue == null) {
-                    continue;
-                }
                 if (needI18n) {
                     if (fieldName.equals(pkFieldName)) {
                         pkFieldValue = fieldValue;
@@ -363,6 +360,8 @@ public class OdataProcessorHelper {
                     property.setValue(ValueType.PRIMITIVE, newPropertyValue);
                 }
             }
+            //添加ETag
+            e1.setETag(Util.getGenericValueETag(genericValue));
             return e1;
         } catch (Exception e) {
             e.printStackTrace();

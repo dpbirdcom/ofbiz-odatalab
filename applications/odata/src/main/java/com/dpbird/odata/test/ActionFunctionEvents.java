@@ -1,5 +1,6 @@
 package com.dpbird.odata.test;
 
+import com.dpbird.odata.OdataEntityQuery;
 import com.dpbird.odata.OfbizMapOdata;
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
@@ -8,6 +9,7 @@ import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityFindOptions;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
@@ -95,6 +97,32 @@ public class ActionFunctionEvents {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+
+        GenericValue party = (GenericValue) boundObject;
+        String otherParm = (String) functionParameters.get("otherParm");
+        return party.getString("partyId") + otherParm;
+    }
+
+    public static Object testBoundSetFunctionOdataQuery(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+        Delegator delegator = (Delegator) request.getAttribute("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
+        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+
+        List<GenericValue> genericValues = OdataEntityQuery.use(delegator).from("OrderHeader")
+                .groupBy("statusId", "orderTypeId", "currencyUom")
+                .function("grandTotal", "sum", "grandTotal_SUM")
+                .function("grandTotal", "max","grandTotal_MAX")
+                .function("currencyUom", "count-distinct", "currencyUom_CD")
+                .where(EntityCondition.makeCondition())
+                .queryList();
+
+        for (GenericValue genericValue : genericValues) {
+            for (Map.Entry<String, Object> entry : genericValue.entrySet()) {
+                Debug.log(entry.toString());
+            }
+            Debug.log("=======");
+        }
 
         GenericValue party = (GenericValue) boundObject;
         String otherParm = (String) functionParameters.get("otherParm");
