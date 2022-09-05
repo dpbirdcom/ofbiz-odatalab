@@ -1991,7 +1991,7 @@ public class EdmConfigLoader {
         if (autoProperties) { // 需要从ofbiz的entity定义里面获取所有Property
             Iterator<ModelField> fieldIterator = modelEntity.getFieldsIterator();
             // 获取所有的外键字段，以及关联到Enumeration表的字段
-            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
+//            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
             List<String> automacticFieldNames = modelEntity.getAutomaticFieldNames(); // lastUpdatedStamp, lastUpdatedTxStamp, createdStamp, createdTxStamp
             while (fieldIterator.hasNext()) {
                 ModelField field = fieldIterator.next();
