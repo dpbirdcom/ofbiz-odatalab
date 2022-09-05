@@ -32,10 +32,7 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class OfbizOdataReader extends OfbizOdataProcessor {
     private DynamicViewEntity dynamicViewEntity = null;
@@ -657,17 +654,32 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, this.edmEntityType.getName()));
 
             /* 如果odata请求带有select就使用, 否则select就使用EdmConfig中定义的Property, 但都需要排除语义化字段 */
-            List<String> ofbizEntityAllFieldNames = delegator.makeValue(csdlEntityType.getOfbizEntity()).getModelEntity().getAllFieldNames();
-            List<String> propertyNames = new ArrayList<>(this.edmEntityType.getPropertyNames());
-            propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
-            Set<String> selectSet = UtilMisc.toSet(propertyNames);
-            if (UtilValidate.isEmpty(fieldsToSelect) && !this.edmEntityType.getName().equals(this.entityName)) {
-                selectSet = UtilMisc.toSet(propertyNames);
-            } else if (UtilValidate.isNotEmpty(fieldsToSelect)) {
-                propertyNames = new ArrayList<>(fieldsToSelect);
-                propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
-                selectSet = UtilMisc.toSet(propertyNames);
+//            ModelEntity ofbizModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+//            List<String> ofbizEntityAllFieldNames = ofbizModelEntity.getAllFieldNames();
+//            List<String> propertyNames = new ArrayList<>(this.edmEntityType.getPropertyNames());
+//            propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
+//            Set<String> selectSet = UtilMisc.toSet(propertyNames);
+//            if (UtilValidate.isEmpty(fieldsToSelect) && !this.edmEntityType.getName().equals(this.entityName)) {
+//                selectSet = UtilMisc.toSet(propertyNames);
+//            } else if (UtilValidate.isNotEmpty(fieldsToSelect)) {
+//                propertyNames = new ArrayList<>(fieldsToSelect);
+//                propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
+//                //后面要处理expand，添加外键
+//                propertyNames.addAll(Util.getEntityFk(ofbizModelEntity));
+//                selectSet = UtilMisc.toSet(propertyNames);
+//            }
+
+            // select
+            ModelEntity ofbizModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+            Set<String> selectSet = new HashSet<>(this.edmEntityType.getPropertyNames());
+            if (UtilValidate.isNotEmpty(fieldsToSelect)) {
+                selectSet = new HashSet<>(fieldsToSelect);
+                //后面要处理expand，添加外键
+                selectSet.addAll(Util.getEntityFk(ofbizModelEntity));
             }
+            //排除语义化字段
+            selectSet.removeIf(property -> !ofbizModelEntity.getAllFieldNames().contains(property));
+
             //如果是aggregate就只查询统计字段
             if (UtilValidate.isNotEmpty(aggregateSet)) {
                 selectSet = aggregateSet;
@@ -692,7 +704,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 resultList = dataItems;
             } else {
                 for (GenericValue dataItem : dataItems) {
-                    resultList.add(Util.convertToTargetGenericValue(delegator, dataItem, modelEntity));
+                    resultList.add(Util.convertToTargetGenericValue(delegator, dataItem, this.modelEntity));
                 }
             }
             Debug.logInfo("============================= after query " + UtilDateTime.nowTimestamp(), module);

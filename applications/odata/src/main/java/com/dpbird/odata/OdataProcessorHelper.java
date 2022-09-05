@@ -275,7 +275,7 @@ public class OdataProcessorHelper {
             }
             Iterator<ModelField> fieldIterator = modelEntity.getFieldsIterator();
             // 获取所有的外键字段，以及Enumeration字段
-            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
+//            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
             List<String> automaticFieldNames = modelEntity.getAutomaticFieldNames(); // lastUpdatedStamp, lastUpdatedTxStamp, createdStamp, createdTxStamp
             while (fieldIterator.hasNext()) {
                 ModelField field = fieldIterator.next();

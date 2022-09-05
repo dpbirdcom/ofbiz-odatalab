@@ -1311,21 +1311,17 @@ public class Util {
 
 	// 获取entity的所有外键字段，但是不包括指向Enumeration的字段
 	public static Set<String> getEntityFk(ModelEntity modelEntity) {
-		Set<String> fkFieldNames = new HashSet<String>();
+		Set<String> fkFieldNames = new HashSet<>();
 		List<ModelRelation> relationOneList = modelEntity.getRelationsOneList();
 		for (ModelRelation relationOne : relationOneList) {
 			String relEntityName = relationOne.getRelEntityName();
 			if (UtilValidate.isEmpty(relationOne.getFkName())) {
 				continue;
 			}
-			if (relEntityName.equals("Enumeration") || relEntityName.equals("StatusItem")) {
-				continue;
-			} else {
-				List<ModelKeyMap> modelKeyMaps = relationOne.getKeyMaps();
-				ModelKeyMap modelKeyMap = modelKeyMaps.get(0);
-				String fkFieldName = modelKeyMap.getFieldName();
-				fkFieldNames.add(fkFieldName);
-			}
+			List<ModelKeyMap> modelKeyMaps = relationOne.getKeyMaps();
+			ModelKeyMap modelKeyMap = modelKeyMaps.get(0);
+			String fkFieldName = modelKeyMap.getFieldName();
+			fkFieldNames.add(fkFieldName);
 		}
 		return fkFieldNames;
 	}
