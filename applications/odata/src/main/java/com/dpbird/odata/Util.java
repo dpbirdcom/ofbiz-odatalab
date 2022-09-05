@@ -109,7 +109,7 @@ public class Util {
 		// Debug.logInfo("单个对象的所有键值:"+map.toString(),module);
 		return map;
 	}
-	
+
 	/**
 	 * 获取对象的所有键值，包含父类
 	 * @param obj
@@ -143,7 +143,7 @@ public class Util {
 		}
 		return map;
 	}
-	
+
 	/**
 	 * 判断object是否为基本类型
 	 * @param object
@@ -1059,7 +1059,7 @@ public class Util {
 		String entityType = entity.getType(); // e.g. com.dpbird.ProductFeature
 		return getNameFromFqn(entityType);
 	}
-	
+
 	public static String getNameFromFqn(String fqn) {
 		String name = fqn.substring(fqn.lastIndexOf('.') + 1);
 		return name;
@@ -2097,36 +2097,42 @@ public class Util {
 
 	/**
 	 * 检查If-Match包含的ETag是否跟数据库匹配
-	 *
-	 * @return 检查通过返回true
 	 */
-	public static boolean checkIfMatch(Delegator delegator, OfbizAppEdmProvider edmProvider, ODataRequest oDataRequest, UriResourceEntitySet resourceEntitySet) {
-		//当前请求不带有ETag
-		if (oDataRequest.getHeader("If-Match") == null && oDataRequest.getHeader("If-None-Match") == null) {
-			return true;
-		}
-		try {
-			//获取当前数据库中的ETag
-			EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
-			OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-			Map<String, Object> primaryKey = uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType);
-			GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
-					.select("lastUpdatedStamp").cache(true).queryOne();
-			String currETag = getGenericValueETag(genericValue);
-
-			if (oDataRequest.getHeader("If-Match") != null) {
-				//匹配返回true
-				String ifMatch = oDataRequest.getHeader("If-Match");
-				return ifMatch.equals(currETag);
-			} else {
-				//不匹配返回true
-				String ifMatch = oDataRequest.getHeader("If-None-Match");
-				return !ifMatch.equals(currETag);
-			}
-		} catch (GenericEntityException | OfbizODataException e) {
-			e.printStackTrace();
-		}
-		return true;
-	}
+	public static void checkIfMatch(Delegator delegator, OfbizAppEdmProvider edmProvider, ODataRequest request,
+                                    UriResourceEntitySet resourceEntitySet) throws ODataApplicationException {
+        try {
+            //如果请求头不带ETag 检查是否是必须的
+            if (request.getHeader("If-Match") == null && request.getHeader("If-None-Match") == null) {
+                OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, resourceEntitySet.getSegmentValue());
+                if (csdlEntitySet.requiredPrecondition()) {
+                    throw new ODataApplicationException(HttpStatusCode.PRECONDITION_REQUIRED.getInfo(), HttpStatusCode.PRECONDITION_REQUIRED.getStatusCode(), null);
+                }
+                return;
+            }
+            //获取当前数据库中的ETag
+            EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
+            OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            Map<String, Object> primaryKey = uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType);
+            GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
+                    .select("lastUpdatedStamp").cache(true).queryOne();
+            String currETag = getGenericValueETag(genericValue);
+            boolean checkResult;
+            if (request.getHeader("If-Match") != null) {
+                //无差异为正确匹配
+                String ifMatch = request.getHeader("If-Match");
+                checkResult = ifMatch.equals(currETag);
+            } else {
+                //有差异为正确匹配
+                String ifMatch = request.getHeader("If-None-Match");
+                checkResult = !ifMatch.equals(currETag);
+            }
+            if (!checkResult) {
+                throw new ODataApplicationException(HttpStatusCode.PRECONDITION_FAILED.getInfo(),
+                        HttpStatusCode.PRECONDITION_FAILED.getStatusCode(), null);
+            }
+        } catch (GenericEntityException | OfbizODataException e) {
+            e.printStackTrace();
+        }
+    }
 
 }
