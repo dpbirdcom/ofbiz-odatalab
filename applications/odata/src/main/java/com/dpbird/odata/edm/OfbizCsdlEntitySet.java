@@ -1,6 +1,7 @@
 package com.dpbird.odata.edm;
 
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.olingo.commons.api.edm.provider.CsdlAnnotation;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntitySet;
 
 import java.util.Map;
@@ -31,5 +32,14 @@ public class OfbizCsdlEntitySet extends CsdlEntitySet {
 
     public void setConditionStr(String conditionStr) {
         this.conditionStr = conditionStr;
+    }
+
+    public boolean requiredPrecondition() {
+        for (CsdlAnnotation annotation : getAnnotations()) {
+            if ("Core.OptimisticConcurrency".equals(annotation.getTerm())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
