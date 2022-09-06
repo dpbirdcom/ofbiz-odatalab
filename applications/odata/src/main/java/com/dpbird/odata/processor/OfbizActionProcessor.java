@@ -17,10 +17,7 @@ import org.apache.ofbiz.service.DispatchContext;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ServiceUtil;
-import org.apache.olingo.commons.api.data.ContextURL;
-import org.apache.olingo.commons.api.data.EntityCollection;
-import org.apache.olingo.commons.api.data.Parameter;
-import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlAction;
 import org.apache.olingo.commons.api.ex.ODataException;
@@ -373,6 +370,10 @@ public class OfbizActionProcessor
                                            SelectOption selectOption, CountOption countOption,
                                            EntityCollection entityCollection)
             throws ODataApplicationException {
+        //响应时排除二进制数据
+        for (Entity entity : entityCollection.getEntities()) {
+            entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+        }
         EdmEntityType edmEntityType = null;
         if (edmBindingTarget != null) {
             edmEntityType = edmBindingTarget.getEntityType();

@@ -567,6 +567,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                                  EdmEntityType edmEntityType, ContentType contentType,
                                  ExpandOption expandOption, SelectOption selectOption, Entity entity)
             throws SerializerException {
+        //响应时排除二进制数据
+        entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
         // serialize
         String selectList = odata.createUriHelper().buildContextURLSelectList(edmEntityType, expandOption,
                 selectOption);
@@ -826,7 +828,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 
             //return
             //响应时排除媒体数据
-            createdEntity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
             serializeEntity(request, response, edmEntitySet, edmEntityType,
                     responseFormat, null, null, createdEntity);
             response.setStatusCode(HttpStatusCode.CREATED.getStatusCode());
