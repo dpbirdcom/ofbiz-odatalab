@@ -1085,11 +1085,7 @@ public class OfbizActionProcessor
         //如果是BoundSetAction，检查If-Match
         if(uriResourceParts.get(0) instanceof UriResourceEntitySet) {
             UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
-            boolean checkIfMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
-            if (!checkIfMatch) {
-                throw new ODataApplicationException(HttpStatusCode.PRECONDITION_FAILED.getInfo(),
-                        HttpStatusCode.PRECONDITION_FAILED.getStatusCode(), locale);
-            }
+            Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
         }
     }
 

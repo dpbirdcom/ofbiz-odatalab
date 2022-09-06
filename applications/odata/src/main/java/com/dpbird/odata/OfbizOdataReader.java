@@ -192,6 +192,9 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                     entityList.add(rowEntity);
                 }
             }
+            if (isCount) {
+                entityCollection.setCount(listTotalCount);
+            }
             //apply
             if (UtilValidate.isNotEmpty(aggregateSet) || UtilValidate.isNotEmpty(groupBySet)) {
                 for (int i = 0; i < entityCollection.getEntities().size(); i++) {
@@ -207,9 +210,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             }
             OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                     queryOptions, entityList, locale, userLogin);
-            if (isCount) {
-                entityCollection.setCount(listTotalCount);
-            }
             if (queryOptions != null && queryOptions.get("expandOption") != null) {
                 for (Entity entity : entityList) {
                     addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, this.edmEntityType);

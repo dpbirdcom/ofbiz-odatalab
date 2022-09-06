@@ -209,11 +209,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
         //check If-Match
-        boolean ifMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, (UriResourceEntitySet) resourceParts.get(0));
-        if (!ifMatch) {
-            HttpStatusCode preconditionFailed = HttpStatusCode.PRECONDITION_FAILED;
-            throw new ODataApplicationException(preconditionFailed.getInfo(), preconditionFailed.getStatusCode(), locale);
-        }
+        Util.checkIfMatch(delegator, edmProvider, oDataRequest, (UriResourceEntitySet) resourceParts.get(0));
         // 1. Retrieve the entity set which belongs to the requested entity
         int segmentCount = resourceParts.size();
         UriResourcePartTyped uriResourcePartTyped = (UriResourcePartTyped) resourceParts.get(0);
@@ -690,11 +686,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         OdataOfbizEntity updatedEntity;
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
         //check If-Match
-        boolean ifMatch = Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
-        if (!ifMatch) {
-            HttpStatusCode preconditionFailed = HttpStatusCode.PRECONDITION_FAILED;
-            throw new ODataApplicationException(preconditionFailed.getInfo(), preconditionFailed.getStatusCode(), locale);
-        }
+        Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet);
         Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
                 "keyParams", keyPredicates, "entityToWrite", requestEntity, "rawServiceUri", oDataRequest.getRawBaseUri(),
                 "oData", odata, "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,
