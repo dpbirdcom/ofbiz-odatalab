@@ -421,6 +421,10 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                                            SelectOption selectOption, CountOption countOption,
                                            EntityCollection entityCollection)
             throws ODataApplicationException {
+        //响应时排除二进制数据
+        for (Entity entity : entityCollection.getEntities()) {
+            entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+        }
         EdmEntityType edmEntityType = null;
         if (edmBindingTarget != null) {
             edmEntityType = edmBindingTarget.getEntityType();

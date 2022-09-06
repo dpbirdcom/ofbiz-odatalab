@@ -280,11 +280,10 @@ public class OdataProcessorHelper {
             while (fieldIterator.hasNext()) {
                 ModelField field = fieldIterator.next();
                 String fieldName = field.getName();
-                //edmConfig未定义、stamp公共字段、空值、二进制数据，跳过
+                //edmConfig未定义、stamp公共字段、空值，跳过
                 if (csdlEntityType.getProperty(fieldName) == null ||
                         automaticFieldNames.contains(fieldName) ||
-                        genericValue.get(fieldName) == null ||
-                        "byte-array".equals(field.getType())) {
+                        genericValue.get(fieldName) == null) {
                     continue;
                 }
                 Object fieldValue = genericValue.get(fieldName);
