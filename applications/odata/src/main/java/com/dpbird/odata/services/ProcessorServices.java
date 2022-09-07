@@ -13,10 +13,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
@@ -108,18 +105,10 @@ public class ProcessorServices {
 		EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) context.get("edmNavigationProperty");
 		String navigationPropertyName = edmNavigationProperty.getName();
 		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
-
 		Entity createdEntity;
-		List<UriParameter> keyParams = (List) context.get("keyParams");
-		List<UriParameter> navKeyParams = (List) context.get("navKeyParams");
-		Map<String, Object> keyMap = null;
-		Map<String, Object> navKeyMap = null;
-		if (UtilValidate.isNotEmpty(navKeyParams)) {
-			navKeyMap = Util.uriParametersToMap(navKeyParams, edmNavigationProperty.getType());
-		}
-		if (UtilValidate.isNotEmpty(keyParams)) {
-			keyMap = Util.uriParametersToMap(keyParams, edmBindingTarget.getEntityType());
-		}
+		Map<String, Object> keyMap = (Map<String, Object>) context.get("keyMap");
+		Map<String, Object> navKeyMap = (Map<String, Object>) context.get("navKeyMap");
+
 		// get NavigationBindingTarget
 		String navigationBindingTarget = null;
 		CsdlEntityContainer csdlEntityContainer = edmProvider.getEntityContainer();
@@ -166,17 +155,9 @@ public class ProcessorServices {
 		EdmBindingTarget edmBindingTarget = (EdmBindingTarget) context.get("edmBindingTarget");
 		EdmEntityType edmTypeFilter = (EdmEntityType) context.get("edmTypeFilter");
 		EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) context.get("edmNavigationProperty");
-		List<UriParameter> keyParams = (List) context.get("keyParams");
-		List<UriParameter> navKeyParams = (List) context.get("navKeyParams");
 		HttpServletRequest httpServletRequest = (HttpServletRequest) context.get("request");
-		Map<String, Object> keyMap = null;
-		if (UtilValidate.isNotEmpty(keyParams)) {
-			keyMap = Util.uriParametersToMap(keyParams, edmBindingTarget.getEntityType());
-		}
-		Map<String, Object> navKeyMap = null;
-		if (UtilValidate.isNotEmpty(navKeyParams)) {
-			navKeyMap = Util.uriParametersToMap(navKeyParams, edmNavigationProperty.getType());
-		}
+		Map<String, Object> keyMap = (Map<String, Object>) context.get("keyMap");
+		Map<String, Object> navKeyMap = (Map<String, Object>) context.get("navKeyMap");
 		OdataOfbizEntity odataOfbizEntity; // this is the updated entity will return
 		Entity entityToWrite = (Entity) context.get("entityToWrite");
 		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) context.get("edmProvider");
@@ -1049,6 +1030,38 @@ public class ProcessorServices {
 		Map<String, Object> result = ServiceUtil.returnSuccess();
 		result.put("createdEntity", createdEntity);
 		return result;
+	}
+
+	public static Map<String, Object> relationToEntity(DispatchContext dctx, Map<String, Object> context)
+			throws OfbizODataException, GenericEntityException {
+		LocalDispatcher dispatcher = dctx.getDispatcher();
+		Delegator delegator = dispatcher.getDelegator();
+		Locale locale = (Locale) context.get("locale");
+		GenericValue userLogin = (GenericValue) context.get("userLogin");
+		EdmEntitySet fromEdmEntitySet = (EdmEntitySet) context.get("fromEdmEntitySet");
+		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) context.get("edmProvider");
+		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(fromEdmEntitySet.getEntityType().getFullQualifiedName());
+		Map<String, Object> keymap = (Map<String, Object>) context.get("keyMap");
+		OdataOfbizEntity toEntity = (OdataOfbizEntity) context.get("toEntity");
+		String relationName = (String) context.get("relationName");
+		GenericValue fromGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), keymap, true);
+		GenericValue toGenericValue = toEntity.getGenericValue();
+		ModelEntity modelEntity = fromGenericValue.getModelEntity();
+		ModelRelation relation = modelEntity.getRelation(relationName);
+		Map<String, Object> paramMap = new HashMap<>();
+		for (ModelKeyMap keyMap : relation.getKeyMaps()) {
+			Object telFieldValue = toGenericValue.get(keyMap.getRelFieldName());
+			if (UtilValidate.isNotEmpty(telFieldValue)) {
+				paramMap.put(keyMap.getFieldName(), telFieldValue);
+			}
+		}
+		Entity entityToWrite = Util.mapToEntity(csdlEntityType, paramMap);
+		Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+				"edmProvider", edmProvider,	"userLogin", userLogin, "locale", locale);
+		Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", fromEdmEntitySet, "entityToWrite", entityToWrite);
+		OfbizOdataWriter ofbizOdataWriter = new OfbizOdataWriter(odataContext, null, edmParams);
+		ofbizOdataWriter.updateEntityData(keymap, entityToWrite);
+		return ServiceUtil.returnSuccess();
 	}
 
 }
