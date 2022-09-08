@@ -2116,20 +2116,19 @@ public class Util {
 	 * 检查If-Match包含的ETag是否跟数据库匹配
 	 */
 	public static void checkIfMatch(Delegator delegator, OfbizAppEdmProvider edmProvider, ODataRequest request,
-                                    UriResourceEntitySet resourceEntitySet) throws ODataApplicationException {
+                                    EdmEntitySet edmEntitySet, List<UriParameter> keyPredicates) throws ODataApplicationException {
         try {
             //如果请求头不带ETag 检查是否是必须的
             if (request.getHeader("If-Match") == null && request.getHeader("If-None-Match") == null) {
-                OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, resourceEntitySet.getSegmentValue());
+                OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, edmEntitySet.getName());
                 if (csdlEntitySet.requiredPrecondition()) {
                     throw new ODataApplicationException(HttpStatusCode.PRECONDITION_REQUIRED.getInfo(), HttpStatusCode.PRECONDITION_REQUIRED.getStatusCode(), null);
                 }
                 return;
             }
             //获取当前数据库中的ETag
-            EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
-            OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-            Map<String, Object> primaryKey = uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType);
+			Map<String, Object> primaryKey = Util.uriParametersToMap(keyPredicates, edmEntitySet.getEntityType());
+			OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
             GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
                     .select("lastUpdatedStamp").cache(true).queryOne();
             matchETag(genericValue, request);
