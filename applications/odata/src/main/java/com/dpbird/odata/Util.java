@@ -2095,6 +2095,23 @@ public class Util {
 		return odataEtag;
 	}
 
+	public static void checkIfMatch(OfbizAppEdmProvider edmProvider, ODataRequest request,
+									OdataOfbizEntity entity, EdmEntitySet edmEntitySet) throws ODataApplicationException {
+		try {
+			//如果请求头不带ETag 检查是否是必须的
+			if (request.getHeader("If-Match") == null && request.getHeader("If-None-Match") == null) {
+				OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, edmEntitySet.getName());
+				if (csdlEntitySet.requiredPrecondition()) {
+					throw new ODataApplicationException(HttpStatusCode.PRECONDITION_REQUIRED.getInfo(), HttpStatusCode.PRECONDITION_REQUIRED.getStatusCode(), null);
+				}
+				return;
+			}
+			matchETag(entity.getGenericValue(), request);
+		} catch (OfbizODataException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
 	 * 检查If-Match包含的ETag是否跟数据库匹配
 	 */
@@ -2115,24 +2132,28 @@ public class Util {
             Map<String, Object> primaryKey = uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType);
             GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
                     .select("lastUpdatedStamp").cache(true).queryOne();
-            String currETag = getGenericValueETag(genericValue);
-            boolean checkResult;
-            if (request.getHeader("If-Match") != null) {
-                //无差异为正确匹配
-                String ifMatch = request.getHeader("If-Match");
-                checkResult = ifMatch.equals(currETag);
-            } else {
-                //有差异为正确匹配
-                String ifMatch = request.getHeader("If-None-Match");
-                checkResult = !ifMatch.equals(currETag);
-            }
-            if (!checkResult) {
-                throw new ODataApplicationException(HttpStatusCode.PRECONDITION_FAILED.getInfo(),
-                        HttpStatusCode.PRECONDITION_FAILED.getStatusCode(), null);
-            }
+            matchETag(genericValue, request);
         } catch (GenericEntityException | OfbizODataException e) {
             e.printStackTrace();
         }
     }
+
+    private static void matchETag(GenericValue genericValue, ODataRequest request) throws ODataApplicationException {
+		boolean checkResult;
+		String currETag = getGenericValueETag(genericValue);
+		if (request.getHeader("If-Match") != null) {
+			//无差异为正确匹配
+			String ifMatch = request.getHeader("If-Match");
+			checkResult = ifMatch.equals(currETag);
+		} else {
+			//有差异为正确匹配
+			String ifMatch = request.getHeader("If-None-Match");
+			checkResult = !ifMatch.equals(currETag);
+		}
+		if (!checkResult) {
+			throw new ODataApplicationException(HttpStatusCode.PRECONDITION_FAILED.getInfo(),
+					HttpStatusCode.PRECONDITION_FAILED.getStatusCode(), null);
+		}
+	}
 
 }
