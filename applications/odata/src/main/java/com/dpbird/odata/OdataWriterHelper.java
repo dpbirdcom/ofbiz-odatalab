@@ -169,7 +169,7 @@ public class OdataWriterHelper {
                     if (delegator.getModelEntity(entityName).isField("lastModifiedDate")) {
                         fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
                     }
-                    updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType, keyMap, fieldMap, userLogin);
+                    updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), keyMap, fieldMap, userLogin);
                     if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
                             UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||
                             UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {

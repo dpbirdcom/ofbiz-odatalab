@@ -1032,36 +1032,4 @@ public class ProcessorServices {
 		return result;
 	}
 
-	public static Map<String, Object> relationToEntity(DispatchContext dctx, Map<String, Object> context)
-			throws OfbizODataException, GenericEntityException {
-		LocalDispatcher dispatcher = dctx.getDispatcher();
-		Delegator delegator = dispatcher.getDelegator();
-		Locale locale = (Locale) context.get("locale");
-		GenericValue userLogin = (GenericValue) context.get("userLogin");
-		EdmEntitySet fromEdmEntitySet = (EdmEntitySet) context.get("fromEdmEntitySet");
-		OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) context.get("edmProvider");
-		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(fromEdmEntitySet.getEntityType().getFullQualifiedName());
-		Map<String, Object> keymap = (Map<String, Object>) context.get("keyMap");
-		OdataOfbizEntity toEntity = (OdataOfbizEntity) context.get("toEntity");
-		String relationName = (String) context.get("relationName");
-		GenericValue fromGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), keymap, true);
-		GenericValue toGenericValue = toEntity.getGenericValue();
-		ModelEntity modelEntity = fromGenericValue.getModelEntity();
-		ModelRelation relation = modelEntity.getRelation(relationName);
-		Map<String, Object> paramMap = new HashMap<>();
-		for (ModelKeyMap keyMap : relation.getKeyMaps()) {
-			Object telFieldValue = toGenericValue.get(keyMap.getRelFieldName());
-			if (UtilValidate.isNotEmpty(telFieldValue)) {
-				paramMap.put(keyMap.getFieldName(), telFieldValue);
-			}
-		}
-		Entity entityToWrite = Util.mapToEntity(csdlEntityType, paramMap);
-		Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-				"edmProvider", edmProvider,	"userLogin", userLogin, "locale", locale);
-		Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", fromEdmEntitySet, "entityToWrite", entityToWrite);
-		OfbizOdataWriter ofbizOdataWriter = new OfbizOdataWriter(odataContext, null, edmParams);
-		ofbizOdataWriter.updateEntityData(keymap, entityToWrite);
-		return ServiceUtil.returnSuccess();
-	}
-
 }
