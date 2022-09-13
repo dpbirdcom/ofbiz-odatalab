@@ -23,13 +23,13 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.*;
+import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.deserializer.DeserializerResult;
 import org.apache.olingo.server.api.deserializer.FixedFormatDeserializer;
 import org.apache.olingo.server.api.deserializer.ODataDeserializer;
@@ -848,23 +848,11 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceEntitySet.getEntityType().getFullQualifiedName());
 
-            //解析媒体文件对象
-            ServletFileUpload servletUpload = new ServletFileUpload(new DiskFileItemFactory());
-            List<FileItem> fileItems = servletUpload.parseRequest(httpServletRequest);
-            FixedFormatDeserializer formatDeserializer = odata.createFixedFormatDeserializer();
-            //媒体数据
-            Map<String, Object> paramMap = new HashMap<>();
-            for (FileItem fileItem : fileItems) {
-                if (fileItem.isFormField()) {
-                    //form表单的普通字段
-                    paramMap.put(fileItem.getFieldName(), fileItem.getString());
-                } else {
-                    //媒体
-                    byte[] mediaData = formatDeserializer.binary(fileItem.getInputStream());
-                    paramMap.put(fileItem.getFieldName(), mediaData);
-                }
-            }
-            Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, paramMap);
+            //获取request表单数据
+            Map<String, Object> uploadFromData = getUploadFromData(httpServletRequest, odata);
+            Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, uploadFromData);
+
+            //create
             Map<String, Object> serviceParams = UtilMisc.toMap("edmEntitySet", uriResourceEntitySet.getEntitySet(),
                     "entityToWrite", entityToWrite, "edmProvider", edmProvider, "userLogin", userLogin);
             Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createMediaEntityData", serviceParams);
@@ -873,9 +861,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             if (entityId == null) {
                 entityId = Util.createId(edmEntitySet.getName(), edmEntityType, ofbizCsdlEntityType, createdEntity.getGenericValue());
             }
-
             //return
-            //响应时排除媒体数据
             serializeEntity(request, response, edmEntitySet, edmEntityType,
                     responseFormat, null, null, createdEntity);
             response.setStatusCode(HttpStatusCode.CREATED.getStatusCode());
@@ -890,11 +876,76 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 
     @Override
     public void updateMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
+        try {
+            //URIResource
+            List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
+            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+            EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
+            EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
+            List<UriParameter> keyPredicates = uriResourceEntitySet.getKeyPredicates();
+            Map<String, Object> keyMap = Util.uriParametersToMap(keyPredicates, edmEntityType);
+            OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceEntitySet.getEntityType().getFullQualifiedName());
+
+            //获取request表单数据
+            Map<String, Object> uploadFromData = getUploadFromData(httpServletRequest, odata);
+            Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, uploadFromData);
+
+            //update
+            Map<String, Object> serviceParams = UtilMisc.toMap("keyMap", keyMap, "edmEntitySet", edmEntitySet,
+                    "entityToWrite", entityToWrite, "edmProvider", edmProvider, "httpServletRequest", httpServletRequest,
+                    "userLogin", userLogin);
+            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateMediaEntityData", serviceParams);
+            OdataOfbizEntity entity = (OdataOfbizEntity) serviceResult.get("entity");
+
+            //return
+            serializeEntity(request, response, edmEntitySet, edmEntityType, responseFormat, null, null, entity);
+            response.setStatusCode(HttpStatusCode.OK.getStatusCode());
+            response.setHeader(HttpHeader.CONTENT_TYPE, responseFormat.toContentTypeString());
+        } catch (OfbizODataException | IOException | FileUploadException | GenericServiceException e) {
+            e.printStackTrace();
+            throw new ODataApplicationException(e.getMessage(),
+                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+        }
 
     }
 
     @Override
     public void deleteMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo) throws ODataApplicationException, ODataLibraryException {
+        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
+        UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
+        Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", resourceEntitySet.getEntitySet(),
+                "keyParams", resourceEntitySet.getKeyPredicates(), "rawServiceUri", request.getRawBaseUri(), "oData", odata,
+                "serviceMetadata", serviceMetadata, "edmProvider", edmProvider, "userLogin", userLogin);
+        try {
+            dispatcher.runSync("dpbird.deleteEntityData", serviceParms);
+            response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
+        } catch (GenericServiceException e) {
+            e.printStackTrace();
+            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+        }
 
+    }
+
+    /**
+     * 获取请求体的表单数据
+     */
+    private Map<String, Object> getUploadFromData(HttpServletRequest httpServletRequest, OData odata) throws FileUploadException, IOException, DeserializerException {
+        //解析媒体文件对象
+        ServletFileUpload servletUpload = new ServletFileUpload(new DiskFileItemFactory());
+        List<FileItem> fileItems = servletUpload.parseRequest(httpServletRequest);
+        FixedFormatDeserializer formatDeserializer = odata.createFixedFormatDeserializer();
+        //媒体数据
+        Map<String, Object> paramMap = new HashMap<>();
+        for (FileItem fileItem : fileItems) {
+            if (fileItem.isFormField()) {
+                //form表单的普通字段
+                paramMap.put(fileItem.getFieldName(), fileItem.getString());
+            } else {
+                //媒体
+                byte[] mediaData = formatDeserializer.binary(fileItem.getInputStream());
+                paramMap.put(fileItem.getFieldName(), mediaData);
+            }
+        }
+        return paramMap;
     }
 }

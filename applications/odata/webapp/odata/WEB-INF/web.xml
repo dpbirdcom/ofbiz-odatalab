@@ -78,12 +78,12 @@ under the License.
 
     <servlet>
         <description>Main Control Servlet</description>
-        <display-name>ControlServlet</display-name>
-        <servlet-name>ControlServlet</servlet-name>
-        <servlet-class>org.apache.ofbiz.webapp.control.ControlServlet</servlet-class>
+        <display-name>OdataControlServlet</display-name>
+        <servlet-name>OdataControlServlet</servlet-name>
+        <servlet-class>com.dpbird.odata.OdataControlServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
-    <servlet-mapping><servlet-name>ControlServlet</servlet-name><url-pattern>/control/*</url-pattern></servlet-mapping>
+    <servlet-mapping><servlet-name>OdataControlServlet</servlet-name><url-pattern>/control/*</url-pattern></servlet-mapping>
 
     <session-config>
         <session-timeout>60</session-timeout><!-- in minutes -->
