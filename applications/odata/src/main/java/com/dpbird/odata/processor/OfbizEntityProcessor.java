@@ -23,6 +23,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
@@ -683,7 +684,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         try {
             Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
             Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
-                      "rawServiceUri", oDataRequest.getRawBaseUri(),"keyMap", keyMap,
+                    "rawServiceUri", oDataRequest.getRawBaseUri(), "keyMap", keyMap,
                     "oData", odata, "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,
                     "sapContextId", sapContextId, "userLogin", userLogin, "request", httpServletRequest);
             if (resourcePaths.size() == 1) {
@@ -706,7 +707,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                         "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet, "edmNavigationProperty", edmNavigationProperty);
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, UtilMisc.toMap("keyMap", keyMap), edmParams);
-
                 if (UtilValidate.isNotEmpty(keyPredicates)) {
                     //Collection  即使传递了子对象id，也要确认是否是当前主对象的关联数据
                     Map<String, Object> navigationKeyMap = Util.uriParametersToMap(keyPredicates, responseEdmEntityType);
@@ -723,18 +723,14 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                     Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntityData", serviceParms);
                     updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
                 } else {
-                    //NoCollection
+                    //NoCollection 先查询，判断要创建还是更新
                     OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
                     if (relatedEntity == null) {
                         //create
-                        serviceParms.put("edmBindingTarget", edmEntitySet);
-                        serviceParms.put("entityToWrite", requestEntity);
-                        serviceParms.put("edmNavigationProperty", edmNavigationProperty);
-                        Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createRelatedEntityData", serviceParms);
-                        updatedEntity = (OdataOfbizEntity) serviceResult.get("createdEntity");
-                        //创建完之后要关联起来
-                        dispatcher.runSync("dpbird.relationToEntity", UtilMisc.toMap("edmProvider", edmProvider, "fromEdmEntitySet", edmEntitySet,
-                                "keyMap", keyMap, "toEntity", updatedEntity, "relationName", edmNavigationProperty.getName(), "userLogin", userLogin));
+                        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+                        updatedEntity = OdataWriterHelper.createEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
+                                csdlEntityType, keyMap, edmNavigationProperty.getName(), requestEntity,
+                                null, userLogin, locale);
                     } else {
                         //update
                         Util.checkIfMatch(edmProvider, oDataRequest, relatedEntity, responseEdmEntitySet);

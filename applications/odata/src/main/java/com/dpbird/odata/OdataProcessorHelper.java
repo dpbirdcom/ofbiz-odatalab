@@ -1083,11 +1083,9 @@ public class OdataProcessorHelper {
         }
     }
 
-    public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator,
-                                                  OfbizCsdlEntityType csdlEntityType,
+    public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator, String entityName,
                                                   Map<String, Object> keyMap, Map<String, Object> fieldMap,
                                                   GenericValue userLogin) throws OfbizODataException {
-        String entityName = csdlEntityType.getOfbizEntity();
         try {
             GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
             String serviceName;
@@ -1718,7 +1716,6 @@ public class OdataProcessorHelper {
                     }
                 }
                 createEntityMap.putAll(relationPossibleKeyMap);
-                // TODO: 如果主genericValue有外键指向destGenericValue，则还需要更新genericValue的外键字段，这个通常发生在relationSize=1的时候
             }
             if (nextModelRelation != null && createdGenericValue != null) {
                 Map<String, Object> relationPossibleKeyMap = new HashMap<>();
@@ -1750,6 +1747,20 @@ public class OdataProcessorHelper {
                 destGenericValue = createdGenericValue;
             }
             nextModelRelation = modelRelation;
+        }
+
+        //如果主genericValue有外键指向destGenericValue，则还需要更新genericValue的外键字段，这个通常发生在relationSize=1的时候
+        if (relationSize == 1 && UtilValidate.isNotEmpty(destGenericValue)) {
+            Map<String, Object> mainEntityFk = new HashMap<>();
+            ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getName());
+            if (modelRelation.getType().contains("one")) { //relationOne 应该都会有外键
+                for (ModelKeyMap keyMap : modelRelation.getKeyMaps()) {
+                    mainEntityFk.put(keyMap.getFieldName(), destGenericValue.get(keyMap.getRelFieldName()));
+                }
+            }
+            if (mainEntityFk.size() > 0) {
+                updateGenericValue(dispatcher, delegator, genericValue.getEntityName(), mainEntity.getKeyMap(), mainEntityFk, userLogin);
+            }
         }
         return destGenericValue;
     }

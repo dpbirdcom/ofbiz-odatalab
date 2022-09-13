@@ -248,17 +248,6 @@ under the License.
         <attribute name="createdEntity" type="org.apache.olingo.commons.api.data.Entity" mode="OUT"/>
     </service>
 
-
-    <service name="dpbird.relationToEntity" engine="java"
-             location="com.dpbird.odata.services.ProcessorServices" invoke="relationToEntity" auth="true">
-        <description>关联实体 让fromEntity关联到toEntity</description>
-        <attribute name="keyMap" type="Map" mode="IN"/>
-        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
-        <attribute name="fromEdmEntitySet" type="org.apache.olingo.commons.api.edm.EdmEntitySet" mode="IN"/>
-        <attribute name="toEntity" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
-        <attribute name="relationName" type="String" mode="IN"/>
-    </service>
-
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->
