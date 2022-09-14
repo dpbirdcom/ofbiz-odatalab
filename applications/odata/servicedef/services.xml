@@ -248,6 +248,17 @@ under the License.
         <attribute name="createdEntity" type="org.apache.olingo.commons.api.data.Entity" mode="OUT"/>
     </service>
 
+    <service name="dpbird.updateMediaEntityData" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="updateMediaEntityData" auth="true">
+        <description>更新媒体数据实体</description>
+        <attribute name="keyMap" type="Map" mode="IN" optional="false"/>
+        <attribute name="edmEntitySet" type="org.apache.olingo.commons.api.edm.EdmEntitySet" mode="IN"/>
+        <attribute name="entityToWrite" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN" optional="true"/>
+        <attribute name="httpServletRequest" type="javax.servlet.http.HttpServletRequest" mode="IN" optional="true"/>
+        <attribute name="entity" type="com.dpbird.odata.edm.OdataOfbizEntity" mode="OUT" optional="false"/>
+    </service>
+
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->
