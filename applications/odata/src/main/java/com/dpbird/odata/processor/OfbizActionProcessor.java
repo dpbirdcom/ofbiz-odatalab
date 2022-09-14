@@ -1086,7 +1086,7 @@ public class OfbizActionProcessor
         //如果是BoundSetAction，检查If-Match
         if(uriResourceParts.get(0) instanceof UriResourceEntitySet) {
             UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
-            Util.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getKeyPredicates());
+            AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getKeyPredicates());
         }
     }
 
