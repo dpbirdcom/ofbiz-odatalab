@@ -29,7 +29,7 @@ http://server/odata.svc/People('admin')
     "partyId": "admin",
     "firstName": "THE",
     "lastName": "ADMINISTRATOR",
-    "gender": "M",
+    "gender": "M"
 }
 ```
 
