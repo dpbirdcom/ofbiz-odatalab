@@ -212,7 +212,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             edmBindingTarget = resourceEntitySet.getEntitySet();
             keyPredicates = resourceEntitySet.getKeyPredicates();
             //check If-Match
-            Util.checkIfMatch(delegator, edmProvider, oDataRequest, resourceEntitySet.getEntitySet(), keyPredicates);
+            AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, resourceEntitySet.getEntitySet(), keyPredicates);
         } else {
             edmBindingTarget = ((UriResourceSingleton) uriResourcePartTyped).getSingleton();
         }
@@ -691,7 +691,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 requestEntity = deserializer.entity(oDataRequest.getBody(), edmEntityType).getEntity();
                 serviceParms.put("entityToWrite", requestEntity);
                 //check If-Match
-                Util.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, uriResourceEntitySet.getKeyPredicates());
+                AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, uriResourceEntitySet.getKeyPredicates());
                 Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntityData", serviceParms);
                 updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
             } else if (resourcePaths.size() == 2) {
@@ -716,7 +716,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                         throw new ODataApplicationException("Relation data not found: " + navigationKeyMap, HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
                     }
                     //check If-Match
-                    Util.checkIfMatch(delegator, edmProvider, oDataRequest, responseEdmEntitySet, keyPredicates);
+                    AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, responseEdmEntitySet, keyPredicates);
                     serviceParms.put("edmBindingTarget", responseEdmEntitySet);
                     serviceParms.put("keyMap", navigationKeyMap);
                     serviceParms.put("entityToWrite", requestEntity);
@@ -733,7 +733,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                                 null, userLogin, locale);
                     } else {
                         //update
-                        Util.checkIfMatch(edmProvider, oDataRequest, relatedEntity, responseEdmEntitySet);
+                        AnnotationCheck.checkIfMatch(edmProvider, oDataRequest, relatedEntity, responseEdmEntitySet);
                         serviceParms.put("edmBindingTarget", responseEdmEntitySet);
                         serviceParms.put("keyMap", relatedEntity.getKeyMap());
                         serviceParms.put("entityToWrite", requestEntity);
