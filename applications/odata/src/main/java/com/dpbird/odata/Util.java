@@ -56,6 +56,7 @@ import java.math.BigDecimal;
 import java.net.*;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Util {
 
@@ -2093,6 +2094,17 @@ public class Util {
 			}
 		}
 		return odataEtag;
+	}
+
+	/**
+	 * 解析一个selectOption 返回解析每个Item后的字段集合
+	 */
+	public static List<String> getSelectOptionFields(SelectOption selectOption) {
+		if (selectOption == null) {
+			return null;
+		}
+		return selectOption.getSelectItems().stream()
+				.map(item -> item.getResourcePath().getUriResourceParts().get(0).getSegmentValue()).collect(Collectors.toList());
 	}
 
 }
