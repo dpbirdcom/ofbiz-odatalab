@@ -13,8 +13,10 @@ import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
@@ -784,10 +786,11 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                     "locale", locale);
             Property property;
             CsdlProperty streamCsdlProperty;
+            Map<String, Object> keyMap;
             if (resourceParts.size() == 1) {
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
                 EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
-                Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
+                keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
                 OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
                 //根据定义查询媒体数据字段
                 streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
@@ -803,7 +806,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(resourceParts, odataContext);
                 //Entity
                 EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
-                Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+                keyMap = (Map<String, Object>) resourceMap.get("keyMap");
                 //Navigation
                 EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
                 Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
@@ -819,18 +822,28 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
                 property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, streamCsdlProperty.getName());
             }
+            //响应给客户端，ContentType为字段mimeType的属性值，如果没有指定那么使用对应DateResource的mimeType
+            String mimeType = streamCsdlProperty.getMimeType();
+            if (mimeType == null) {
+                mimeType = EntityQuery.use(delegator).from("DataResource")
+                        .select("mimeTypeId").where(keyMap).queryOne().getString("mimeTypeId");
+            }
+            //未找到媒体对应的响应类型mimeType
+            if (mimeType == null) {
+                throw new ODataApplicationException("The media response type was not specified.",
+                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            }
             if (property != null && property.getValue() != null) {
-                //将媒体数据响应到客户端 根据字段的MimeType设定ContentType
                 final byte[] bytes = (byte[]) property.getValue();
                 final InputStream responseContent = odata.createFixedFormatSerializer().binary(bytes);
                 response.setContent(responseContent);
                 response.setStatusCode(HttpStatusCode.OK.getStatusCode());
-                response.setHeader(HttpHeader.CONTENT_TYPE, streamCsdlProperty.getMimeType());
+                response.setHeader(HttpHeader.CONTENT_TYPE, mimeType);
             }
         } catch (OfbizODataException e) {
             throw new ODataApplicationException(e.getMessage(),
                     Integer.parseInt(e.getODataErrorCode()), locale);
-        } catch (SerializerException e) {
+        } catch (SerializerException | GenericEntityException e) {
             throw new ODataApplicationException(e.getMessage(),
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
