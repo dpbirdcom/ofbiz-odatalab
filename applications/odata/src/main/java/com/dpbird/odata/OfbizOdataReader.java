@@ -298,24 +298,28 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         }
     }
 
-
-    public Property readRelatedEntityProperty(Map<String, Object> keyMap,
-                                   EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap,
-                                   String propertyName) throws OfbizODataException {
-        Entity relatedEntity;
+    //读取单个关联对象
+    public Entity readRelatedEntityOne(Map<String, Object> keyMap,
+                                              EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap) throws OfbizODataException {
         if (navKeyMap == null) {
             //one
-            relatedEntity = getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
+            return getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
         } else {
             //many
             EntityCollection relatedEntityCollection = findRelatedEntityCollectionByCondition(keyMap, edmNavigationProperty, EntityCondition.makeCondition(navKeyMap));
-            relatedEntity = relatedEntityCollection.getEntities().stream().findFirst().orElse(null);
+            return relatedEntityCollection.getEntities().stream().findFirst().orElse(null);
         }
+    }
+
+    //读取关联对象的单个字段
+    public Property readRelatedEntityProperty(Map<String, Object> keyMap,
+                                              EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap,
+                                              String propertyName) throws OfbizODataException {
+        Entity relatedEntity = readRelatedEntityOne(keyMap, edmNavigationProperty, navKeyMap);
         if (relatedEntity == null) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Associated data not found: " + edmNavigationProperty.getName());
         }
         return relatedEntity.getProperty(propertyName);
-
     }
 
     /**

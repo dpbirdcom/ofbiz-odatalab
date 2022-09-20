@@ -22,7 +22,7 @@ module = "demo.Product.generateFields.groovy";
 //这个方法做为处理语义化字段
 def generateFields(Map<String, Object> context){
     SelectOption selectOption = context.parameters.get("selectOption");
-    String[] fieldsToSelect = selectOption != null ? selectOption.getText().split(",") : ["testIds"]
+    String[] fieldsToSelect = selectOption != null && selectOption.getText() != null ? selectOption.getText().split(",") : ["testIds"]
     List<Entity> entityList = context.parameters.entityList;
     entityList.each { entity ->
         OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;

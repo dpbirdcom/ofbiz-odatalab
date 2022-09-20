@@ -786,11 +786,11 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                     "locale", locale);
             Property property;
             CsdlProperty streamCsdlProperty;
-            Map<String, Object> keyMap;
+            Map<String, Object> dataResourcePK;
             if (resourceParts.size() == 1) {
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
                 EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
-                keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
+                dataResourcePK = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
                 OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
                 //根据定义查询媒体数据字段
                 streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
@@ -799,14 +799,14 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 }
                 Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet());
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
-                Entity responseEntity = ofbizOdataReader.readEntityData(keyMap, null);
+                Entity responseEntity = ofbizOdataReader.readEntityData(dataResourcePK, null);
                 property = responseEntity.getProperty(streamCsdlProperty.getName());
             } else {
                 //多段式查询媒体数据
                 Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(resourceParts, odataContext);
                 //Entity
                 EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
-                keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+                Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
                 //Navigation
                 EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
                 Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
@@ -820,13 +820,16 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                         "edmNavigationProperty", edmNavigationProperty);
                 Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, streamCsdlProperty.getName());
+                Entity responseEntity = ofbizOdataReader.readRelatedEntityOne(keyMap, edmNavigationProperty, navKeyMap);
+                property = responseEntity.getProperty(streamCsdlProperty.getName());
+                Property dataResourceId = responseEntity.getProperty("dataResourceId");
+                dataResourcePK = UtilMisc.toMap("dataResourceId", dataResourceId.getValue());
             }
             //响应给客户端，ContentType为字段mimeType的属性值，如果没有指定那么使用对应DateResource的mimeType
             String mimeType = streamCsdlProperty.getMimeType();
             if (mimeType == null) {
                 mimeType = EntityQuery.use(delegator).from("DataResource")
-                        .select("mimeTypeId").where(keyMap).queryOne().getString("mimeTypeId");
+                        .select("mimeTypeId").where(dataResourcePK).queryOne().getString("mimeTypeId");
             }
             //未找到媒体对应的响应类型mimeType
             if (mimeType == null) {
