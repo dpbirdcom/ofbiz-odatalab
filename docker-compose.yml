@@ -34,6 +34,11 @@ services:
         - 8082:8080
       depends_on:
         - activemq
+      deploy:
+        resources:
+          limits:
+            cpus: "2.00"
+            memory: 2G
       volumes:
         - "/opt/gbms/gbms_volume/config/entityengine.xml:/root/ofbiz/framework/entity/config/entityengine.xml"
         - "/opt/gbms/gbms_volume/logs:/root/ofbiz/runtime/logs"
