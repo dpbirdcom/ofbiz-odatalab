@@ -36,6 +36,9 @@ services:
         - activemq
       deploy:
         resources:
+          requests:
+            cpus: "2.00"
+            memory: 2G
           limits:
             cpus: "2.00"
             memory: 2G
