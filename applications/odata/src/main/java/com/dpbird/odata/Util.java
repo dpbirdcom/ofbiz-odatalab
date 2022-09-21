@@ -2110,7 +2110,7 @@ public class Util {
 	/**
 	 * 解析searchOption 获取search所有的词汇集合
 	 */
-	public static List<String> getSearchOptionText(SearchOption searchOption) {
+	public static List<String> getSearchOptionWords(SearchOption searchOption) {
 		if (searchOption == null) {
 			return null;
 		}

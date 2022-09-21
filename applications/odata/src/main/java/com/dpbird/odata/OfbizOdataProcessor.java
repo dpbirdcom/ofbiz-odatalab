@@ -376,9 +376,8 @@ public class OfbizOdataProcessor {
             }
         }
 
-        //去掉所有的双引号 再用空格分割
         List<EntityCondition> searchLikeCondition = new ArrayList<>();
-        for (String searchText : Util.getSearchOptionText(search)) {
+        for (String searchText : Util.getSearchOptionWords(search)) {
             List<EntityCondition> multiLikeCondition = new ArrayList<>();
             searchProperties.forEach(field -> multiLikeCondition.add(EntityCondition.makeCondition(field, EntityOperator.LIKE, "%" + searchText + "%")));
             searchLikeCondition.add(EntityCondition.makeCondition(multiLikeCondition, EntityOperator.OR));
