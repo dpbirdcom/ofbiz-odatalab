@@ -120,7 +120,7 @@ under the License.
 <!--        </jms-service>-->
         <jms-service name="draculaPointsReq" send-mode="all">
             <server jndi-server-name="default"
-                    client-id="ofbizDraculaSender"
+                    client-id="gbmsSender"
                     jndi-name="topicConnectionFactory"
                     topic-queue="dracula.services.points.req"
                     type="topic"
@@ -130,7 +130,7 @@ under the License.
         </jms-service>
         <jms-service name="draculaPointsRes" send-mode="all">
             <server jndi-server-name="default"
-                    client-id="ofbizDraculaReceiver"
+                    client-id="gbmsReceiver"
                     jndi-name="topicConnectionFactory"
                     topic-queue="dracula.services.points.res"
                     type="topic"
