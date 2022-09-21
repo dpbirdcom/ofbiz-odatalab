@@ -21,7 +21,6 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
@@ -509,7 +508,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                     genericValues = EntityUtil.filterByCondition(genericValues, filterCondition);
                 }
                 //处理search
-                if (queryOptions != null && queryOptions.get("searchOption") != null) {
+                if (queryOptions != null && queryOptions.get("searchOption") != null && this.entitySearchCondition != null) {
                     genericValues = EntityUtil.filterByCondition(genericValues, this.entitySearchCondition);
                 }
                 //过滤条件之后为null 直接返回

@@ -27,10 +27,7 @@ import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ServiceMetadata;
-import org.apache.olingo.server.api.uri.UriInfoResource;
-import org.apache.olingo.server.api.uri.UriResource;
-import org.apache.olingo.server.api.uri.UriResourceNavigation;
-import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
+import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
@@ -381,8 +378,7 @@ public class OfbizOdataProcessor {
 
         //去掉所有的双引号 再用空格分割
         List<EntityCondition> searchLikeCondition = new ArrayList<>();
-        String[] searchArr = search.getText().replaceAll("\"", "").split(" ");
-        for (String searchText : searchArr) {
+        for (String searchText : Util.getSearchOptionText(search)) {
             List<EntityCondition> multiLikeCondition = new ArrayList<>();
             searchProperties.forEach(field -> multiLikeCondition.add(EntityCondition.makeCondition(field, EntityOperator.LIKE, "%" + searchText + "%")));
             searchLikeCondition.add(EntityCondition.makeCondition(multiLikeCondition, EntityOperator.OR));
@@ -939,7 +935,8 @@ public class OfbizOdataProcessor {
         if (levelsExpandOption != null) {
             expandLevel = levelsExpandOption.getValue();
         }
-        UriResource uriResource = expandItem.getResourcePath().getUriResourceParts().get(0);
+        List<UriResource> expandItemPath = expandItem.getResourcePath().getUriResourceParts();
+        UriResource uriResource = expandItemPath.get(0);
         if (uriResource instanceof UriResourceNavigation) {
             edmNavigationProperty = ((UriResourceNavigation) uriResource).getProperty();
         }
@@ -952,6 +949,7 @@ public class OfbizOdataProcessor {
             FilterOption filterOption = expandItem.getFilterOption();
             OrderByOption orderByOption = expandItem.getOrderByOption();
             SelectOption selectOption = expandItem.getSelectOption();
+            SearchOption searchOption = expandItem.getSearchOption();
             ExpandOption nestedExpandOption = expandItem.getExpandOption(); // expand nested in expand
             if (nestedExpandOption == null && expandLevel > 1) {
                 ExpandOptionImpl expandOptionImpl = new ExpandOptionImpl();
@@ -960,7 +958,7 @@ public class OfbizOdataProcessor {
                 expandOptionImpl.addExpandItem(expandItem);
                 nestedExpandOption = expandOptionImpl;
             }
-            expandCollection(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption);
+            expandCollection(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, searchOption);
         } else { // expand对象不是collection
             // 此处改过
             FilterOption filterOption = expandItem.getFilterOption();
@@ -987,7 +985,7 @@ public class OfbizOdataProcessor {
             nestedExpandOption = expandOptionImpl;
         }
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-            expandCollection(entity, edmEntityType, edmNavigationProperty, null, null, nestedExpandOption, null);
+            expandCollection(entity, edmEntityType, edmNavigationProperty, null, null, nestedExpandOption, null, null);
         } else { // expand对象不是collection
             expandNonCollection(entity, edmEntityType, edmNavigationProperty, null, null, nestedExpandOption, null);
         } // end expand对象不是collection
@@ -996,14 +994,14 @@ public class OfbizOdataProcessor {
     private EntityCollection getExpandData(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                            EdmNavigationProperty edmNavigationProperty,
                                            FilterOption filterOption, OrderByOption orderByOption,
-                                           ExpandOption nestedExpandOption, SelectOption selectOption) throws OfbizODataException {
+                                           ExpandOption nestedExpandOption, SelectOption selectOption, SearchOption searchOption) throws OfbizODataException {
         OfbizOdataReader embeddedReader;
         Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                 "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
         Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("filterOption", filterOption,
-                "expandOption", nestedExpandOption, "orderByOption", orderByOption, "selectOption", selectOption);
-        Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
-        embeddedReader = new OfbizOdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
+                "expandOption", nestedExpandOption, "orderByOption", orderByOption, "selectOption", selectOption, "searchOption", searchOption);
+        Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
+        embeddedReader = new OfbizOdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
         return embeddedReader.findRelatedEntityCollection(entity, edmNavigationProperty, embeddedQueryOptions, false);
     }
 
@@ -1011,9 +1009,10 @@ public class OfbizOdataProcessor {
                                      EdmNavigationProperty edmNavigationProperty,
                                      FilterOption filterOption, OrderByOption orderByOption,
                                      ExpandOption nestedExpandOption, SelectOption selectOption) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption);
+        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, null);
         if (null != expandEntityCollection && UtilValidate.isNotEmpty(expandEntityCollection.getEntities())) {
             Entity expandEntity = expandEntityCollection.getEntities().get(0);
+            expandEntityCollection.setCount(expandEntityCollection.getEntities().size());
             Link link = new Link();
             String navPropName = edmNavigationProperty.getName();
             link.setTitle(navPropName);
@@ -1031,14 +1030,15 @@ public class OfbizOdataProcessor {
     private void expandCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                   EdmNavigationProperty edmNavigationProperty,
                                   FilterOption filterOption, OrderByOption orderByOption,
-                                  ExpandOption nestedExpandOption, SelectOption selectOption) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption);
+                                  ExpandOption nestedExpandOption, SelectOption selectOption, SearchOption searchOption) throws OfbizODataException {
+        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, searchOption);
         String navPropName = edmNavigationProperty.getName();
         Link link = new Link();
         link.setTitle(navPropName);
         link.setType(Constants.ENTITY_NAVIGATION_LINK_TYPE);
         link.setRel(Constants.NS_ASSOCIATION_LINK_REL + navPropName);
         link.setInlineEntitySet(expandEntityCollection);
+        expandEntityCollection.setCount(expandEntityCollection.getEntities().size());
         if (entity.getId() != null) { // TODO:要检查一下为什么会有id为null的情况
             String linkHref = entity.getId().toString() + "/" + navPropName;
             link.setHref(linkHref);
