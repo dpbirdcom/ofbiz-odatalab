@@ -2107,4 +2107,27 @@ public class Util {
 				.map(item -> item.getResourcePath().getUriResourceParts().get(0).getSegmentValue()).collect(Collectors.toList());
 	}
 
+	/**
+	 * 解析searchOption 获取search所有的词汇集合
+	 */
+	public static List<String> getSearchOptionWords(SearchOption searchOption) {
+		if (searchOption == null) {
+			return null;
+		}
+		String[] searchTextArr;
+		if (searchOption.getText() != null) {
+			searchTextArr = searchOption.getText().replaceAll("\"", "").split(" ");
+		} else {
+			//如果是嵌套的search 没有文本只有表达式,需要自己解析
+			String searchExpressionText = searchOption.getSearchExpression().toString();
+			//remove { } " ' AND
+			searchTextArr = searchExpressionText.replaceAll("\\{", "")
+					.replaceAll("}", "")
+					.replaceAll("\"", "")
+					.replaceAll("'", "")
+					.split(" AND ");
+		}
+		return new ArrayList<>(Arrays.asList(searchTextArr));
+	}
+
 }
