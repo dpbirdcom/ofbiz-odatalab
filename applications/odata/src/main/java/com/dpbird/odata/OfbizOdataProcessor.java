@@ -53,6 +53,7 @@ public class OfbizOdataProcessor {
 
     public static final String module = OfbizOdataProcessor.class.getName();
     public static final int MAX_ROWS = 10000;
+    public static final int COUNT_OPTION_MAX_RAWS = 1000;
     public static final int DAYS_BEFORE = -100;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
@@ -448,13 +449,10 @@ public class OfbizOdataProcessor {
 
     protected void retrieveFieldsToSelect() {
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("selectOption") != null) {
-            fieldsToSelect = new HashSet<String>();
-            for (String selectFieldName : ((SelectOption) queryOptions.get("selectOption")).getText().split(",")) {
-                fieldsToSelect.add(selectFieldName);
-            }
+            SelectOption selectOption = (SelectOption) queryOptions.get("selectOption");
+            fieldsToSelect = new HashSet<>(Util.getSelectOptionFields(selectOption));
             if (this.modelEntity != null) {
-                List<String> pkFieldNames = modelEntity.getPkFieldNames();
-                fieldsToSelect.addAll(pkFieldNames);
+                fieldsToSelect.addAll(modelEntity.getPkFieldNames());
             }
         }
     }
@@ -588,6 +586,10 @@ public class OfbizOdataProcessor {
             List<OrderByItem> orderItemList = ((OrderByOption) queryOptions.get("orderByOption")).getOrders();
             for (OrderByItem orderByItem : orderItemList) {
                 Expression expression = orderByItem.getExpression();
+                if(expression.toString().contains("$count")) {
+                    //这里不支持根据子对象数量排序 会在查询结果后处理
+                    continue;
+                }
                 UriInfoResource resourcePath = ((Member) expression).getResourcePath();
                 List<UriResource> uriResourceParts = resourcePath.getUriResourceParts();
                 //单个字段
