@@ -177,15 +177,6 @@ public class JmsServiceEngine extends AbstractEngine {
         } catch (JMSException je) {
             Debug.logError(je.getMessage(), module);
             throw new GenericServiceException("JMS Internal Error.", je);
-        } finally {
-            try {
-                publisher.close();
-                session.close();
-                con.close();
-            } catch (JMSException e) {
-                Debug.logError(e.getMessage(), module);
-                e.printStackTrace();
-            }
         }
         return ServiceUtil.returnSuccess();
 
