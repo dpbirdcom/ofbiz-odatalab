@@ -1315,10 +1315,6 @@ public class Util {
 		Set<String> fkFieldNames = new HashSet<>();
 		List<ModelRelation> relationOneList = modelEntity.getRelationsOneList();
 		for (ModelRelation relationOne : relationOneList) {
-			String relEntityName = relationOne.getRelEntityName();
-			if (UtilValidate.isEmpty(relationOne.getFkName())) {
-				continue;
-			}
 			List<ModelKeyMap> modelKeyMaps = relationOne.getKeyMaps();
 			ModelKeyMap modelKeyMap = modelKeyMaps.get(0);
 			String fkFieldName = modelKeyMap.getFieldName();
