@@ -6,6 +6,7 @@ import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericModelException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityComparisonOperator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
@@ -53,7 +54,7 @@ public class OfbizOdataProcessor {
 
     public static final String module = OfbizOdataProcessor.class.getName();
     public static final int MAX_ROWS = 10000;
-    public static final int COUNT_OPTION_MAX_RAWS = 1000;
+    public static final int EXTRA_QUERY_MAX_RAW = 1000;
     public static final int DAYS_BEFORE = -100;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
@@ -106,11 +107,13 @@ public class OfbizOdataProcessor {
         this.sapContextId = (String) odataContext.get("sapContextId");
         try {
             retrieveModelEntity();
-            retrieveEntityCondition();
-            retrieveFieldsToSelect();
-            retrieveFindOption();
-			retrieveOrderBy();
-            retrieveApply();
+            if (this.modelEntity != null) {
+                retrieveEntityCondition();
+                retrieveFieldsToSelect();
+                retrieveFindOption();
+                retrieveOrderBy();
+                retrieveApply();
+            }
         } catch (ODataException e) {
             e.printStackTrace();
         }

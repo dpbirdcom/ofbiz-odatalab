@@ -24,13 +24,11 @@ import org.apache.olingo.server.api.ServiceMetadata;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
-import org.apache.olingo.server.api.uri.queryoption.expression.Member;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class OfbizOdataReader extends OfbizOdataProcessor {
     private DynamicViewEntity dynamicViewEntity = null;
@@ -119,7 +117,11 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         if (csdlEntitySet.getHandler() != null) {
             GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
             try {
-                genericValues = groovyHelper.findGenericValues(csdlEntitySet.getHandler(), edmProvider, csdlEntitySet, queryOptions, entityCondition);
+                if (modelEntity != null) {
+                    genericValues = groovyHelper.findGenericValues(csdlEntitySet.getHandler(), edmProvider, csdlEntitySet, queryOptions, entityCondition);
+                } else {
+                    return groovyHelper.findSemanticEntities(edmProvider, csdlEntitySet, queryOptions);
+                }
             } catch (MissingMethodExceptionNoStack e) {
                 Debug.logInfo(e.getMessage(), module);
             }
@@ -212,9 +214,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 for (Entity entity : entityList) {
                     addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, this.edmEntityType);
                 }
-            }
-            if (queryOptions != null && queryOptions.get("orderByOption") != null) {
-                sortAndFilterByRelationCount(entityCollection, (OrderByOption) queryOptions.get("orderByOption"), null);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -887,60 +886,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         }
         /*******************************************************************************************************/
 
-    }
-
-    /**
-     * 处理根据子对象的数量排序或者筛选
-     */
-    private void sortAndFilterByRelationCount(EntityCollection entityCollection, OrderByOption orderByOption, FilterOption filterOption) throws OfbizODataException {
-        //count orderby
-        List<OrderByItem> orderByCounts = orderByOption.getOrders().stream()
-                .filter(item -> item.getExpression().toString().contains("$count")).collect(Collectors.toList());
-        if (UtilValidate.isEmpty(orderByCounts)) {
-            return;
-        }
-        //太大的数据量不支持
-        if (entityCollection.getEntities().size() > COUNT_OPTION_MAX_RAWS) {
-            throw new OfbizODataException("Not support sorting and filtering large amounts of data. ($count)");
-        }
-        //不支持子对象count多重排序
-        if (orderByCounts.size() > 1) {
-            throw new OfbizODataException("Multiple sorting is not supported. ($count)");
-        }
-        OrderByItem orderByItem = orderByCounts.get(0);
-        UriInfoResource resourcePath = ((Member) orderByItem.getExpression()).getResourcePath();
-        UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourcePath.getUriResourceParts().get(0);
-        EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-
-        //key存放entity value存放子对象数量, 到最后用value进行排序
-        Map<Entity, Integer> relationCountMap = new HashMap<>();
-        for (Entity entity : entityCollection.getEntities()) {
-            Link navigationLink = entity.getNavigationLink(edmNavigationProperty.getName());
-            int relCount;
-            if (navigationLink != null) {
-                //如果存在Link里, 就不用再查询
-                relCount = navigationLink.getInlineEntitySet().getEntities().size();
-            } else {
-                //查询子对象
-                Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                        "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
-                Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
-                EntityCollection relEntityCollection = ofbizOdataReader.findRelatedEntityCollection(entity, edmNavigationProperty, null, false);
-                relCount = relEntityCollection.getEntities().size();
-            }
-            relationCountMap.put(entity, relCount);
-        }
-        entityCollection.getEntities().clear();
-        if (orderByItem.isDescending()) {
-            //desc
-            relationCountMap.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                    .forEachOrdered(entry -> entityCollection.getEntities().add(entry.getKey()));
-        } else {
-            //asc
-            relationCountMap.entrySet().stream().sorted(Map.Entry.comparingByValue())
-                    .forEachOrdered(entry -> entityCollection.getEntities().add(entry.getKey()));
-        }
     }
 
 }

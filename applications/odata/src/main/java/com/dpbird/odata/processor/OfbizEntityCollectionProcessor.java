@@ -146,14 +146,13 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
 
             if (resourcePathSize == 1) {
                 edmEntitySet = startEdmEntitySet; // first (and only) entitySet
-                OfbizOdataReader ofbizOdataReader = null;
                 try {
                     Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                             "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                             "locale", locale);
                     Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
                             "edmTypeFilter", edmTypeFilter);
-                    ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
+                    OfbizOdataReader ofbizOdataReader = new ExtraOdataReader(odataContext, queryOptions, edmParams);
                     entityCollection = ofbizOdataReader.findList();
                 } catch (ODataException e) {
                     e.printStackTrace();

@@ -113,6 +113,9 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             }
             return EntityCondition.makeCondition(exprs, joinOperator);
         } else if (left instanceof String) {
+            if (left.toString().contains("$count")) {
+                return null;
+            }
             EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
             String realLeft = (String) left;
 //            if (lastAlias != null) {
@@ -326,6 +329,9 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
 
     private Object visitMemberMultiParts(List<UriResource> uriResourceParts)
             throws OfbizODataException, ExpressionVisitException, ODataApplicationException {
+        if (uriResourceParts.get(uriResourceParts.size() - 1) instanceof UriResourceCount) {
+            return uriResourceParts.toString();
+        }
         if (dynamicViewHolder == null) { // 进入这个方法的，都是复杂查询，需要用到DynamicView
             dynamicViewHolder = new DynamicViewHolder(csdlEntityType, edmProvider, delegator, dispatcher, userLogin);
         }

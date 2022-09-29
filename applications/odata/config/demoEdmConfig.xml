@@ -248,7 +248,12 @@
 	<EnumType Name="ProductFeatureApplTypeEnum" OfbizEntity="ProductFeatureApplType" />
 	<EnumType Name="KeywordStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=KEYWORD_STATUS" />
 	<EnumType Name="PartyStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=PARTY_STATUS" />
-
+	
+	<EntityType Name="PartyInfo">
+		<Property Name="partyId" Type="String"/>
+		<Property Name="displayName" Type="String"/>
+	</EntityType>
+	
 	<EntityType Name="FixedAsset">
 		<RelAlias Name="TrackingLabel" Relations="FixedAssetIdent(fixedAssetIdentTypeId=TRACKING_LABEL)" />
 		<RelAlias Name="Category" Relations="InstanceOfProduct" />
@@ -1017,6 +1022,7 @@
 		<EntitySet Name="Products" EntityType="Product">
 		<NavigationPropertyBinding Path="ProductPrice" Target="ProductPrices"/>
 		</EntitySet>
+		<EntitySet Name="PartyInfos" EntityType="PartyInfo" Handler="component://odata/groovyScripts/demo/PartyInfo/writerEntityData.groovy"/>
 		<EntitySet Name="SimpleProducts" EntityType="SimpleProduct"/>
 		<EntitySet Name="PartyTypes" EntityType="PartyType"/>
 		<EntitySet Name="ProductPriceTypes" EntityType="ProductPriceType"/>

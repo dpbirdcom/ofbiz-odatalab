@@ -12,6 +12,7 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.apache.olingo.server.api.uri.queryoption.SelectOption;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+@SuppressWarnings("unchecked")
 public class GroovyHelper {
     public static final String module = GroovyHelper.class.getName();
     private Delegator delegator;
@@ -138,5 +140,19 @@ public class GroovyHelper {
         params.put("entityCondition", entityCondition);
         // groovy相应的方法，如果没有数据，需要返回空List，不能返回null
         return (List<GenericValue>) runScript(handler, "findGenericValues");
+    }
+
+    //这个入口来自EntitySet的Handler 用来读取虚拟的实体
+    public EntityCollection findSemanticEntities(OfbizAppEdmProvider edmProvider,
+                                                OfbizCsdlEntitySet csdlEntitySet,
+                                                Map<String, QueryOption> queryOptions) throws OfbizODataException {
+        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
+        params.put("queryOptions", queryOptions);
+        params.put("edmProvider", edmProvider);
+        params.put("csdlEntitySet", csdlEntitySet);
+        List<Entity> entities = (List<Entity>) runScript(csdlEntitySet.getHandler(), "findSemanticEntities");
+        EntityCollection entityCollection = new EntityCollection();
+        entityCollection.getEntities().addAll(entities);
+        return entityCollection;
     }
 }

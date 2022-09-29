@@ -1984,11 +1984,12 @@ public class EdmConfigLoader {
             try {
                 modelEntity = reader.getModelEntity(ofbizEntity);
             } catch (GenericEntityException e) {
-                e.printStackTrace();
-                return null;
+                //允许没有modelEntity
+//                e.printStackTrace();
+//                return null;
             }
         }
-        if (autoProperties) { // 需要从ofbiz的entity定义里面获取所有Property
+        if (autoProperties && modelEntity != null) { // 需要从ofbiz的entity定义里面获取所有Property
             Iterator<ModelField> fieldIterator = modelEntity.getFieldsIterator();
             // 获取所有的外键字段，以及关联到Enumeration表的字段
 //            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
@@ -2017,7 +2018,7 @@ public class EdmConfigLoader {
                 csdlProperties.add(csdlProperty);
             }
         }
-        if (UtilValidate.isEmpty(propertyRefs)) { // EntityType的Key还没有定义
+        if (UtilValidate.isEmpty(propertyRefs) && UtilValidate.isNotEmpty(modelEntity)) { // EntityType的Key还没有定义
             // 先添加主键，所有odata的EntityType必须映射到一个ofbiz对象作为主对象，所以，总是可以从ofbiz主对象中获取主键字段
             Iterator<ModelField> pksIterator = modelEntity.getPksIterator();
             Set<String> pkFieldNames = new HashSet<>();
