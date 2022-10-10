@@ -85,7 +85,7 @@ public class GroovyHelper {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
         params.put("entity", entityCreated);
         params.put("nestedEntity", nestedEntityToCreate);
-        return (GenericValue)runScript(handler, "createNestedData");
+        return (GenericValue) runScript(handler, "createNestedData");
     }
 
     public void deleteNavigationData(String handler, GenericValue genericValue, GenericValue nestedGenericValue) throws OfbizODataException {
@@ -142,10 +142,10 @@ public class GroovyHelper {
         return (List<GenericValue>) runScript(handler, "findGenericValues");
     }
 
-    //这个入口来自EntitySet的Handler 用来读取虚拟的实体
+    //EntitySet的Handler 用来读取语义化实体列表
     public EntityCollection findSemanticEntities(OfbizAppEdmProvider edmProvider,
-                                                OfbizCsdlEntitySet csdlEntitySet,
-                                                Map<String, QueryOption> queryOptions) throws OfbizODataException {
+                                                 OfbizCsdlEntitySet csdlEntitySet,
+                                                 Map<String, QueryOption> queryOptions) throws OfbizODataException {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
         params.put("queryOptions", queryOptions);
         params.put("edmProvider", edmProvider);
@@ -154,5 +154,16 @@ public class GroovyHelper {
         EntityCollection entityCollection = new EntityCollection();
         entityCollection.getEntities().addAll(entities);
         return entityCollection;
+    }
+
+    //EntitySet的Handler 用来读取单个语义化实体
+    public Entity findSemanticEntity(OfbizAppEdmProvider edmProvider,
+                                     OfbizCsdlEntitySet csdlEntitySet,
+                                     Map<String, Object> keyMap) throws OfbizODataException {
+        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
+        params.put("keyMap", keyMap);
+        params.put("edmProvider", edmProvider);
+        params.put("csdlEntitySet", csdlEntitySet);
+        return (Entity) runScript(csdlEntitySet.getHandler(), "findSemanticEntity");
     }
 }

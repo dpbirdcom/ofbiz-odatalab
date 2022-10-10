@@ -250,6 +250,9 @@
 	<EnumType Name="PartyStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=PARTY_STATUS" />
 	
 	<EntityType Name="PartyInfo">
+		<Key>
+			<PropertyRef Name="partyId"/>
+		</Key>
 		<Property Name="partyId" Type="String"/>
 		<Property Name="displayName" Type="String"/>
 	</EntityType>

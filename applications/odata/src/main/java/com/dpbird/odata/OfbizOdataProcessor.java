@@ -6,6 +6,7 @@ import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericModelException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityComparisonOperator;
@@ -701,7 +702,11 @@ public class OfbizOdataProcessor {
         // entityName = FakedNavigation.lookupEntity(edmEntityType, edmTypeFilter, null, null, searchOption);
         isOdataView = OdataView.isOdataView(delegator, this.entityName);
         if (!isOdataView && this.entityName != null) {
-            this.modelEntity = delegator.getModelEntity(this.entityName);
+            try {
+                this.modelEntity = delegator.getModelReader().getModelEntity(this.entityName);
+            } catch (GenericEntityException e) {
+                Debug.logWarning(e.getMessage(), module);
+            }
         }
     }
 

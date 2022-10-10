@@ -742,22 +742,31 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
 
     public OdataOfbizEntity readEntityData(Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)
             throws OfbizODataException {
-        GenericValue genericValue;
         OdataOfbizEntity entity;
-        genericValue = OdataProcessorHelper.readEntityData(odataContext,
-                (EdmBindingTarget) edmParams.get("edmBindingTarget"),
-                keyMap);
-        if (genericValue == null) {
-            throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + entityName);
-        }
-        entity = makeEntityFromGv(genericValue);
-        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                queryOptions, UtilMisc.toList(entity), locale, userLogin);
-
-        if (queryOptions != null) {
-            if (queryOptions.get("expandOption") != null) {
-                addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, this.edmEntityType);
+        if (modelEntity != null) {
+            GenericValue genericValue = OdataProcessorHelper.readEntityData(odataContext,
+                    (EdmBindingTarget) edmParams.get("edmBindingTarget"),
+                    keyMap);
+            if (genericValue == null) {
+                throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + entityName);
             }
+            entity = makeEntityFromGv(genericValue);
+            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                    queryOptions, UtilMisc.toList(entity), locale, userLogin);
+            if (queryOptions != null) {
+                if (queryOptions.get("expandOption") != null) {
+                    addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, this.edmEntityType);
+                }
+            }
+        } else {
+            //语义化实体
+            EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
+            OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, edmEntitySet.getName());
+            if (csdlEntitySet.getHandler() == null) {
+                throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + entityName);
+            }
+            GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
+            entity = (OdataOfbizEntity) groovyHelper.findSemanticEntity(edmProvider, csdlEntitySet, keyMap);
         }
         entity.setKeyMap(keyMap);
         return entity;

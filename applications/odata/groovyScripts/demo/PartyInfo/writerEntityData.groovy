@@ -24,15 +24,27 @@ import org.apache.ofbiz.entity.util.EntityQuery
 
 module = "demo.PartyInfo.findSemanticEntities.groovy";
 
+//read list
 def findSemanticEntities(Map<String, Object> context) {
     List<Entity> entityList = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
         OdataOfbizEntity entity = new OdataOfbizEntity();
-        entity.addProperty(new Property(null,"partyId",ValueType.PRIMITIVE,"t_id_" + i))
-        entity.addProperty(new Property(null,"displayName",ValueType.PRIMITIVE,"t_dnABC"))
+        entity.addProperty(new Property(null, "partyId", ValueType.PRIMITIVE, "t_id_" + i))
+        entity.addProperty(new Property(null, "displayName", ValueType.PRIMITIVE, "t_dnABC"))
         entityList.add(entity);
     }
     return entityList;
+}
+
+//read one
+def findSemanticEntity(Map<String, Object> context) {
+    Map<String, Object> keyMap = context.parameters.get("keyMap");
+    OdataOfbizEntity entity = new OdataOfbizEntity();
+    for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
+        entity.addProperty(new Property(null, entry.getKey(), ValueType.PRIMITIVE, entry.getValue()))
+    }
+    entity.addProperty(new Property(null, "displayName", ValueType.PRIMITIVE, "t_dnABC"))
+    return entity;
 }
 
 
