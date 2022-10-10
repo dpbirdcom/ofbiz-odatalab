@@ -544,7 +544,7 @@ public class EdmConfigLoader {
 
     private static OfbizCsdlEntityType loadEntityTypeFromElement(Delegator delegator, LocalDispatcher dispatcher,
                                                                  Element entityTypeElement, Locale locale)
-            throws GenericServiceException, GenericEntityException {
+            throws GenericServiceException {
         String name = entityTypeElement.getAttribute("Name");
         String ofbizEntity = name;
         String draftEntityName = null;
@@ -570,7 +570,12 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("AttrDateEntityName"))) {
             attrDateEntityName = entityTypeElement.getAttribute("AttrDateEntityName");
         }
-        ModelEntity modelEntity = delegator.getModelEntity(ofbizEntity);
+        ModelEntity modelEntity = null;
+        try {
+            modelEntity = delegator.getModelReader().getModelEntity(ofbizEntity);
+        } catch (GenericEntityException e) {
+            Debug.logWarning(e.getMessage(), module);
+        }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("Handler"))) {
             handlerClass = entityTypeElement.getAttribute("Handler");
         }
@@ -1980,13 +1985,10 @@ public class EdmConfigLoader {
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
         if (ofbizEntity != null) {
-            ModelReader reader = delegator.getModelReader();
             try {
-                modelEntity = reader.getModelEntity(ofbizEntity);
+                modelEntity = delegator.getModelReader().getModelEntity(ofbizEntity);
             } catch (GenericEntityException e) {
-                //允许没有modelEntity
-//                e.printStackTrace();
-//                return null;
+                Debug.logWarning(e.getMessage(), module);
             }
         }
         if (autoProperties && modelEntity != null) { // 需要从ofbiz的entity定义里面获取所有Property

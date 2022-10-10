@@ -2,6 +2,8 @@ package com.dpbird.odata.edm;
 
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.commons.api.data.ValueType;
 
 import java.util.Map;
 
@@ -42,5 +44,9 @@ public class OdataOfbizEntity extends Entity {
 
 	public boolean isDraft() {
 		return isDraft;
+	}
+
+	public void addProperty(String propertyName, Object productValue) {
+		this.addProperty(new Property(null, propertyName, ValueType.PRIMITIVE, productValue));
 	}
 }
