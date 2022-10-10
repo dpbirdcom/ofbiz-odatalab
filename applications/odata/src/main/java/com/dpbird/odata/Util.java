@@ -2126,4 +2126,15 @@ public class Util {
 		return new ArrayList<>(Arrays.asList(searchTextArr));
 	}
 
+	/** 判断是否是语义化实体 */
+	public static boolean isSemanticEntity(Delegator delegator, EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider) {
+		try {
+			OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+			ModelEntity modelEntity = delegator.getModelReader().getModelEntity(entityType.getOfbizEntity());
+			return UtilValidate.isEmpty(modelEntity);
+		} catch (OfbizODataException | GenericEntityException e) {
+			return true;
+		}
+	}
+
 }

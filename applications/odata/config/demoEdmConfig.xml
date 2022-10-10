@@ -453,6 +453,8 @@
 							Handler="component://odata/groovyScripts/demo/Facility/Product.groovy"/>
 		<NavigationProperty Name="Party" Type="Party" AutoBinding="true" IsCollection="false"
 							Handler="component://odata/groovyScripts/demo/Facility/Party.groovy"/>
+		<NavigationProperty Name="PartyInfo" Type="PartyInfo" AutoBinding="true" IsCollection="true"
+							Handler="component://odata/groovyScripts/demo/Facility/PartyInfo.groovy"/>
 	</EntityType>
 	<EntityType Name="TaxAuthority" AutoProperties="true"/>
 	<EntityType Name="SimpleProduct" OfbizEntity="Product" SearchOption="internalName,brandName,productName">

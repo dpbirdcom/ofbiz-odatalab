@@ -71,6 +71,16 @@ public class GroovyHelper {
         return (List<GenericValue>) runScript(location, "getNavigationData");
     }
 
+    public List<Entity> getSemanticNavigationData(String location, Entity entity, EdmNavigationProperty edmNavigationProperty,
+                                                Map<String, QueryOption> queryOptions, List<String> orderBy) throws OfbizODataException, MissingMethodExceptionNoStack {
+        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
+        params.put("entity", entity);
+        params.put("orderBy", orderBy);
+        params.put("queryOptions", queryOptions);
+        params.put("edmNavigationProperty", edmNavigationProperty);
+        return (List<Entity>) runScript(location, "getSemanticNavigationData");
+    }
+
     public void bindNavigationLink(String location, OdataOfbizEntity entity,
                                    OdataOfbizEntity nestedEntity) throws OfbizODataException {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);

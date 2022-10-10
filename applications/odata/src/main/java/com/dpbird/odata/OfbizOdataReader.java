@@ -488,7 +488,16 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
                 String handler = csdlNavigationProperty.getHandler();
                 try { // 有可能定义了handler，但是没有定义getNavigationData方法
-                    genericValues = groovyHelper.getNavigationData(handler, entity, edmNavigationProperty, queryOptions, filterByDate, null);
+                    boolean semanticEntity = Util.isSemanticEntity(delegator, edmNavigationProperty.getType(), edmProvider);
+                    if (semanticEntity) {
+                        //Navigation 语义化实体
+                        List<Entity> semanticNavigationData = groovyHelper.getSemanticNavigationData(handler, entity, edmNavigationProperty, queryOptions, null);
+                        EntityCollection entityCollection = new EntityCollection();
+                        entityCollection.getEntities().addAll(semanticNavigationData);
+                        return entityCollection;
+                    } else {
+                        genericValues = groovyHelper.getNavigationData(handler, entity, edmNavigationProperty, queryOptions, filterByDate, null);
+                    }
                 } catch (MissingMethodExceptionNoStack e) {
                     Debug.logInfo(e.getMessage(), module);
                     EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();

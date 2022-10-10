@@ -3,8 +3,7 @@ package com.dpbird.odata;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.entity.condition.EntityComparisonOperator;
-import org.apache.ofbiz.entity.condition.EntityOperator;
+import org.apache.ofbiz.entity.condition.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
@@ -18,6 +17,7 @@ import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceCount;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.queryoption.OrderByItem;
 import org.apache.olingo.server.api.uri.queryoption.expression.*;
 
 import java.util.*;
@@ -88,31 +88,33 @@ public class ExtraOdataReader extends OfbizOdataReader {
             return;
         }
         //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
-        ExtraCondition extraCondition = (ExtraCondition) filterOption.getExpression().accept(new ExtraExpressionVisitor());
-        Debug.logInfo("extraCondition: " + extraCondition.toString(), MODULE);
-        if (extraCondition.getLeftOption() instanceof UriResourceNavigation) {
-            UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLeftOption();
-            EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-            Integer condValue = Integer.valueOf(extraCondition.getRightOption().toString());
-            EntityComparisonOperator<?, ?> operator = extraCondition.getOperator();
-            Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
-            entityCollection.getEntities().clear();
-            //不同的运算符比较
-            Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
-            if (operator.equals(EntityOperator.EQUALS)) {
-                mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
-            } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
-                mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
-            } else if (operator.equals(EntityOperator.LESS_THAN)) {
-                mapStream = mapStream.filter(en -> en.getValue() < condValue);
-            } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
-                mapStream = mapStream.filter(en -> en.getValue() <= condValue);
-            } else if (operator.equals(EntityOperator.GREATER_THAN)) {
-                mapStream = mapStream.filter(en -> en.getValue() > condValue);
-            } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
-                mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+        List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraExpressionVisitor());
+        Debug.logInfo("extraCondition: " + extraConditionList.toString(), MODULE);
+        for (EntityExpr extraCondition : extraConditionList) {
+            if (extraCondition.getLhs() instanceof UriResourceNavigation) {
+                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
+                EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
+                Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
+                EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
+                Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
+                entityCollection.getEntities().clear();
+                //不同的运算符比较
+                Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
+                if (operator.equals(EntityOperator.EQUALS)) {
+                    mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
+                } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
+                    mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
+                } else if (operator.equals(EntityOperator.LESS_THAN)) {
+                    mapStream = mapStream.filter(en -> en.getValue() < condValue);
+                } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
+                    mapStream = mapStream.filter(en -> en.getValue() <= condValue);
+                } else if (operator.equals(EntityOperator.GREATER_THAN)) {
+                    mapStream = mapStream.filter(en -> en.getValue() > condValue);
+                } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
+                    mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+                }
+                mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
             }
-            mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
         }
     }
 
@@ -187,17 +189,26 @@ public class ExtraOdataReader extends OfbizOdataReader {
         topValue = MAX_ROWS;
     }
 
+    @SuppressWarnings("unchecked")
     private static class ExtraExpressionVisitor implements ExpressionVisitor<Object> {
         @Override
         public Object visitBinaryOperator(BinaryOperatorKind operator, Object left, Object right) throws ExpressionVisitException, ODataApplicationException {
             EntityComparisonOperator<?, ?> entityComparisonOperator = OdataExpressionVisitor.COMPARISONOPERATORMAP.get(operator);
-            if (left == null && right instanceof ExtraCondition) return right;
-            if (right == null && left instanceof ExtraCondition) return left;
+            if (left == null && right instanceof List) return right;
+            if (right == null && left instanceof List) return left;
             if (left == null || right == null) return null;
-            if (left instanceof ExtraCondition && right instanceof ExtraCondition) {
-                //TODO: 多个条件 可能需要返回一个List
+            if (left instanceof List && right instanceof List) {
+                EntityJoinOperator joinOperator = OdataExpressionVisitor.JOINOPERATORMAP.get(operator);
+                if (joinOperator.equals(EntityOperator.AND)) {
+                    List<EntityExpr> entityExprs = (List<EntityExpr>) left;
+                    entityExprs.addAll((List<EntityExpr>) right);
+                    return entityExprs;
+                } else if (joinOperator.equals(EntityOperator.OR)) {
+                    //TODO: 不支持or
+                    throw new ExpressionVisitException("The current syntax does not support 'or'.");
+                }
             }
-            return new ExtraCondition(left, entityComparisonOperator, right);
+            return UtilMisc.toList(new EntityExpr(left, entityComparisonOperator, right));
         }
 
         @Override
@@ -255,49 +266,6 @@ public class ExtraOdataReader extends OfbizOdataReader {
         @Override
         public Object visitBinaryOperator(BinaryOperatorKind operator, Object left, List<Object> right) throws ExpressionVisitException, ODataApplicationException {
             return null;
-        }
-    }
-
-    private static class ExtraCondition {
-        private Object leftOption;
-        private EntityComparisonOperator<?, ?> operator;
-        private Object rightOption;
-
-        public ExtraCondition(Object leftOption, EntityComparisonOperator<?, ?> operator, Object rightOption) {
-            this.leftOption = leftOption;
-            this.operator = operator;
-            this.rightOption = rightOption;
-        }
-
-        public Object getLeftOption() {
-            return leftOption;
-        }
-
-        public void setLeftOption(Object leftOption) {
-            this.leftOption = leftOption;
-        }
-
-        public EntityComparisonOperator<?, ?> getOperator() {
-            return operator;
-        }
-
-        public void setOperator(EntityComparisonOperator<?, ?> operator) {
-            this.operator = operator;
-        }
-
-        public Object getRightOption() {
-            return rightOption;
-        }
-
-        public void setRightOption(Object rightOption) {
-            this.rightOption = rightOption;
-        }
-
-        @Override
-        public String toString() {
-            return leftOption.toString() +
-                    operator.toString() +
-                    rightOption.toString();
         }
     }
 
