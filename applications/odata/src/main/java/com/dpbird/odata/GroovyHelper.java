@@ -153,17 +153,14 @@ public class GroovyHelper {
     }
 
     //EntitySet的Handler 用来读取语义化实体列表
-    public EntityCollection findSemanticEntities(OfbizAppEdmProvider edmProvider,
+    public List<Entity> findSemanticEntities(OfbizAppEdmProvider edmProvider,
                                                  OfbizCsdlEntitySet csdlEntitySet,
                                                  Map<String, QueryOption> queryOptions) throws OfbizODataException {
         Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
         params.put("queryOptions", queryOptions);
         params.put("edmProvider", edmProvider);
         params.put("csdlEntitySet", csdlEntitySet);
-        List<Entity> entities = (List<Entity>) runScript(csdlEntitySet.getHandler(), "findSemanticEntities");
-        EntityCollection entityCollection = new EntityCollection();
-        entityCollection.getEntities().addAll(entities);
-        return entityCollection;
+        return (List<Entity>) runScript(csdlEntitySet.getHandler(), "findSemanticEntities");
     }
 
     //EntitySet的Handler 用来读取单个语义化实体

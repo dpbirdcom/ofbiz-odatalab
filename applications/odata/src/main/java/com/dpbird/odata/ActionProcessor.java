@@ -67,7 +67,7 @@ public class ActionProcessor extends OfbizOdataWriter {
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             OdataOfbizEntity entity = (OdataOfbizEntity) result.getEntity();
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity,
-                    (EdmEntityType) edmAction.getReturnType().getType());
+                    (EdmEntityType) edmAction.getReturnType().getType(), edmParams);
         }
         return result;
     }
