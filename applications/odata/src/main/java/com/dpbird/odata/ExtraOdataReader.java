@@ -47,6 +47,7 @@ public class ExtraOdataReader extends OfbizOdataReader {
         }
         extraOdataFilter(entityCollection);
         extraOdataOrderBy(entityCollection);
+        entityCollectionCount(entityCollection);
         entityCollectionPage(entityCollection);
         return entityCollection;
     }
@@ -145,24 +146,19 @@ public class ExtraOdataReader extends OfbizOdataReader {
         return relationCountMap;
     }
 
+    /**
+     * count
+     */
+    private void entityCollectionCount(EntityCollection entityCollection) {
+        entityCollection.setCount(entityCollection.getEntities().size());
+    }
 
     /**
-     * 对结果集分页
+     * 分页
      */
     private void entityCollectionPage(EntityCollection entityCollection) {
         retrieveFindOption();
-        List<Entity> entities = entityCollection.getEntities();
-        List<Entity> entitiesPage;
-        if ((skipValue + topValue) > entities.size()) {
-            if (entities.size() <= skipValue) {
-                return;
-            }
-            entitiesPage = new ArrayList<>(entities.subList(skipValue, entities.size()));
-        } else {
-            entitiesPage = new ArrayList<>(entities.subList(skipValue, skipValue + topValue));
-        }
-        entityCollection.getEntities().clear();
-        entityCollection.getEntities().addAll(entitiesPage);
+        Util.pageEntityCollection(entityCollection, skipValue, topValue);
     }
 
     /**

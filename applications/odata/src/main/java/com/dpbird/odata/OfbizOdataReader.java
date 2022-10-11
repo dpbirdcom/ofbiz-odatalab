@@ -120,10 +120,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 if (modelEntity != null) {
                     genericValues = groovyHelper.findGenericValues(csdlEntitySet.getHandler(), edmProvider, csdlEntitySet, queryOptions, entityCondition);
                 } else {
-                    List<Entity> semanticEntities = groovyHelper.findSemanticEntities(edmProvider, csdlEntitySet, queryOptions);
-                    EntityCollection entityCollection = new EntityCollection();
-                    entityCollection.getEntities().addAll(semanticEntities);
-                    return entityCollection;
+                    return findSemanticList(csdlEntitySet, isCount);
                 }
             } catch (MissingMethodExceptionNoStack e) {
                 Debug.logInfo(e.getMessage(), module);
@@ -224,7 +221,25 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             throw new OfbizODataException(e.getMessage());
         }
         return entityCollection;
+    }
 
+    /**
+     * 查询语义化实体列表
+     */
+    public EntityCollection findSemanticList(OfbizCsdlEntitySet csdlEntitySet, boolean isCount) throws ODataException {
+        //使用EntitySet的Handler查询数据
+        GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
+        List<Entity> semanticEntities = groovyHelper.findSemanticEntities(edmProvider, csdlEntitySet, queryOptions);
+        EntityCollection entityCollection = new EntityCollection();
+        entityCollection.getEntities().addAll(semanticEntities);
+        //count
+        if (isCount) {
+            entityCollection.setCount(entityCollection.getEntities().size());
+        }
+        //分页
+        retrieveFindOption();
+        Util.pageEntityCollection(entityCollection, skipValue, topValue);
+        return entityCollection;
     }
 
     public OdataOfbizEntity makeEntityFromGv(GenericValue genericValue) throws OfbizODataException {
@@ -617,8 +632,9 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             semanticNavigationData = groovyHelper.findSemanticEntities(edmProvider, csdlEntitySet, queryOptions);
         }
         EntityCollection entityCollection = new EntityCollection();
-        entityCollection.getEntities().addAll(semanticNavigationData);
         entityCollection.setCount(semanticNavigationData.size());
+        entityCollection.getEntities().addAll(semanticNavigationData);
+        Util.pageEntityCollection(entityCollection, skipValue, topValue);
         return entityCollection;
     }
 
@@ -697,22 +713,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                     .where(entityCondition)
                     .from(dynamicViewEntity);
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, this.edmEntityType.getName()));
-
-            /* 如果odata请求带有select就使用, 否则select就使用EdmConfig中定义的Property, 但都需要排除语义化字段 */
-//            ModelEntity ofbizModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-//            List<String> ofbizEntityAllFieldNames = ofbizModelEntity.getAllFieldNames();
-//            List<String> propertyNames = new ArrayList<>(this.edmEntityType.getPropertyNames());
-//            propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
-//            Set<String> selectSet = UtilMisc.toSet(propertyNames);
-//            if (UtilValidate.isEmpty(fieldsToSelect) && !this.edmEntityType.getName().equals(this.entityName)) {
-//                selectSet = UtilMisc.toSet(propertyNames);
-//            } else if (UtilValidate.isNotEmpty(fieldsToSelect)) {
-//                propertyNames = new ArrayList<>(fieldsToSelect);
-//                propertyNames.removeIf(property -> !ofbizEntityAllFieldNames.contains(property));
-//                //后面要处理expand，添加外键
-//                propertyNames.addAll(Util.getEntityFk(ofbizModelEntity));
-//                selectSet = UtilMisc.toSet(propertyNames);
-//            }
 
             // select
             ModelEntity ofbizModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());

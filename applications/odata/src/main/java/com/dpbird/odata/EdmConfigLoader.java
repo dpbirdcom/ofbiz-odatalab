@@ -2251,11 +2251,17 @@ public class EdmConfigLoader {
             //把navigation转为relation
             for (CsdlNavigationProperty csdlNavigationProperty : entityType.getNavigationProperties()) {
                 OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty) csdlNavigationProperty;
+                EntityTypeRelAlias relAlias = navigationProperty.getRelAlias();
+                //所有带有Handler的Navigation都跳过
                 if (UtilValidate.isNotEmpty(navigationProperty.getHandler())) {
                     continue;
                 }
+                //relAlias为空
+                if(UtilValidate.isEmpty(relAlias)) {
+                    Debug.logWarning("NavigationProperty (" + navigationProperty.getName() + ") relAlias is empty.", module);
+                    continue;
+                }
                 //拿第一段去添加relation，没有定义外键就不添加
-                EntityTypeRelAlias relAlias = navigationProperty.getRelAlias();
                 ModelRelation relation = currModelEntity.getRelation(relAlias.getRelations().get(0));
                 boolean hasRelationKey = true;
                 for (ModelKeyMap keyMap : relation.getKeyMaps()) {
