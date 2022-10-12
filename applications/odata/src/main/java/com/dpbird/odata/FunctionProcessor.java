@@ -1,6 +1,7 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.OdataOfbizEntity;
+import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlFunction;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -11,6 +12,7 @@ import org.apache.ofbiz.service.ModelParam;
 import org.apache.ofbiz.service.ModelService;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.uri.*;
@@ -117,12 +119,17 @@ public class FunctionProcessor extends OfbizOdataReader{
             result = singletonBoundFunctionPrimitive(edmFunction, csdlFunction, paramMap,
                     (UriResourceSingleton) boundEntity, uriResourceNavigation);
         }
-        OdataOfbizEntity entity = null;
+        OdataOfbizEntity entity;
         if (result instanceof GenericValue) {
             entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                     (EdmEntityType) edmFunction.getReturnType().getType(), (GenericValue) result, locale);
-        } else { // TODO: 目前硬编码ShoppingCart
+        } else if (result instanceof Map) {
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+            entity = (OdataOfbizEntity) Util.mapToEntity(csdlEntityType, (Map<String, Object>) result);
+        } else {
+            // TODO: 目前硬编码ShoppingCart
             entity = this.objectToEntity(csdlFunction.getReturnType().getTypeFQN(), result);
+
         }
         if (entity != null) {
             OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
@@ -163,6 +170,9 @@ public class FunctionProcessor extends OfbizOdataReader{
             if (item instanceof GenericValue) {
                 entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                         (EdmEntityType) edmFunction.getReturnType().getType(), (GenericValue) item, locale);
+            } else if (item instanceof Map) {
+                OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+                entity = (OdataOfbizEntity) Util.mapToEntity(csdlEntityType, (Map<String, Object>) item);
             } else {
                 entity = this.objectToEntity(csdlFunction.getReturnType().getTypeFQN(), item);
             }
@@ -227,7 +237,7 @@ public class FunctionProcessor extends OfbizOdataReader{
             result = OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(),
                     paramMap, originGenericValue);
         }
-        if (result == null || !(result instanceof List)) {
+        if (!(result instanceof List)) {
             return null;
         }
         return (List<Object>) result;
@@ -515,7 +525,10 @@ public class FunctionProcessor extends OfbizOdataReader{
                 if (listItem instanceof GenericValue) {
                     entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                             (EdmEntityType) edmFunction.getReturnType().getType(), (GenericValue) listItem, locale);
-                } else {
+                } else if (listItem instanceof Map) {
+                    OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+                    entity = Util.mapToEntity(csdlEntityType, (Map<String, Object>) listItem);
+                }  else {
                     entity = this.objectToEntity(csdlFunction.getReturnType().getTypeFQN(), listItem);
                 }
                 if (entity != null) {
@@ -653,12 +666,21 @@ public class FunctionProcessor extends OfbizOdataReader{
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
         Map<String, Object> paramMap = Util.uriParametersToMap(uriParameters, edmFunction, aliases);
-        Object result = OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(),
+        Object result;
+        try {
+            result = OdataProcessorHelper.callFunctionActionMethod(odataContext,
+                    csdlFunction.getOfbizMethod(), paramMap, null, null, null, null);
+        } catch (OfbizODataException e) {
+            result = OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(),
                     paramMap, null);
+        }
         OdataOfbizEntity entity;
         if (result instanceof GenericValue) {
             entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                     (EdmEntityType) edmFunction.getReturnType().getType(), (GenericValue) result, locale);
+        } else if (result instanceof Map) {
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+            entity = (OdataOfbizEntity) Util.mapToEntity(csdlEntityType, (Map<String, Object>) result);
         } else {
             entity = this.objectToEntity(csdlFunction.getReturnType().getTypeFQN(), result);
         }
@@ -678,14 +700,24 @@ public class FunctionProcessor extends OfbizOdataReader{
      * 将返回结果转换为EntityCollection进行返回
      *
      */
+    @SuppressWarnings("unchecked")
     public EntityCollection processImportFunctionEntityCollection(UriResourceFunction uriResourceFunction,
                                               List<UriParameter> uriParameters, List<AliasQueryOption> aliases) throws ODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         EdmFunction function = uriResourceFunction.getFunction();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
         Map<String, Object> paramMap = Util.uriParametersToMap(uriParameters, edmFunction, aliases);
-        List<GenericValue> invokeResult = (List<GenericValue>)OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(), paramMap, null);
-        if (invokeResult == null){
+
+        List<Object> result;
+        try {
+            result = (List<Object>) OdataProcessorHelper.callFunctionActionMethod(odataContext,
+                    csdlFunction.getOfbizMethod(), paramMap, null, null, null, null);
+        } catch (OfbizODataException e) {
+            result = (List<Object>) OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(),
+                    paramMap, null);
+        }
+//        List<GenericValue> invokeResult = (List<GenericValue>)OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlFunction.getOfbizMethod(), paramMap, null);
+        if (result == null){
             //如果允许为null
             if (edmFunction.getReturnType().isNullable()) {
                 return new EntityCollection();
@@ -694,17 +726,23 @@ public class FunctionProcessor extends OfbizOdataReader{
             }
         }
         //ImportFunction -- 进行一下分页处理
-        List<GenericValue> genericValues = listToPage(invokeResult, topValue, skipValue);
+        List<Object> resultList = listToPage(result, topValue, skipValue);
         EntityCollection responseEntityCollection = new EntityCollection();
         List<Entity> entities = responseEntityCollection.getEntities();
-        for (GenericValue genericValue : genericValues) {
-            OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
-                    (EdmEntityType) function.getReturnType().getType(), genericValue, locale);
-            entities.add(entity);
-            if (entity != null) {
-                OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                        queryOptions, UtilMisc.toList(entity), locale, userLogin);
+        for (Object item : resultList) {
+            if (item instanceof GenericValue) {
+                OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
+                        (EdmEntityType) function.getReturnType().getType(), (GenericValue) item, locale);
+                entities.add(entity);
+                if (entity != null) {
+                    OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                            queryOptions, UtilMisc.toList(entity), locale, userLogin);
+                }
+            } else if (item instanceof Map) {
+                OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+                entities.add(Util.mapToEntity(csdlEntityType, (Map<String, Object>) item));
             }
+
         }
         return responseEntityCollection;
     }

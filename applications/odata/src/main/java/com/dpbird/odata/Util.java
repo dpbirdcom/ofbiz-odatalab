@@ -1731,7 +1731,7 @@ public class Util {
 	}
 
 	public static Entity mapToEntity(OfbizCsdlEntityType csdlEntityType, Map<String, Object> fieldMap) {
-		Entity entity = new Entity();
+		OdataOfbizEntity entity = new OdataOfbizEntity();
 		entity.setType(csdlEntityType.getFullQualifiedNameString());
 		List<CsdlProperty> csdlProperties = csdlEntityType.getProperties();
 		for (CsdlProperty csdlProperty:csdlProperties) {

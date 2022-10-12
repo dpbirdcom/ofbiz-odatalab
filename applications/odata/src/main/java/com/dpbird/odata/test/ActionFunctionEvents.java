@@ -61,6 +61,48 @@ public class ActionFunctionEvents {
         return party.getRelated("PartyRole", null, null, false);
     }
 
+    //Semantic Entity
+    public static Object testBoundSetActionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                          EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                          Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        return UtilMisc.toMap("partyId", keyMap.get("partyId"), "displayName", otherParm);
+    }
+
+    //Semantic Entity
+    public static Object testBoundSetActionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            mapList.add(UtilMisc.toMap("partyId", keyMap.get("partyId").toString() + i, "displayName", otherParm));
+        }
+        return mapList;
+    }
+
+    //Semantic Entity
+    public static Object testBoundSingletonActionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                          EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                          Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        return UtilMisc.toMap("partyId", edmBindingTarget.getName(), "displayName", otherParm);
+    }
+
+    //Semantic Entity
+    public static Object testBoundSingletonActionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            mapList.add(UtilMisc.toMap("partyId", edmBindingTarget.getName() + i, "displayName", otherParm));
+        }
+        return mapList;
+    }
+
     public static Object testBoundSingletonActionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
@@ -267,6 +309,49 @@ public class ActionFunctionEvents {
         return party.getRelatedOne("CreatedByUserLogin", false);
     }
 
+    public static Object testBoundSetFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        return UtilMisc.toMap("partyId", keyMap.get("partyId"), "displayName", otherParm);
+    }
+
+    public static Object testBoundSetFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            mapList.add(UtilMisc.toMap("partyId", keyMap.get("partyId"), "displayName", otherParm));
+        }
+        return mapList;
+    }
+    public static Object testBoundSingletonFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        return UtilMisc.toMap("partyId", edmBindingTarget.getName(), "displayName", otherParm);
+    }
+
+    public static Object testBoundSingletonFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        String otherParm = (String) actionParameters.get("otherParm");
+        //PartyInfo
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            mapList.add(UtilMisc.toMap("partyId", edmBindingTarget.getName() + i, "displayName", otherParm));
+        }
+        return mapList;
+    }
+
     public static Object testBoundSetFunctionEntityCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
@@ -386,6 +471,29 @@ public class ActionFunctionEvents {
         GenericValue party = delegator.findOne("Party", false, UtilMisc.toMap("partyId", partyId));
         return party.getRelated("PartyRole", null, null, false);
     }
+
+
+    public static Object testImportActionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                        EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                        Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        String partyId = (String) actionParameters.get("partyId");
+        return UtilMisc.toMap("partyId", partyId, "displayName", otherParm);
+    }
+
+    public static Object testImportActionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                  EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                  Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) actionParameters.get("otherParm");
+        String partyId = (String) actionParameters.get("partyId");
+        //PartyInfo
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            mapList.add(UtilMisc.toMap("partyId", partyId + i, "displayName", otherParm));
+        }
+        return mapList;
+    }
+
 
     public static Object testImportActionVoid(HttpServletRequest request, Map<String, Object> actionParameters)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
@@ -685,6 +793,27 @@ public class ActionFunctionEvents {
         GenericValue party = delegator.findOne("Party", false, UtilMisc.toMap("partyId", partyId));
 
         return party.getRelatedOne("CreatedByUserLogin", false);
+    }
+
+    public static Object testImportFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
+                                                          EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                          Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) functionParameters.get("otherParm");
+        String partyId = (String) functionParameters.get("partyId");
+        return UtilMisc.toMap("partyId", partyId, "displayName", otherParm);
+    }
+
+   public static Object testImportFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
+                                                                   EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                   Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+        String otherParm = (String) functionParameters.get("otherParm");
+        String partyId = (String) functionParameters.get("partyId");
+       //PartyInfo
+       List<Map<String, Object>> mapList = new ArrayList<>();
+       for (int i = 0; i < 5; i++) {
+           mapList.add(UtilMisc.toMap("partyId", partyId + i, "displayName", otherParm));
+       }
+       return mapList;
     }
 
    public static Object testImportFunctionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters)

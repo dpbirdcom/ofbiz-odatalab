@@ -123,6 +123,10 @@ public class ActionProcessor extends OfbizOdataWriter {
         } else if (actionMethodResult instanceof Entity) {
             entity = (Entity) actionMethodResult;
             needSemanticFields = false;
+        } else if (actionMethodResult instanceof Map) {
+            OfbizCsdlEntityType returnEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmAction.getReturnType().getType().getFullQualifiedName());
+            entity = Util.mapToEntity(returnEntityType, (Map<String, Object>) actionMethodResult);
+            needSemanticFields = false;
         } else { // TODO: 目前硬编码ShoppingCart
             entity = this.objectToEntity(csdlAction.getReturnType().getTypeFQN(), actionMethodResult);
         }
@@ -248,6 +252,9 @@ public class ActionProcessor extends OfbizOdataWriter {
         if (actionMethodResult instanceof GenericValue) {
             entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                     (EdmEntityType) edmAction.getReturnType().getType(), (GenericValue) actionMethodResult, locale);
+        } else if (actionMethodResult instanceof Map) {
+            OfbizCsdlEntityType returnEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmAction.getReturnType().getType().getFullQualifiedName());
+            entity = Util.mapToEntity(returnEntityType, (Map<String, Object>) actionMethodResult);
         } else {
             entity = this.objectToEntity(csdlAction.getReturnType().getTypeFQN(), actionMethodResult);
         }
@@ -530,8 +537,13 @@ public class ActionProcessor extends OfbizOdataWriter {
         OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
         Map<String, Object> paramMap = Util.parametersToMap(actionParameters);
 
-        return OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlAction.getOfbizMethod(),
-                paramMap, null);
+        try {
+            return OdataProcessorHelper.callFunctionActionMethod(odataContext,
+                    csdlAction.getOfbizMethod(), paramMap, null, null, null, null);
+        } catch (OfbizODataException e) {
+            return OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlAction.getOfbizMethod(),
+                    paramMap, null);
+        }
     }
 
     public void processBoundActionVoid(UriResourceAction action, Map<String, Parameter> parameters,
@@ -616,6 +628,7 @@ public class ActionProcessor extends OfbizOdataWriter {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public OFbizEntityActionResult processImportActionEntity(UriResourceAction uriResourceAction,
                                                              Map<String, Parameter> actionParameters)
             throws ODataException {
@@ -626,12 +639,21 @@ public class ActionProcessor extends OfbizOdataWriter {
         Map<String, Object> paramMap = Util.parametersToMap(actionParameters);
         OFbizEntityActionResult result = new OFbizEntityActionResult();
         Entity entity;
-        Object actionMethodResult = OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlAction.getOfbizMethod(),
-                paramMap, null);
+        Object actionMethodResult;
+        try {
+            actionMethodResult = OdataProcessorHelper.callFunctionActionMethod(odataContext,
+                    csdlAction.getOfbizMethod(), paramMap, null, null, null, null);
+        } catch (OfbizODataException e) {
+            actionMethodResult = OdataProcessorHelper.processFunctionActionMethod(httpServletRequest, csdlAction.getOfbizMethod(),
+                    paramMap, null);
+        }
         if (actionMethodResult instanceof GenericValue) {
             entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                     (EdmEntityType) edmAction.getReturnType().getType(), (GenericValue) actionMethodResult, locale);
-        } else {
+        } else if (actionMethodResult instanceof Map) {
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmAction.getReturnType().getType().getFullQualifiedName());
+            entity = Util.mapToEntity(csdlEntityType, (Map<String, Object>) actionMethodResult);
+        }else {
             entity = this.objectToEntity(csdlAction.getReturnType().getTypeFQN(), actionMethodResult);
         }
         if (entity != null) {

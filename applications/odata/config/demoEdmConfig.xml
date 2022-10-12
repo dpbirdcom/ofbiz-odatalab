@@ -676,6 +676,16 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="PartyRole" IsCollection="true"/>
 	</Action>
+	<Action Name="testImportActionSemanticEntity" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportActionSemanticEntity">
+		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Action>
+	<Action Name="testImportActionSemanticEntityCollection" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportActionSemanticEntityCollection">
+		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
+	</Action>
 	<Action Name="testBoundSetActionPrimitive" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionPrimitive">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
@@ -690,6 +700,26 @@
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="PartyRole" IsCollection="true"/>
+	</Action>
+	<Action Name="testBoundSetActionSemanticEntity" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionSemanticEntity">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Action>
+	<Action Name="testBoundSetActionSemanticEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionSemanticEntityCollection">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
+	</Action>
+	<Action Name="testBoundSingletonActionSemanticEntity" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonActionSemanticEntity">
+		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Action>
+	<Action Name="testBoundSingletonActionSemanticEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonActionSemanticEntityCollection">
+		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
 	</Action>
 	<Action Name="testBoundSingletonActionPrimitive" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonActionPrimitive">
 		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
@@ -809,6 +839,36 @@
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="UserLogin"/>
+	</Function>
+	<Function Name="testImportFunctionSemanticEntity" IsBound="false" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionSemanticEntity">
+		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Function>
+	<Function Name="testImportFunctionSemanticEntityCollection" IsBound="false" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionSemanticEntityCollection">
+		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
+	</Function>
+	<Function Name="testBoundSetFunctionSemanticEntity" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionSemanticEntity">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Function>
+	<Function Name="testBoundSetFunctionSemanticEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionSemanticEntityCollection">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
+	</Function>
+	<Function Name="testBoundSingletonFunctionSemanticEntity" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonFunctionSemanticEntity">
+		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo"/>
+	</Function>
+	<Function Name="testBoundSingletonFunctionSemanticEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonFunctionSemanticEntityCollection">
+		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="PartyInfo" IsCollection="true"/>
 	</Function>
 	<Function Name="testBoundSetFunctionEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionEntityCollection">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
@@ -1300,6 +1360,8 @@
 		<ActionImport Name="testImportActionComplexCollection" Action="testImportActionComplexCollection"/>
 		<ActionImport Name="testImportActionEntity" Action="testImportActionEntity"/>
 		<ActionImport Name="testImportActionEntityCollection" Action="testImportActionEntityCollection"/>
+		<ActionImport Name="testImportActionSemanticEntity" Action="testImportActionSemanticEntity"/>
+		<ActionImport Name="testImportActionSemanticEntityCollection" Action="testImportActionSemanticEntityCollection"/>
 		<ActionImport Name="testImportActionVoid" Action="testImportActionVoid"/>
 		<FunctionImport Name="testImportFunctionPrimitive" Function="testImportFunctionPrimitive"/>
 		<FunctionImport Name="testImportFunctionPrimitiveCollection" Function="testImportFunctionPrimitiveCollection"/>
@@ -1311,6 +1373,8 @@
 		<FunctionImport Name="testCollectionParamEntityCollection" Function="testCollectionParamEntityCollection"/>
 		<FunctionImport Name="testCollectionParamComplex" Function="testCollectionParamComplex"/>
 		<FunctionImport Name="testCollectionParamComplexCollection" Function="testCollectionParamComplexCollection"/>
+		<FunctionImport Name="testImportFunctionSemanticEntity" Function="testImportFunctionSemanticEntity"/>
+		<FunctionImport Name="testImportFunctionSemanticEntityCollection" Function="testImportFunctionSemanticEntityCollection"/>
 
 
 		<ActionImport Name="testEntityTypeInput" Action="testEntityTypeInput"/>

@@ -327,18 +327,20 @@ public class OfbizActionProcessor
         try {
             //执行结果转换为EntityCollection
             EntityCollection entityCollection = null;
-            if (invokeResult instanceof List) {
-                List<GenericValue> genericValues = (List<GenericValue>) invokeResult;
+            if (invokeResult instanceof List && UtilValidate.isNotEmpty(invokeResult)) {
                 entityCollection = new EntityCollection();
-                if (UtilValidate.isNotEmpty(invokeResult)) {
-                    for (GenericValue genericValue : genericValues) {
-                        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,
-                                        (EdmEntityType) uriResourceAction.getAction().getReturnType().getType(), genericValue, locale);
-                        entityCollection.getEntities().add(entity);
+                List<Object> resultList = (List<Object>) invokeResult;
+                EdmEntityType returnType = (EdmEntityType) uriResourceAction.getAction().getReturnType().getType();
+                for (Object item : resultList) {
+                    if (item instanceof GenericValue) {
+                        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,returnType, (GenericValue) item, locale);
                         if (entity != null) {
-                            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                                    queryOptions, UtilMisc.toList(entity), locale, userLogin);
+                            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
                         }
+                        entityCollection.getEntities().add(entity);
+                    } else if (item instanceof Map) {
+                        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(returnType.getFullQualifiedName());
+                        entityCollection.getEntities().add(Util.mapToEntity(csdlEntityType, (Map<String, Object>) item));
                     }
                 }
             } else if (invokeResult instanceof EntityCollection) {
