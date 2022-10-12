@@ -599,8 +599,15 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             }
             EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
             if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
+                //添加子对象的edmBindingTarget
+                Map<String, Object> edmParamOption = new HashMap<>();
+                EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
+                if (edmBindingTarget != null) {
+                    EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
+                    edmParamOption.put("edmBindingTarget", navigationTargetEntitySet);
+                }
                 for (Entity en : entityList) {
-                    addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) en, navEdmEntityType, edmParams);
+                    addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) en, navEdmEntityType, edmParamOption);
                 }
             }
             return entityCollection;

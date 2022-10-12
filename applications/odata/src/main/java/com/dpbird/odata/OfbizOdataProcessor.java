@@ -1010,7 +1010,10 @@ public class OfbizOdataProcessor {
         Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("filterOption", filterOption,
                 "expandOption", nestedExpandOption, "orderByOption", orderByOption, "selectOption", selectOption, "searchOption", searchOption);
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-        embeddedEdmParams.putAll(edmParams);
+        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
+        if (edmBindingTarget != null) {
+            embeddedEdmParams.put("edmBindingTarget", edmBindingTarget);
+        }
         embeddedReader = new OfbizOdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
         return embeddedReader.findRelatedEntityCollection(entity, edmNavigationProperty, embeddedQueryOptions, false);
     }
