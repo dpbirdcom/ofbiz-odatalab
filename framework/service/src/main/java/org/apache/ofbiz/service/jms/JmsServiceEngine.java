@@ -19,10 +19,7 @@
 package org.apache.ofbiz.service.jms;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
@@ -86,7 +83,7 @@ public class JmsServiceEngine extends AbstractEngine {
     }
 
     protected Message makeMessage(Session session, ModelService modelService, Map<String, Object> context)
-        throws GenericServiceException, JMSException {
+            throws GenericServiceException, JMSException {
         List<String> outParams = modelService.getParameterNames(ModelService.OUT_PARAM, false);
 
         if (UtilValidate.isNotEmpty(outParams))
@@ -130,11 +127,13 @@ public class JmsServiceEngine extends AbstractEngine {
         InitialContext jndi = null;
         TopicConnectionFactory factory = null;
         TopicConnection con = null;
-
+        TopicPublisher publisher = null;
+        TopicSession session = null;
         try {
             jndi = JNDIContextFactory.getInitialContext(serverName);
             factory = (TopicConnectionFactory) jndi.lookup(jndiName);
         } catch (GeneralException ge) {
+            Debug.logError("runTopic exception:" + ge.getMessage(), module);
             throw new GenericServiceException("Problems getting JNDI InitialContext.", ge.getNested());
         } catch (NamingException ne) {
             JNDIContextFactory.clearInitialContext(serverName);
@@ -142,8 +141,11 @@ public class JmsServiceEngine extends AbstractEngine {
                 jndi = JNDIContextFactory.getInitialContext(serverName);
                 factory = (TopicConnectionFactory) jndi.lookup(jndiName);
             } catch (GeneralException ge2) {
+                Debug.logError("runTopic exception:" + ge2.getMessage(), module);
+
                 throw new GenericServiceException("Problems getting JNDI InitialContext.", ge2.getNested());
             } catch (NamingException ne2) {
+                Debug.logError("runTopic exception:" + ne2.getMessage(), module);
                 throw new GenericServiceException("JNDI lookup problems.", ne);
             }
         }
@@ -152,12 +154,12 @@ public class JmsServiceEngine extends AbstractEngine {
             con = factory.createTopicConnection(userName, password);
 
             if (clientId != null && clientId.length() > 1)
-                con.setClientID(clientId);
+            con.setClientID(clientId + UUID.randomUUID());
             con.start();
 
-            TopicSession session = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+            session = con.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
             Topic topic = (Topic) jndi.lookup(topicName);
-            TopicPublisher publisher = session.createPublisher(topic);
+            publisher = session.createPublisher(topic);
 
             // create/send the message
             Message message = makeMessage(session, modelService, context);
@@ -170,8 +172,10 @@ public class JmsServiceEngine extends AbstractEngine {
             session.close();
             con.close();
         } catch (NamingException ne) {
+            Debug.logError(ne.getMessage(), module);
             throw new GenericServiceException("Problems with JNDI lookup.", ne);
         } catch (JMSException je) {
+            Debug.logError(je.getMessage(), module);
             throw new GenericServiceException("JMS Internal Error.", je);
         }
         return ServiceUtil.returnSuccess();
@@ -312,7 +316,7 @@ public class JmsServiceEngine extends AbstractEngine {
         List<Server> serverList = serviceElement.getServers();
 
         Map<String, Object> result = new HashMap<String, Object>();
-        for (Server server: serverList) {
+        for (Server server : serverList) {
             String serverType = server.getType();
             if ("topic".equals(serverType))
                 result.putAll(runTopic(modelService, context, server));

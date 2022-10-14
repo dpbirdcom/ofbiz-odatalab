@@ -43,7 +43,7 @@ public class JmsListenerFactory implements Runnable {
 
     public static final String module = JmsListenerFactory.class.getName();
 
-    public static final String TOPIC_LISTENER_CLASS = "org.apache.ofbiz.service.jms.JmsTopicListener";
+    public static final String TOPIC_LISTENER_CLASS = "org.apache.ofbiz.service.jms.GenericTopicListener";
     public static final String QUEUE_LISTENER_CLASS = "org.apache.ofbiz.service.jms.JmsQueueListener";
 
     protected static Map<String, GenericMessageListener> listeners = new ConcurrentHashMap<String, GenericMessageListener>();

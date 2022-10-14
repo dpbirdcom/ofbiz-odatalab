@@ -1,0 +1,6 @@
+[submodule "plugins/gbms"]
+	path = plugins/gbms
+	url = https://gitee.com/cloudlakenet/gbms.git
+[submodule "plugins/alioss"]
+	path = plugins/alioss
+	url = https://gitee.com/cloudlakenet/alioss-plugin.git

@@ -9534,7 +9534,7 @@
         <value xml:lang="ru">Ожидающее</value>
         <value xml:lang="th">ยังค้างอยู่</value>
         <value xml:lang="vi">Đang đợi</value>
-        <value xml:lang="zh">未决</value>
+        <value xml:lang="zh">待处理</value>
         <value xml:lang="zh-TW">未決</value>
     </property>
     <property key="StatusItem.description.COM_REFERRED">
