@@ -699,6 +699,27 @@ under the License.
         </relation>
     </entity>
 
+    <entity entity-name="EdmApp"
+            package-name="com.dpbird.odata"
+            title="Edm App">
+        <field name="edmAppId" type="id"/>
+        <field name="description" type="value"/>
+        <prim-key field="edmAppId"/>
+    </entity>
+
+    <entity entity-name="EdmAppConfig"
+            package-name="com.dpbird.odata"
+            title="Edm App Config">
+        <field name="edmAppId" type="id"/>
+        <field name="edmAppVersion" type="value"/>
+        <field name="edmConfigContent" type="very-long"/>
+        <prim-key field="edmAppId"/>
+        <prim-key field="edmAppVersion"/>
+        <relation type="one" fk-name="EAC_EA" rel-entity-name="EdmApp">
+            <key-map field-name="edmAppId"/>
+        </relation>
+    </entity>
+
     <entity entity-name="TestEntity"
             package-name="com.dpbird.odata"
             title="TestEntity">

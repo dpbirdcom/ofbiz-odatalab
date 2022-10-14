@@ -12,6 +12,7 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.*;
@@ -21,13 +22,14 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
 
     public static final String module = OfbizAppEdmProvider.class.getName();
     private Map<String, EdmWebConfig> edmReferenceConfigMap = null;
-    private String webapp;
+    private final String webapp;
     // private InputStream edmConfigInputStream;
     public static final FullQualifiedName CONTAINER = new FullQualifiedName(OfbizMapOdata.NAMESPACE, OfbizMapOdata.CONTAINER_NAME);
 
@@ -53,13 +55,12 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     public Map<String, Object> boundActionsMap = new HashMap<String, Object>();
     public Map<String, Object> boundFunctionsMap = new HashMap<String, Object>();
 
-    private Delegator delegator;
+    private final Delegator delegator;
     private static LocalDispatcher dispatcher;
-    private GenericValue userLogin;
-    private Locale locale;
+    private final GenericValue userLogin;
+    private final Locale locale;
     private static String eTag = null;
     private static String componentName = null;
-    private static String componentPath = null;
     CsdlSchema cachedSchema;
     Map<String, CsdlSchema> referenceSchemaMap = new HashMap<String, CsdlSchema>();
 
@@ -68,12 +69,11 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         super();
         Debug.logInfo("=============================== constructor OfbizAppEdmProvider", module);
         this.delegator = delegator;
-        this.dispatcher = dispatcher;
+        OfbizAppEdmProvider.dispatcher = dispatcher;
         this.webapp = appName;
         this.userLogin = userLogin;
         this.locale = locale;
-        this.componentName = componentName;
-        this.componentPath = componentPath;
+        OfbizAppEdmProvider.componentName = componentName;
 //		this.edmConfigInputStream = edmConfigInputStream;
         CsdlSchemaCache csdlSchemaCache;
         csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
@@ -112,23 +112,22 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache) throws ODataException {
 
         String prefix = "component://" ;
-
-        InputStream edmConfigInputStream = getFileInputStream(prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml");
+        String filePath = prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml";
+        InputStream edmConfigInputStream = getFileInputStream(filePath);
         EdmWebConfig edmWebConfig;
-        EdmConfigLoader ecl = new EdmConfigLoader(componentPath);
         try {
-            edmWebConfig = ecl.loadAppEdmConfig(delegator, dispatcher, edmConfigInputStream, locale);
+            edmWebConfig = EdmConfigLoader.loadAppEdmConfig(delegator, dispatcher, edmConfigInputStream, locale);
             OfbizCsdlSchema csdlSchema = this.createSchema(OfbizMapOdata.NAMESPACE, edmWebConfig, null);
-            ecl.generateAnnotations(delegator, csdlSchema, locale);
+            EdmConfigLoader.generateAnnotations(delegator, csdlSchema, locale);
             csdlSchemaCache.put(this.webapp, csdlSchema);
             if (UtilValidate.isEmpty(this.edmReferenceConfigMap)) {
-                this.edmReferenceConfigMap = new HashMap<String, EdmWebConfig>();
+                this.edmReferenceConfigMap = new HashMap<>();
             }
             Iterator<Map.Entry<String, String>> referenceIt = edmReferencePath.entrySet().iterator();
             while (referenceIt.hasNext()) {
                 Map.Entry<String, String> entry = referenceIt.next();
                 InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
-                EdmWebConfig edmReferenceConfig = ecl.loadEdmReference(delegator, dispatcher, inputStream, locale);
+                EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
                 this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
                 CsdlSchema referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
                 csdlSchemaCache.put(entry.getKey(), referenceSchema);
@@ -195,9 +194,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     public CsdlEntityType getEntityType(FullQualifiedName entityTypeName) throws OfbizODataException {
         if (cachedSchema != null) {
             CsdlEntityType csdlEntityType = cachedSchema.getEntityType(entityTypeName.getName());
-            if (csdlEntityType != null) {
-                return csdlEntityType;
-            }
+            return csdlEntityType;
         }
         return null;
     }
@@ -442,24 +439,28 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         return null;
     }
 
-    // ugly, will fix it later
-    private static InputStream getFileInputStream(String filePath) {
 
-
+    private InputStream getFileInputStream(String filePath) {
         try {
 //            String fileName = "component://" + componentName + "/config" + filePath;
             String fileUrl = FlexibleLocation.resolveLocation(filePath).getFile();
-            File f = new File(fileUrl);
-            return new FileInputStream(f);
-        } catch (FileNotFoundException e) {
-            Debug.logInfo("------- didn't find file " + filePath + filePath, module);
-        } catch (MalformedURLException e) {
+            File file = new File(fileUrl);
+            if (file.exists()) {
+                return new FileInputStream(file);
+            } else {
+                GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmAppConfig").where("edmAppId", webapp).queryFirst();
+                if (edmAppConfig != null) {
+                    String edmConfigContent = edmAppConfig.getString("edmConfigContent");
+                    return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+        } catch (FileNotFoundException | MalformedURLException | GenericEntityException e) {
             Debug.logInfo("------- didn't find file " + filePath + filePath, module);
         }
         return null;
     }
 
     public String getETag() {
-        return this.eTag;
+        return eTag;
     }
 }
