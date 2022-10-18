@@ -528,6 +528,7 @@
 		<Property Name="priority" Type="Priority"/>
 		<Property Name="statusId" Type="OrderStatusEnum"/>
 		<Property Name="salesChannelEnumId" Type="SalesChannelEnumeration"/>
+		<NavigationProperty Name="OrderType" AutoBinding="true" FilterByDate="false"/>
 		<NavigationProperty Name="StatusItem" AutoBinding="true" FilterByDate="false"/>
 		<NavigationProperty Name="OrderItem" AutoBinding="true" FilterByDate="false"/>
 		<NavigationProperty Name="OrderRole" AutoBinding="true" FilterByDate="false"/>
@@ -547,6 +548,7 @@
 		<NavigationProperty Name="OrderAdjustment" AutoBinding="true" FilterByDate="false"/>
 		<NavigationProperty Name="OrderItemAttribute" AutoBinding="true"/>
 	</EntityType>
+	<EntityType Name="OrderType" AutoProperties="true"/>
 	<EntityType Name="OrderRole" AutoProperties="true"/>
 	<EntityType Name="OrderItemAttribute" AutoProperties="true"/>
 	<EntityType Name="ProductPromo" AutoProperties="true"/>
@@ -1201,6 +1203,7 @@
 			<NavigationPropertyBinding Path="ProductContent" Target="ProductContents"/>
 		</EntitySet>
 		<EntitySet Name="StatusTypes" EntityType="StatusType"/>
+		<EntitySet Name="OrderTypes" EntityType="OrderType"/>
 		<EntitySet Name="DataResources" EntityType="DataResource"/>
 		<EntitySet Name="ContentAttributes" EntityType="ContentAttribute"/>
 		<EntitySet Name="ContentAssocs" EntityType="ContentAssoc">

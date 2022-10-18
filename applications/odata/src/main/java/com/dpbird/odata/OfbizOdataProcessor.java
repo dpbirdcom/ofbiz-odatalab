@@ -139,19 +139,24 @@ public class OfbizOdataProcessor {
 
     protected void retrieveEntityCondition() throws ODataException {
         EntityCondition moreCondition = null; // 这个变量暂时不用
-        //如果有search先使用search
-        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("searchOption") != null) {
-            processSearchOption();
-            //search并没有使用dynamicViewHolder那就允许search和filter结合使用
-            if (dynamicViewHolder == null) {
-                EntityCondition filterCondition = parseFilterOption(queryOptions);
-                if (filterCondition != null) {
-                    entityCondition = EntityCondition.makeCondition(UtilMisc.toList(entityCondition, filterCondition), EntityOperator.AND);
-                }
-            }
-        } else {
-            entityCondition = parseFilterOption(queryOptions);
+        //处理filter和search查询
+        entityCondition = parseFilterOption();
+        EntityCondition searchCondition = processSearchOption();
+        if (searchCondition != null) {
+            entityCondition = Util.appendCondition(entityCondition, searchCondition);
         }
+//        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("searchOption") != null) {
+//            entityCondition = Util.appendCondition(entitySearchCondition, filterCondition);
+            //search并没有使用dynamicViewHolder那就允许search和filter结合使用
+//            if (dynamicViewHolder == null) {
+//                EntityCondition filterCondition = parseFilterOption(queryOptions);
+//                if (filterCondition != null) {
+//                    entityCondition = EntityCondition.makeCondition(UtilMisc.toList(entityCondition, filterCondition), EntityOperator.AND);
+//                }
+//            }
+//        } else {
+//            entityCondition = parseFilterOption();
+//        }
         if (extraOption != null) {
             EntityCondition extraCondition = EntityCondition.makeCondition(extraOption);
             if (entityCondition == null) {
@@ -268,7 +273,7 @@ public class OfbizOdataProcessor {
         }
     }
 
-    protected EntityCondition parseFilterOption(Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    protected EntityCondition parseFilterOption() throws OfbizODataException {
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("filterOption") != null) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             String entityName = csdlEntityType.getOfbizEntity();
@@ -323,7 +328,10 @@ public class OfbizOdataProcessor {
         return null;
     }
 
-    private void processSearchOption() throws OfbizODataException {
+    private EntityCondition processSearchOption() throws OfbizODataException {
+        if (UtilValidate.isEmpty(queryOptions) || UtilValidate.isEmpty(queryOptions.get("searchOption"))) {
+            return null;
+        }
         List<String> searchProperties = new ArrayList<>();
         SearchOption search = (SearchOption) queryOptions.get("searchOption");
         Debug.log("========= Search text = " + search.getText(), module);
@@ -334,7 +342,7 @@ public class OfbizOdataProcessor {
         }
         if (csdlEntityType.getSearchOption() == null) {
             //没有指定SearchOption
-            return;
+            return null;
         }
         List<String> searchList = parseSearchExpr(csdlEntityType.getSearchOption());
         for (String option : searchList) {
@@ -380,16 +388,14 @@ public class OfbizOdataProcessor {
                 }
             }
         }
-
         List<EntityCondition> searchLikeCondition = new ArrayList<>();
         for (String searchText : Util.getSearchOptionWords(search)) {
             List<EntityCondition> multiLikeCondition = new ArrayList<>();
             searchProperties.forEach(field -> multiLikeCondition.add(EntityCondition.makeCondition(field, EntityOperator.LIKE, "%" + searchText + "%")));
             searchLikeCondition.add(EntityCondition.makeCondition(multiLikeCondition, EntityOperator.OR));
         }
-        //在处理Search的时候entityCondition应该是没值的，这里就直接给它赋值
-        entityCondition = EntityCondition.makeCondition(searchLikeCondition, EntityOperator.AND);
         entitySearchCondition = EntityCondition.makeCondition(searchLikeCondition, EntityOperator.AND);
+        return entitySearchCondition;
     }
 
     //解析SearchOption字符串
@@ -994,9 +1000,9 @@ public class OfbizOdataProcessor {
             nestedExpandOption = expandOptionImpl;
         }
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-            expandCollection(entity, edmEntityType, edmNavigationProperty, edmParams, null, null, nestedExpandOption, null, null);
+            expandCollection(entity, edmEntityType, edmNavigationProperty, null, null, null, nestedExpandOption, null, null);
         } else { // expand对象不是collection
-            expandNonCollection(entity, edmEntityType, edmNavigationProperty, edmParams, null, null, nestedExpandOption, null);
+            expandNonCollection(entity, edmEntityType, edmNavigationProperty, null, null, null, nestedExpandOption, null);
         } // end expand对象不是collection
     }
 
@@ -1010,9 +1016,8 @@ public class OfbizOdataProcessor {
         Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("filterOption", filterOption,
                 "expandOption", nestedExpandOption, "orderByOption", orderByOption, "selectOption", selectOption, "searchOption", searchOption);
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
-        if (edmBindingTarget != null) {
-            embeddedEdmParams.put("edmBindingTarget", edmBindingTarget);
+        if (edmParams != null && edmParams.get("edmBindingTarget") != null) {
+            embeddedEdmParams.put("edmBindingTarget", edmParams.get("edmBindingTarget"));
         }
         embeddedReader = new OfbizOdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
         return embeddedReader.findRelatedEntityCollection(entity, edmNavigationProperty, embeddedQueryOptions, false);
