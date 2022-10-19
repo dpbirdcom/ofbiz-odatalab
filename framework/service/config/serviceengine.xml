@@ -54,6 +54,7 @@ under the License.
         <engine name="route" class="org.apache.ofbiz.service.engine.RouteEngine"/>
         <!-- <engine name="http" class="org.apache.ofbiz.service.engine.HttpEngine"/> -->
         <engine name="jms" class="org.apache.ofbiz.service.jms.JmsServiceEngine"/>
+        <engine name="gbmsjms" class="com.banfftech.gbms.jms.GBMSJmsServiceEngine"/>
         <engine name="rmi" class="org.apache.ofbiz.service.rmi.RmiServiceEngine"/>
         <!-- <engine name="soap" class="org.apache.ofbiz.service.engine.SOAPClientEngine"/> -->
         <!-- The engine xml-rpc-local is only used by a test service and for this reason it is configured to run on port 8080.
@@ -97,6 +98,46 @@ under the License.
         -->
 
         <!-- JMS Service Queue/Topic Configuration -->
+<!--        <jms-service name="jciPointsReq" send-mode="all">-->
+<!--            <server jndi-server-name="default"-->
+<!--                    client-id="ofbizSender"-->
+<!--                    jndi-name="topicConnectionFactory"-->
+<!--                    topic-queue="jci.services.points.req"-->
+<!--                    type="topic"-->
+<!--                    username=""-->
+<!--                    password=""-->
+<!--                    listen="false"/>-->
+<!--        </jms-service>-->
+<!--        <jms-service name="jciPointsRes" send-mode="all">-->
+<!--            <server jndi-server-name="default"-->
+<!--                    client-id="ofbizReceiver"-->
+<!--                    jndi-name="topicConnectionFactory"-->
+<!--                    topic-queue="jci.services.points.res"-->
+<!--                    type="topic"-->
+<!--                    username=""-->
+<!--                    password=""-->
+<!--                    listen="true"/>-->
+<!--        </jms-service>-->
+        <jms-service name="draculaPointsReq" send-mode="all">
+            <server jndi-server-name="default"
+                    client-id="gbmsSender"
+                    jndi-name="topicConnectionFactory"
+                    topic-queue="dracula.services.points.req"
+                    type="topic"
+                    username=""
+                    password=""
+                    listen="false"/>
+        </jms-service>
+        <jms-service name="draculaPointsRes" send-mode="all">
+            <server jndi-server-name="default"
+                    client-id="gbmsReceiver"
+                    jndi-name="topicConnectionFactory"
+                    topic-queue="dracula.services.points.res"
+                    type="topic"
+                    username=""
+                    password=""
+                    listen="true"/>
+        </jms-service>
         <!--
         <jms-service name="serviceMessenger" send-mode="all">
             <server jndi-server-name="default"
