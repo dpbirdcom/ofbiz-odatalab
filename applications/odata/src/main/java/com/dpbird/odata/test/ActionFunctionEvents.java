@@ -5,7 +5,10 @@ import com.dpbird.odata.OfbizMapOdata;
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.apache.ofbiz.base.util.*;
+import org.apache.ofbiz.base.util.collections.PagedList;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
@@ -361,6 +364,33 @@ public class ActionFunctionEvents {
 
         GenericValue party = (GenericValue) boundObject;
         return party.getRelated("PartyRole", null, null, false);
+    }
+
+    public static Object testBoundSetFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("Product").queryPagedList(1, 100);
+        return pagedList.getData();
+    }
+
+    public static Object testImportFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderHeader").queryPagedList(1, 100);
+        return pagedList.getData();
+    }
+
+    public static Object testImportFunctionEntityCollectionFilterManyKey(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
+                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
+                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderItem").queryPagedList(1, 100);
+        return pagedList.getData();
     }
 
     public static Object testBoundSingletonFunctionEntity(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)

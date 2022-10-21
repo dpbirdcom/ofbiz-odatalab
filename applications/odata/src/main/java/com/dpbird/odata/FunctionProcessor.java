@@ -17,6 +17,7 @@ import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
+import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -165,8 +166,7 @@ public class FunctionProcessor extends OfbizOdataReader{
             }
         }
         //对查询结果做分页处理
-        List<Object> PageResult = listToPage(result, topValue, skipValue);
-        for (Object item:PageResult) {
+        for (Object item : result) {
             if (item instanceof GenericValue) {
                 entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                         (EdmEntityType) edmFunction.getReturnType().getType(), (GenericValue) item, locale);
@@ -182,6 +182,12 @@ public class FunctionProcessor extends OfbizOdataReader{
                         queryOptions, UtilMisc.toList(entity), locale, userLogin);
             }
         }
+        if (queryOptions.get("filterOption") != null) {
+            FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+            Util.filterEntityCollection(entityCollection, filterOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
+        }
+        Util.pageEntityCollection(entityCollection, skipValue, topValue);
         return entityCollection;
     }
 
@@ -725,11 +731,9 @@ public class FunctionProcessor extends OfbizOdataReader{
                 throw new OfbizODataException(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode() + "", "The return entity collection cannot be null.");
             }
         }
-        //ImportFunction -- 进行一下分页处理
-        List<Object> resultList = listToPage(result, topValue, skipValue);
         EntityCollection responseEntityCollection = new EntityCollection();
         List<Entity> entities = responseEntityCollection.getEntities();
-        for (Object item : resultList) {
+        for (Object item : result) {
             if (item instanceof GenericValue) {
                 OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
                         (EdmEntityType) function.getReturnType().getType(), (GenericValue) item, locale);
@@ -742,8 +746,13 @@ public class FunctionProcessor extends OfbizOdataReader{
                 OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
                 entities.add(Util.mapToEntity(csdlEntityType, (Map<String, Object>) item));
             }
-
         }
+        if (queryOptions.get("filterOption") != null) {
+            FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
+            Util.filterEntityCollection(responseEntityCollection, filterOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
+        }
+        Util.pageEntityCollection(responseEntityCollection, skipValue, topValue);
         return responseEntityCollection;
     }
 

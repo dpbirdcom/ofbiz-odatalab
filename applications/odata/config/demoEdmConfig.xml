@@ -985,7 +985,16 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="true"/>
 		<ReturnType Type="TestObjectOne" IsCollection="true"/>
 	</Function>
-
+	<Function Name="testBoundSetFunctionEntityCollectionFilter" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionEntityCollectionFilter">
+		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<ReturnType Type="Product" IsCollection="true"/>
+	</Function>
+	<Function Name="testImportFunctionEntityCollectionFilter" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionEntityCollectionFilter">
+		<ReturnType Type="OrderHeader" IsCollection="true"/>
+	</Function>
+	<Function Name="testImportFunctionEntityCollectionFilterManyKey" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionEntityCollectionFilterManyKey">
+		<ReturnType Type="OrderItem" IsCollection="true"/>
+	</Function>
 
 
 
@@ -1378,6 +1387,8 @@
 		<FunctionImport Name="testCollectionParamComplexCollection" Function="testCollectionParamComplexCollection"/>
 		<FunctionImport Name="testImportFunctionSemanticEntity" Function="testImportFunctionSemanticEntity"/>
 		<FunctionImport Name="testImportFunctionSemanticEntityCollection" Function="testImportFunctionSemanticEntityCollection"/>
+		<FunctionImport Name="testImportFunctionEntityCollectionFilter" Function="testImportFunctionEntityCollectionFilter"/>
+		<FunctionImport Name="testImportFunctionEntityCollectionFilterManyKey" Function="testImportFunctionEntityCollectionFilterManyKey"/>
 
 
 		<ActionImport Name="testEntityTypeInput" Action="testEntityTypeInput"/>

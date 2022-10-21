@@ -490,7 +490,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                     "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
                     "locale", locale);
-            Map<String, QueryOption> queryOptions = UtilMisc.toMap("skipOption", skipOption, "topOption", topOption);
+            Map<String, QueryOption> queryOptions = UtilMisc.toMap("skipOption", skipOption, "topOption", topOption, "filterOption", filterOption);
             FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, queryOptions, null);
             entityCollection = ofbizOdataReader.processBoundFunctionEntityCollection(uriResourceFunction, parameters,
                     boundEntity, uriResourceNavigation, uriInfo.getAliases());

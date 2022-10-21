@@ -26,7 +26,6 @@ import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
@@ -64,14 +63,13 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (dynamicViewEntity == null) {
                 countLong = EntityQuery.use(delegator).from(entityNameToFind).where(entityCondition).queryCount();
             } else {
-                printDynamicView();
+                Util.printDynamicView(dynamicViewEntity, entityCondition, module);
                 countLong = EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).queryCount();
             }
             return countLong;
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
-//        return OdataProcessorHelper.readEntitySetCount(odataContext, entityNameToFind, filterOption, csdlEntityType);
     }
 
     public Long readRelatedEntityCount(EdmBindingTarget edmBindingTarget, EntityCollection entityCollection)
@@ -89,12 +87,12 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (entityCollection == null || UtilValidate.isEmpty(entityCollection.getEntities())) {
                 return 0L;
             }
-            EntityCondition queryCondition = Util.getGenericValuesQueryCond(entityCollection, dynamicViewEntity != null);
+            EntityCondition queryCondition = Util.getEntityCollectionQueryCond(entityCollection, dynamicViewEntity != null);
             entityCondition = Util.appendCondition(entityCondition, queryCondition);
             if (dynamicViewEntity == null) {
                 return EntityQuery.use(delegator).from(entityNameToFind).where(entityCondition).queryCount();
             } else {
-                printDynamicView();
+                Util.printDynamicView(dynamicViewEntity, entityCondition, module);
                 return EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).queryCount();
             }
         } catch (GenericEntityException e) {
@@ -126,64 +124,33 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 Debug.logInfo(e.getMessage(), module);
             }
         }
-
-        if (genericValues == null) {
-            // OdataView目前支持持简单条件查询，象lambda expression或者navigation的查询
-            // 如果这个entityName存在于OdataView中，说明这是数据库定义的view，需要动态生成dynamicView，然后才能查询
-            if (isOdataView) {
-                OdataView odataView = new OdataView(delegator, this.entityName);
-                PagedList<GenericValue> pagedList = odataView.findList(entityCondition,
-                        (ApplyOption) queryOptions.get("applyOption"), fieldsToSelect, orderBy, efo, isCount);
-                genericValues = pagedList.getData();
-                if (isCount) {
-                    listTotalCount = pagedList.getSize();
-                }
-            } else if (dynamicViewEntity == null) {
-                String entityToFind = modelEntity.getEntityName();
-                try {
-                    Boolean useCache = skipValue > 0 || topValue > 0 || entityCondition != null ? false : true;
+        try {
+            if (genericValues == null) {
+                if (dynamicViewEntity == null) {
+                    //查询实体数据
+                    boolean useCache = skipValue <= 0 && topValue <= 0 && entityCondition == null;
                     // fieldsToSelect暂时先去掉，因为会影响到expand，如果select的字段不包括expand需要的外键，expand就会出不来数据
+                    OdataEntityQuery odataEntityQuery = (OdataEntityQuery) OdataEntityQuery.use(delegator).from(modelEntity.getEntityName())
+                            .where(entityCondition).orderBy(orderBy).cache(useCache).cursorScrollInsensitive();
                     if (this.filterByDate) {
-                        OdataEntityQuery odataEntityQuery = (OdataEntityQuery) OdataEntityQuery.use(delegator).from(entityToFind).filterByDate()
-                                .where(entityCondition).orderBy(orderBy).cache(useCache).cursorScrollInsensitive();
-                        genericValues = odataEntityQuery.queryList(this.skipValue, this.topValue);
-                    } else {
-                        OdataEntityQuery odataEntityQuery = (OdataEntityQuery) OdataEntityQuery.use(delegator).from(entityToFind)
-                                .where(entityCondition).orderBy(orderBy).cache(useCache).cursorScrollInsensitive();
-                        genericValues = odataEntityQuery.queryList(this.skipValue, this.topValue);
+                        odataEntityQuery = (OdataEntityQuery) odataEntityQuery.filterByDate();
                     }
-                } catch (GenericEntityException e) {
-                    e.printStackTrace();
-                    throw new ODataException(e.getMessage());
-                }
-                if (isCount) {
-                    try {
-                        if (this.filterByDate) {
-                            listTotalCount = (int) EntityQuery.use(delegator).from(entityToFind).filterByDate()
-                                    .where(entityCondition).cursorScrollInsensitive().queryCount();
-                        } else {
-                            listTotalCount = (int) EntityQuery.use(delegator).from(entityToFind)
-                                    .where(entityCondition).cursorScrollInsensitive().queryCount();
-                        }
-                    } catch (GenericEntityException e) {
-                        e.printStackTrace();
-                        throw new ODataException(e.getMessage());
+                    genericValues = odataEntityQuery.queryList(this.skipValue, this.topValue);
+                    if (isCount) {
+                        listTotalCount = (int) odataEntityQuery.queryCount();
                     }
-                }
-            } else {
-                // 需要用DynamicView去查询
-                // 注意，这里的PagedList，只有data和size是维护的，其它字段暂时不可靠
-                // 只要使用到了dynamicView，就一定需要对主对象进行groupby，所以isCount参数是true
-                PagedList<GenericValue> pagedList = findListWithDynamicView();
-                genericValues = pagedList.getData();
-                if (isCount) {
-                    listTotalCount = pagedList.getSize();
+                } else {
+                    // 需要用DynamicView去查询
+                    // 注意，这里的PagedList，只有data和size是维护的，其它字段暂时不可靠
+                    // 只要使用到了dynamicView，就一定需要对主对象进行groupby，所以isCount参数是true
+                    PagedList<GenericValue> pagedList = findListWithDynamicView();
+                    genericValues = pagedList.getData();
+                    if (isCount) {
+                        listTotalCount = pagedList.getSize();
+                    }
                 }
             }
-        }
-        EntityCollection entityCollection = new EntityCollection();
-        // 这个try只是做debug用，将来用重新规划各种exception的处理
-        try {
+            EntityCollection entityCollection = new EntityCollection();
             List<Entity> entityList = entityCollection.getEntities();
             if (genericValues != null) {
                 for (GenericValue genericValue : genericValues) {
@@ -216,11 +183,11 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                             this.edmEntityType, edmParams);
                 }
             }
+            return entityCollection;
         } catch (Exception e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        return entityCollection;
     }
 
     /**
@@ -619,8 +586,8 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
     }
 
     public EntityCollection findRelatedSemanticEntity(Entity entity,
-                                                        EdmNavigationProperty edmNavigationProperty,
-                                                        Map<String, QueryOption> queryOptions) throws OfbizODataException {
+                                                      EdmNavigationProperty edmNavigationProperty,
+                                                      Map<String, QueryOption> queryOptions) throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
         GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
@@ -632,7 +599,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             //如果这个语义化Navigation没有Handler 那就从EntitySet的Handler取数据
             EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
             EdmEntitySet navigationEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
-            if(UtilValidate.isEmpty(navigationEntitySet)) {
+            if (UtilValidate.isEmpty(navigationEntitySet)) {
                 throw new OfbizODataException("Not found EntitySet: " + edmNavigationProperty.getName());
             }
             OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, navigationEntitySet.getName());
@@ -712,7 +679,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
                 entityCondition = Util.appendCondition(entityCondition, applyCondition);
             }
             //print
-            printDynamicView();
+            Util.printDynamicView(dynamicViewEntity, entityCondition, module);
 
             // make sure this is in a transaction
             beganTransaction = TransactionUtil.begin();
@@ -927,22 +894,6 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             Debug.logError(e.getMessage(), module);
         }
         return returnCondition;
-    }
-
-    private void printDynamicView() {
-        /********************** debug用，输出dynamicViewEntity的xml表达式 ****************************************/
-        try {
-            String dynamicViewXml = dynamicViewEntity.getViewXml(dynamicViewEntity.getEntityName());
-            Debug.logInfo(dynamicViewXml, module);
-            if (entityCondition != null) {
-                Debug.logInfo(entityCondition.toString(), module);
-            }
-        } catch (IOException e2) {
-            // TODO Auto-generated catch block
-            e2.printStackTrace();
-        }
-        /*******************************************************************************************************/
-
     }
 
 }
