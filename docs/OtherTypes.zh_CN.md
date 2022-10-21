@@ -1,3 +1,4 @@
+## Other Types ##
 # EnumType
 EnumType是在OData里定义枚举类型，枚举值是通过子元素Element来表达。
 
