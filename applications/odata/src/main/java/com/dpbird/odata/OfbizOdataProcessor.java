@@ -108,10 +108,10 @@ public class OfbizOdataProcessor {
         this.sapContextId = (String) odataContext.get("sapContextId");
         try {
             retrieveModelEntity();
+            retrieveFindOption();
             if (this.modelEntity != null) {
                 retrieveEntityCondition();
                 retrieveFieldsToSelect();
-                retrieveFindOption();
                 retrieveOrderBy();
                 retrieveApply();
             }

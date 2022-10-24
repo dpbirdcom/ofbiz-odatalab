@@ -13,6 +13,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.base.util.collections.ResourceBundleMapWrapper;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericEntity;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
@@ -2019,7 +2020,7 @@ public class Util {
 	}
 
 	//获取一个数据集合的查询条件
-	public static EntityCondition getGenericValuesQueryCond(EntityCollection entityCollection, boolean addPrefix) {
+	public static EntityCondition getEntityCollectionQueryCond(EntityCollection entityCollection, boolean addPrefix) {
 		List<GenericValue> genericValueList = new ArrayList<>();
 		for (Entity entity : entityCollection) {
 			OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
@@ -2153,6 +2154,71 @@ public class Util {
 		}
 		entityCollection.getEntities().clear();
 		entityCollection.getEntities().addAll(entitiesPage);
+	}
+
+	/**
+	 * 对现有的数据集进行filter
+	 */
+	public static void filterEntityCollection(EntityCollection entityCollection, FilterOption filterOption,
+														  OfbizCsdlEntityType csdlEntityType, OfbizAppEdmProvider edmProvider,
+														  Delegator delegator, LocalDispatcher dispatcher, GenericValue userLogin, Locale locale) throws OfbizODataException {
+		if (UtilValidate.isEmpty(entityCollection) || entityCollection.getEntities().size() == 0) {
+			return;
+		}
+		try {
+			// 1.获取现有数据集的主键 只在这个范围之内做查询
+			ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+			EntityCondition primaryKeyCond = getEntityCollectionQueryCond(entityCollection, false);
+
+			// 2. 解析FilterOption表达式
+			OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
+			DynamicViewEntity dynamicViewEntity = null;
+			EntityCondition entityCondition = (EntityCondition) filterOption.getExpression().accept(expressionVisitor);
+			if (expressionVisitor.getDynamicViewHolder() != null) {
+				dynamicViewEntity = expressionVisitor.getDynamicViewHolder().getDynamicViewEntity();
+			}
+
+			// 3.使用主键范围的条件和filter的条件进行查询
+			entityCondition = appendCondition(primaryKeyCond, entityCondition);
+			EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition);
+			List<GenericValue> queryResult;
+			if (dynamicViewEntity == null) {
+				queryResult = entityQuery.from(modelEntity.getEntityName()).cache().queryList();
+			} else {
+				printDynamicView(dynamicViewEntity, entityCondition, module);
+				queryResult = entityQuery.from(dynamicViewEntity).queryList();
+				queryResult = queryResult.stream().map(result -> convertToTargetGenericValue(delegator, result, modelEntity))
+						.collect(Collectors.toList());
+			}
+			List<String> resultPrimaryKeys = queryResult.stream().map(GenericEntity::getPkShortValueString).collect(Collectors.toList());
+
+			// 4.根据查询结果移除数据，只保留查询结果中依然存在的数据
+			Iterator<Entity> iterator = entityCollection.getEntities().iterator();
+			while (iterator.hasNext()) {
+				OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) iterator.next();
+				String pkValue = ofbizEntity.getGenericValue().getPkShortValueString();
+				if (!resultPrimaryKeys.contains(pkValue)) {
+					iterator.remove();
+				}
+			}
+		} catch (ODataException | GenericEntityException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Log打印DynamicView
+	 */
+	public static void printDynamicView(DynamicViewEntity dynamicViewEntity, EntityCondition entityCondition, String module) {
+		try {
+			String dynamicViewXml = dynamicViewEntity.getViewXml(dynamicViewEntity.getEntityName());
+			Debug.logInfo(dynamicViewXml, module);
+			if (entityCondition != null) {
+				Debug.logInfo(entityCondition.toString(), module);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
