@@ -1936,7 +1936,8 @@ public class EdmConfigLoader {
             if (expression.contains("=")) {
                 String[] keyValue = expression.split("=");
                 if (UtilValidate.isNotEmpty(keyValue)) {
-                    entityCondition = EntityCondition.makeCondition(keyValue[0], keyValue[1]);
+                    String value = "null".equals(keyValue[1]) ? null : keyValue[1];
+                    entityCondition = EntityCondition.makeCondition(keyValue[0], value);
                 }
                 if (conditionMap != null) {
                     conditionMap.put(keyValue[0], keyValue[1]);

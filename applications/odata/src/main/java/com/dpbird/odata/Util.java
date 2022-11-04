@@ -1943,7 +1943,8 @@ public class Util {
 				if (UtilValidate.isNotEmpty(keyValue)) {
 					String key = keyValue[0].trim();
 					String valueStr = keyValue[1].trim();
-					String realValue = parseVariable(valueStr, userLogin);
+					String realValue = "null".equals(valueStr) ?
+							null : parseVariable(valueStr, userLogin);
 					entityCondition = EntityCondition.makeCondition(key, realValue);
 				}
 			} else if (expression.contains(" not in ")) {
