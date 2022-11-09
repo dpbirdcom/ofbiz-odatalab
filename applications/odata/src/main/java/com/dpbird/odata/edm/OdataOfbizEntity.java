@@ -49,4 +49,8 @@ public class OdataOfbizEntity extends Entity {
 	public void addProperty(String propertyName, Object productValue) {
 		this.addProperty(new Property(null, propertyName, ValueType.PRIMITIVE, productValue));
 	}
+
+	public Object getPropertyValue(String propertyName) {
+		return getProperty(propertyName).getValue();
+	}
 }

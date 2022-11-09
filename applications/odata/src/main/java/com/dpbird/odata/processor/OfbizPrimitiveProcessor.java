@@ -172,30 +172,32 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
                     property = ofbizOdataReader.processBoundFunctionPrimitive(uriResourceFunction, parameters,
                             boundEntity, uriResourceNavigation, uriInfo.getAliases());
-                } else if (resourcePaths.get(1) instanceof UriResourcePrimitiveProperty) {
-                    //Entity Property
-                    UriResourcePrimitiveProperty uriResourcePrimitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(1);
-                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
-                    property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
-                } else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
-                    //property
-                    UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
-                    List<UriResource> uriResources = resourcePaths.subList(0, resourcePaths.size() - 1);
-                    //Entity
-                    Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(uriResources, odataContext);
-                    EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
-                    Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
-                    //Navigation
-                    EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
-                    Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
-                    Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
-                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
-                            "edmNavigationProperty", edmNavigationProperty);
-                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                    property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());
-                } else {
-                    throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
                 }
+                //TODO: 读Entity或者Navigation的单个字段
+//                } else if (resourcePaths.get(1) instanceof UriResourcePrimitiveProperty) {
+//                    //Entity Property
+//                    UriResourcePrimitiveProperty uriResourcePrimitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(1);
+//                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
+//                    property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
+//                } else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
+//                    //property
+//                    UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
+//                    List<UriResource> uriResources = resourcePaths.subList(0, resourcePaths.size() - 1);
+//                    //EdmBindingTarget
+//                    Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(uriResources, odataContext);
+//                    EdmBindingTarget edmBindingTarget = (EdmBindingTarget) resourceMap.get("edmBindingTarget");
+//                    Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
+//                    //Navigation
+//                    EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
+//                    Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
+//                    Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
+//                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget,
+//                            "edmNavigationProperty", edmNavigationProperty);
+//                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
+//                    property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());
+//                } else {
+//                    throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
+//                }
             } catch (OfbizODataException e) {
                 throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
             }
@@ -254,7 +256,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                     "locale", locale);
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
             OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
-            entity = ofbizOdataReader.readEntityData(keyMap, null);
+//            entity = ofbizOdataReader.readEntityData(keyMap, null);
         } catch (ODataException e) {
             e.printStackTrace();
             throw new ODataApplicationException(e.getMessage(),

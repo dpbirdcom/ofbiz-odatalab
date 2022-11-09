@@ -474,9 +474,12 @@ public class DraftHandler {
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", null, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
-                OdataOfbizEntity ofbizEntity = ofbizOdataReader.makeEntityFromGv(mainGenericValue);
-                return ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, queryOptions);
+//                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
+//                OdataOfbizEntity ofbizEntity = ofbizOdataReader.makeEntityFromGv(mainGenericValue);
+//                return ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, queryOptions);
+                OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
+                OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
+                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
             } catch (GenericEntityException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR), e.getMessage());
             }

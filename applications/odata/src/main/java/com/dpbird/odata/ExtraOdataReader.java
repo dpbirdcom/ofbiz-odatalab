@@ -26,15 +26,15 @@ import java.util.stream.Stream;
 /**
  * 为OfbizOdataReader做扩展，主要处理一些ofbiz无法直接支持的odata查询
  */
-public class ExtraOdataReader extends OfbizOdataReader {
-    public static final String MODULE = OfbizOdataReader.class.getName();
+public class ExtraOdataReader extends OdataReader {
+    public static final String MODULE = OdataReader.class.getName();
 
     public ExtraOdataReader(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions, Map<String, Object> edmParams) {
         super(odataContext, queryOptions, edmParams);
     }
 
     @Override
-    public EntityCollection findList() throws ODataException {
+    public EntityCollection findList() throws OfbizODataException {
         //如果父类支持就直接处理
         if (useOfbizReader(queryOptions)) {
             return super.findList();
@@ -83,39 +83,45 @@ public class ExtraOdataReader extends OfbizOdataReader {
     /**
      * 处理filter
      */
-    private void extraOdataFilter(EntityCollection entityCollection) throws OfbizODataException, ExpressionVisitException, ODataApplicationException {
+    private void extraOdataFilter(EntityCollection entityCollection) throws OfbizODataException {
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         if (filterOption == null) {
             return;
         }
-        //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
-        List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraExpressionVisitor());
-        Debug.logInfo("extraCondition: " + extraConditionList.toString(), MODULE);
-        for (EntityExpr extraCondition : extraConditionList) {
-            if (extraCondition.getLhs() instanceof UriResourceNavigation) {
-                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
-                EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-                Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
-                EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
-                Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
-                entityCollection.getEntities().clear();
-                //不同的运算符比较
-                Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
-                if (operator.equals(EntityOperator.EQUALS)) {
-                    mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
-                } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
-                    mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
-                } else if (operator.equals(EntityOperator.LESS_THAN)) {
-                    mapStream = mapStream.filter(en -> en.getValue() < condValue);
-                } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
-                    mapStream = mapStream.filter(en -> en.getValue() <= condValue);
-                } else if (operator.equals(EntityOperator.GREATER_THAN)) {
-                    mapStream = mapStream.filter(en -> en.getValue() > condValue);
-                } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
-                    mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+        try {
+            List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraExpressionVisitor());
+            //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
+            Debug.logInfo("extraCondition: " + extraConditionList.toString(), MODULE);
+            for (EntityExpr extraCondition : extraConditionList) {
+                if (extraCondition.getLhs() instanceof UriResourceNavigation) {
+                    UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
+                    EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
+                    Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
+                    EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
+                    Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
+                    entityCollection.getEntities().clear();
+                    //不同的运算符比较
+                    Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
+                    if (operator.equals(EntityOperator.EQUALS)) {
+                        mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
+                        mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.LESS_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() < condValue);
+                    } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() <= condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() > condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+                    }
+                    mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
                 }
-                mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
             }
+
+        } catch (ExpressionVisitException |ODataApplicationException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
@@ -137,8 +143,8 @@ public class ExtraOdataReader extends OfbizOdataReader {
                 Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
                 Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
-                EntityCollection relEntityCollection = ofbizOdataReader.findRelatedEntityCollection(entity, edmNavigationProperty, null, false);
+                OdataReader reader = new OdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
+                EntityCollection relEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), null);
                 relCount = relEntityCollection.getEntities().size();
             }
             relationCountMap.put(entity, relCount);

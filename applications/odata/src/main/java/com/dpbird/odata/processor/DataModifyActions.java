@@ -20,10 +20,7 @@ import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
-import org.apache.olingo.commons.api.edm.EdmEntitySet;
-import org.apache.olingo.commons.api.edm.EdmEntityType;
-import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
-import org.apache.olingo.commons.api.edm.FullQualifiedName;
+import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.ODataRequest;
@@ -438,12 +435,14 @@ public class DataModifyActions {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
             Map<String, Object> readerContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                     "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale);
-            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
-            OdataOfbizEntity entity = ofbizOdataReader.readEntityData(keyMap, null);
+//            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
+//            OdataOfbizEntity entity = ofbizOdataReader.readEntityData(keyMap, null);
+            OdataReader reader = new OdataReader(readerContext, null, edmParams);
+            OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
             Map<String, Object> svcResult = dispatcher.runSync("dpbird.copyEntityToDraft",
                     UtilMisc.toMap("draftUUID", sapContextId, "entity", entity, "userLogin", userLogin));
             draftGenericValue = (GenericValue) svcResult.get("draftGenericValue");
-            copyNavigationToDraft(readerContext, edmEntitySet.getEntityType(), keyMap, sapContextId, draftEntityName, 1);
+            copyNavigationToDraft(readerContext, edmEntitySet, keyMap, sapContextId, draftEntityName, 1);
 
         } catch (GenericServiceException | GenericEntityException e) {
             e.printStackTrace();
@@ -456,12 +455,13 @@ public class DataModifyActions {
                 draftGenericValue, locale);
     }
 
-    private static void copyNavigationToDraft(Map<String, Object> readerContext, EdmEntityType edmEntityType, Map<String, Object> keyMap,
+    private static void copyNavigationToDraft(Map<String, Object> readerContext, EdmBindingTarget edmBindingTarget, Map<String, Object> keyMap,
                                               String parentUUID, String mainEntityDraftName, int navLevel) throws OfbizODataException, GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) readerContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) readerContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) readerContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) readerContext.get("edmProvider");
+        EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         List<CsdlNavigationProperty> csdlNavigationProperties = csdlEntityType.getNavigationProperties();
         for (CsdlNavigationProperty csdlNavigationProperty : csdlNavigationProperties) {
@@ -473,9 +473,13 @@ public class DataModifyActions {
                 continue;
             }
             EdmNavigationProperty edmNavigationProperty = edmEntityType.getNavigationProperty(csdlNavigationProperty.getName());
-            Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
-            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
-            EntityCollection entities = ofbizOdataReader.findRelatedEntityCollection(keyMap, edmNavigationProperty, null, null);
+            EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
+            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget);
+//            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
+//            EntityCollection entities = ofbizOdataReader.findRelatedEntityCollection(keyMap, edmNavigationProperty, null, null);
+            OdataReader reader = new OdataReader(readerContext, new HashMap<>(), edmParams);
+            Entity mainEntity = reader.findOne(keyMap, null);
+            EntityCollection entities = reader.findRelatedList(mainEntity, edmNavigationProperty, new HashMap<>(), null);
             for (Entity entity : entities.getEntities()) {
                 String navDraftUUID = Util.generateDraftUUID();
                 OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;
@@ -486,7 +490,7 @@ public class DataModifyActions {
                         UtilMisc.toMap("draftUUID", navDraftUUID, "entity", entity, "userLogin", userLogin));
                 if (navLevel < 2) {
                     //暂时只支持两级的Draft Navigation
-                    copyNavigationToDraft(readerContext, edmNavigationProperty.getType(), odataOfbizEntity.getKeyMap(), navDraftUUID, mainEntityDraftName, 2);
+                    copyNavigationToDraft(readerContext, navigationTargetEntitySet, odataOfbizEntity.getKeyMap(), navDraftUUID, mainEntityDraftName, 2);
                 }
             }
         }

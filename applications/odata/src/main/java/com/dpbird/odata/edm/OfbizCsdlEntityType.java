@@ -2,9 +2,13 @@ package com.dpbird.odata.edm;
 
 import java.util.*;
 
+import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.annotation.Term;
+import com.dpbird.odata.handler.HandlerFactory;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
 import com.dpbird.odata.Util;

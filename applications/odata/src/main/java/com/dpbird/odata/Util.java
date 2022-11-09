@@ -1731,6 +1731,14 @@ public class Util {
 		return dataItems;
 	}
 
+	public static List<Entity> mapToEntity(OfbizCsdlEntityType csdlEntityType, List<Map<String, Object>> fieldMap) {
+		List<Entity> entityList = new ArrayList<>();
+		for (Map<String, Object> objectMap : fieldMap) {
+			entityList.add(mapToEntity(csdlEntityType, new HashMap<>(objectMap)));
+		}
+		return entityList;
+	}
+
 	public static Entity mapToEntity(OfbizCsdlEntityType csdlEntityType, Map<String, Object> fieldMap) {
 		OdataOfbizEntity entity = new OdataOfbizEntity();
 		entity.setType(csdlEntityType.getFullQualifiedNameString());
@@ -1943,7 +1951,8 @@ public class Util {
 				if (UtilValidate.isNotEmpty(keyValue)) {
 					String key = keyValue[0].trim();
 					String valueStr = keyValue[1].trim();
-					String realValue = parseVariable(valueStr, userLogin);
+					String realValue = "null".equals(valueStr) ?
+							null : parseVariable(valueStr, userLogin);
 					entityCondition = EntityCondition.makeCondition(key, realValue);
 				}
 			} else if (expression.contains(" not in ")) {
@@ -2012,11 +2021,11 @@ public class Util {
 	}
 
 	public static EntityCondition appendCondition(EntityCondition originalCondition, EntityCondition laterCondition) {
-		if (originalCondition == null) {
-			return laterCondition;
-		} else {
-			return EntityCondition.makeCondition(originalCondition, laterCondition);
+		if (originalCondition == null && laterCondition == null) {
+			return null;
 		}
+		return originalCondition == null ? laterCondition : laterCondition == null ?
+				originalCondition : EntityCondition.makeCondition(originalCondition, laterCondition);
 	}
 
 	//获取一个数据集合的查询条件
@@ -2157,53 +2166,89 @@ public class Util {
 	}
 
 	/**
-	 * 对现有的数据集进行filter
+	 * 对现有的数据集进行filter、orderby
 	 */
-	public static void filterEntityCollection(EntityCollection entityCollection, FilterOption filterOption,
+	public static void filterEntityCollection(EntityCollection entityCollection, FilterOption filterOption, OrderByOption orderByOption,
 														  OfbizCsdlEntityType csdlEntityType, OfbizAppEdmProvider edmProvider,
 														  Delegator delegator, LocalDispatcher dispatcher, GenericValue userLogin, Locale locale) throws OfbizODataException {
 		if (UtilValidate.isEmpty(entityCollection) || entityCollection.getEntities().size() == 0) {
 			return;
 		}
 		try {
-			// 1.获取现有数据集的主键 只在这个范围之内做查询
+			//获取现有数据集的主键 只在这个范围之内做查询
 			ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
 			EntityCondition primaryKeyCond = getEntityCollectionQueryCond(entityCollection, false);
-
-			// 2. 解析FilterOption表达式
-			OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
+			//解析FilterOption表达式
 			DynamicViewEntity dynamicViewEntity = null;
-			EntityCondition entityCondition = (EntityCondition) filterOption.getExpression().accept(expressionVisitor);
-			if (expressionVisitor.getDynamicViewHolder() != null) {
-				dynamicViewEntity = expressionVisitor.getDynamicViewHolder().getDynamicViewEntity();
+			EntityCondition entityCondition = null;
+			if (filterOption != null) {
+				OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
+				entityCondition = (EntityCondition) filterOption.getExpression().accept(expressionVisitor);
+				if (expressionVisitor.getDynamicViewHolder() != null) {
+					dynamicViewEntity = expressionVisitor.getDynamicViewHolder().getDynamicViewEntity();
+				}
 			}
-
-			// 3.使用主键范围的条件和filter的条件进行查询
+			//使用主键范围的条件和filter的条件进行查询
 			entityCondition = appendCondition(primaryKeyCond, entityCondition);
-			EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition);
+			List<String> orderby = retrieveSimpleOrderByOption(orderByOption);
+			EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).orderBy(orderby);
 			List<GenericValue> queryResult;
 			if (dynamicViewEntity == null) {
-				queryResult = entityQuery.from(modelEntity.getEntityName()).cache().queryList();
+				queryResult = entityQuery.from(modelEntity.getEntityName()).queryList();
 			} else {
 				printDynamicView(dynamicViewEntity, entityCondition, module);
 				queryResult = entityQuery.from(dynamicViewEntity).queryList();
 				queryResult = queryResult.stream().map(result -> convertToTargetGenericValue(delegator, result, modelEntity))
 						.collect(Collectors.toList());
 			}
-			List<String> resultPrimaryKeys = queryResult.stream().map(GenericEntity::getPkShortValueString).collect(Collectors.toList());
-
-			// 4.根据查询结果移除数据，只保留查询结果中依然存在的数据
-			Iterator<Entity> iterator = entityCollection.getEntities().iterator();
-			while (iterator.hasNext()) {
-				OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) iterator.next();
-				String pkValue = ofbizEntity.getGenericValue().getPkShortValueString();
-				if (!resultPrimaryKeys.contains(pkValue)) {
-					iterator.remove();
-				}
+			//添加新查询的数据
+			entityCollection.getEntities().clear();
+			for (GenericValue dataItem : queryResult) {
+				OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, dataItem, locale);
+				entityCollection.getEntities().add(rowEntity);
 			}
 		} catch (ODataException | GenericEntityException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static Entity getEntityCollectionOne(List<Entity> entityList, Map<String, Object> primaryKey) {
+		for (Entity entity : entityList) {
+			OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+			Map<String, Object> currentPk = new HashMap<>();
+			for (Map.Entry<String, Object> entry : primaryKey.entrySet()) {
+				Object propertyValue = ofbizEntity.getPropertyValue(entry.getKey());
+				currentPk.put(entry.getKey(), propertyValue);
+			}
+			if (primaryKey.equals(currentPk)) {
+				return entity;
+			}
+		}
+		return null;
+	}
+
+	public static EntityCondition procApplyCondition(List<UriResource> uriResourceParts, Delegator delegator,
+											   OfbizAppEdmProvider edmProvider, ModelEntity modelEntity)
+			throws OfbizODataException {
+		EntityCondition returnCondition = null;
+		try {
+			UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+			Map<String, Object> keyMap = Util.uriParametersToMap(resourceEntitySet.getKeyPredicates(), resourceEntitySet.getEntityType());
+			OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(resourceEntitySet.getEntityType().getFullQualifiedName());
+			GenericValue mainGenericValue = delegator.findOne(ofbizCsdlEntityType.getOfbizEntity(), keyMap, true);
+			ModelRelation relation = modelEntity.getRelation(uriResourceParts.get(1).getSegmentValue());
+			for (ModelKeyMap relKeyMap : relation.getKeyMaps()) {
+				Object relValue = mainGenericValue.get(relKeyMap.getFieldName());
+				//缺少外键数据
+				if (UtilValidate.isEmpty(relValue)) {
+					return null;
+				}
+				returnCondition = Util.appendCondition(returnCondition, EntityCondition.makeCondition(relKeyMap.getRelFieldName(), relValue));
+			}
+		} catch (GenericEntityException e) {
+			Debug.logError(e.getMessage(), module);
+		}
+		return returnCondition;
 	}
 
 	/**

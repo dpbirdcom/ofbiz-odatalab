@@ -156,6 +156,25 @@ public class OdataProcessorHelper {
     }
 
     public static Object callFunctionActionMethod(Map<String, Object> oDataContext, String classMethod,
+                                                  Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+        String className = classMethod.substring(0, classMethod.lastIndexOf('.'));
+        String methodName = classMethod.substring(classMethod.lastIndexOf('.') + 1);
+        try {
+            Class<?> objectClass = Class.forName(className);
+            Method method = objectClass.getMethod(methodName, Map.class, Map.class, EdmBindingTarget.class);
+            return method.invoke(objectClass, oDataContext, paramMap, edmBindingTarget);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+            if (e instanceof InvocationTargetException) {
+                InvocationTargetException invocationTargetException = (InvocationTargetException) e;
+                throw (OfbizODataException) invocationTargetException.getTargetException();
+            } else {
+                throw new OfbizODataException(OfbizMapOdata.ERROR_CODE_TWO, e.getMessage());
+            }
+        }
+    }
+
+    public static Object callFunctionActionMethod(Map<String, Object> oDataContext, String classMethod,
                                                   Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget,
                                                   EdmNavigationProperty edmNavigationProperty,
                                                   Map<String, Object> keyMap, Map<String, Object> navKeyMap)
@@ -811,11 +830,10 @@ public class OdataProcessorHelper {
             }
         }
         for (Entity entity : entityList) {
-            OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
-            if (ofbizEntity.isDraft()) { // 这些entity数据来自draft，所以，不需要处理attribute了
+            OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;
+            if (odataOfbizEntity.isDraft() || odataOfbizEntity.getGenericValue() == null) { // 这些entity数据来自draft，所以，不需要处理attribute了
                 return entityList;
             }
-            OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;
             GenericValue genericValue = odataOfbizEntity.getGenericValue();
             for (OfbizCsdlProperty attrProperty : attrProperties) {
                 Map<String, Object> attrMapKey = new HashMap<>(genericValue.getPrimaryKey());
@@ -1752,7 +1770,7 @@ public class OdataProcessorHelper {
         //如果主genericValue有外键指向destGenericValue，则还需要更新genericValue的外键字段，这个通常发生在relationSize=1的时候
         if (relationSize == 1 && UtilValidate.isNotEmpty(destGenericValue)) {
             Map<String, Object> mainEntityFk = new HashMap<>();
-            ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getName());
+            ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getRelations().get(0));
             if (modelRelation.getType().contains("one")) { //relationOne 应该都会有外键
                 for (ModelKeyMap keyMap : modelRelation.getKeyMaps()) {
                     mainEntityFk.put(keyMap.getFieldName(), destGenericValue.get(keyMap.getRelFieldName()));

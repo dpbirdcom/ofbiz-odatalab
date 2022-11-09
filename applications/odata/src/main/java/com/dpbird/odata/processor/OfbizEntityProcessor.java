@@ -7,11 +7,13 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.fop.util.ListUtil;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.content.data.DataResourceWorker;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
@@ -26,7 +28,6 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
-import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -270,404 +271,49 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void readEntity(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo, ContentType responseContentType)
             throws ODataApplicationException, ODataLibraryException {
+        //Check SAP-ContextId
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
         if (UtilValidate.isNotEmpty(sapContextId)) {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
-        final List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
-        int resourcePathSize = resourcePaths.size();
-        Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
-        SelectOption selectOption = (SelectOption) queryOptions.get("selectOption");
-        ExpandOption expandOption = (ExpandOption) queryOptions.get("expandOption");
-        EdmFunction edmFunction;
-        EdmEntityType edmEntityType = null;
-        UriResource lastUriResource = resourcePaths.get(resourcePathSize - 1);
-        UriResource firstUriResource = resourcePaths.get(0);
-        if (lastUriResource instanceof UriResourceFunction) {
-            edmFunction = (EdmFunction) ((UriResourceFunction) lastUriResource).getFunction();
-            edmEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
-        }
-
-        Entity entity = null;
-        if (firstUriResource instanceof UriResourceEntitySet) {
-            try {
-                readEntityInternal(oDataRequest, oDataResponse, uriInfo, responseContentType);
-            } catch (OfbizODataException e) {
-                e.printStackTrace();
-                throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(),
-                        locale);
+        try {
+            OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
+            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo);
+            UriResourceDataInfo uriResourceDataInfo = resourceDataInfos.get(resourceDataInfos.size() - 1);
+            Entity responseEntity = (Entity) uriResourceDataInfo.getEntityData();
+            //response
+            if (responseEntity != null) {
+                serializeEntity(oDataRequest, oDataResponse, uriResourceDataInfo.getEdmBindingTarget(), uriResourceDataInfo.getEdmEntityType(),
+                        responseContentType, uriInfo.getExpandOption(), uriInfo.getSelectOption(), responseEntity);
             }
-        } else if (firstUriResource instanceof UriResourceFunction) {
-            UriResourceFunction importFunction = (UriResourceFunction) firstUriResource;
-            entity = processImportFunctionEntity(uriInfo, queryOptions);
-            //允许没有返回值
-            if (entity == null && importFunction.getFunction().getReturnType().isNullable()) {
-                oDataResponse.setContent(null);
-                oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
-                oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
-                return;
-            }
-        } else if (firstUriResource instanceof UriResourceSingleton) {
-            readSingleton(oDataRequest, oDataResponse, uriInfo, responseContentType);
-        } else {
-            throw new ODataApplicationException("Only EntitySet is supported",
-                    HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
-        }
-
-        // serialize entity
-        if (entity != null) {
-            ContextURL contextURL;
-            try {
-                contextURL = ContextURL.with().serviceRoot(new URI(oDataRequest.getRawBaseUri() + "/")).type(edmEntityType)
-                        .build();
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-                throw new ODataApplicationException("Something wrong", HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(),
-                        locale);
-            }
-            final EntitySerializerOptions opts = EntitySerializerOptions.with()
-                    .contextURL(contextURL)
-                    .expand(expandOption)
-                    .select(selectOption).build();
-            final ODataSerializer serializer = odata.createSerializer(responseContentType);
-            final SerializerResult serializerResult = serializer.entity(serviceMetadata, edmEntityType, entity, opts);
-
-            // 3rd configure the response object
-            oDataResponse.setContent(serializerResult.getContent());
             oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
-        }
-    }
-
-    private void readSingleton(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo,
-                               ContentType responseContentType) throws ODataApplicationException, SerializerException {
-        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
-        int segmentCount = resourceParts.size();
-        UriResourceSingleton uriResourceSingleton = (UriResourceSingleton) resourceParts.get(0);
-        EdmSingleton edmSingleton = uriResourceSingleton.getSingleton();
-        EdmEntityType responseEdmEntityType = uriResourceSingleton.getEntityType(); // we'll need this to build the ContextURL
-
-        SelectOption selectOption = uriInfo.getSelectOption();
-        ExpandOption expandOption = uriInfo.getExpandOption();
-        CountOption countOption = uriInfo.getCountOption();
-        OdataOfbizEntity responseEntity = null;
-        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                "locale", locale);
-        Map<String, QueryOption> queryOptions = UtilMisc.toMap("selectOption", selectOption,
-                "expandOption", expandOption, "countOption", countOption);
-        Map<String, Object> edmParams = UtilMisc.toMap("edmSingleton", edmSingleton);
-        OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
-        try {
-            if (segmentCount == 2) {
-                //两段式navigation
-                if (resourceParts.get(1) instanceof UriResourceNavigation) {
-                    responseEntity = ofbizOdataReader.readSingletonData(true);
-                    Map<String, Object> keyMap = responseEntity.getKeyMap();
-
-                    UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
-                    EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-                    responseEdmEntityType = edmNavigationProperty.getType();
-                    responseEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
-                } else {
-                    //两段式Function
-                    Map<String, Object> boundFunctionResult = processBoundFunction(uriInfo);
-                    responseEntity = (OdataOfbizEntity) boundFunctionResult.get("entity");
-                    responseEdmEntityType = (EdmEntityType) boundFunctionResult.get("entityType");
-                }
-            } else if (segmentCount == 1) {
-                responseEntity = ofbizOdataReader.readSingletonData(true);
-            }
         } catch (OfbizODataException e) {
-            e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(),
-                    Integer.parseInt(e.getODataErrorCode()), locale, e.getODataErrorCode());
+            throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
         }
-
-        // 以下serialize的代码，可以和readEntityInternal中相应的代码合并
-        if (responseEntity == null) {
-            throw new ODataApplicationException("The request resource is not found.",
-                    HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
-        }
-        // serialize
-        serializeEntity(oDataRequest, oDataResponse, edmSingleton, responseEdmEntityType, responseContentType,
-                expandOption, selectOption, responseEntity);
-        oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
-        oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
-    }
-
-    private void readEntityInternal(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo,
-                                    ContentType responseContentType) throws ODataApplicationException, SerializerException, OfbizODataException {
-        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
-        int segmentCount = resourceParts.size();
-        UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
-        EdmEntitySet startEdmEntitySet = uriResourceEntitySet.getEntitySet();
-        EdmEntitySet responseEdmEntitySet = null; // we need this for building the contextUrl
-        EdmEntityType responseEdmEntityType = null; // we'll need this to build the ContextURL
-
-        List<UriParameter> keyPredicates = uriResourceEntitySet.getKeyPredicates();
-        EdmEntityType startEdmEntityType = startEdmEntitySet.getEntityType();
-        Map<String, Object> keyMap = Util.uriParametersToMap(keyPredicates, startEdmEntityType);
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(startEdmEntityType.getFullQualifiedName());
-        SelectOption selectOption = uriInfo.getSelectOption();
-        ExpandOption expandOption = uriInfo.getExpandOption();
-        CountOption countOption = uriInfo.getCountOption();
-        String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, csdlEntityType);
-        Entity responseEntity = null;
-        if (segmentCount == 1) { // no navigation
-            responseEdmEntitySet = startEdmEntitySet;
-            try {
-                Map<String, QueryOption> queryParams = UtilMisc.toMap("selectOption", selectOption,
-                        "expandOption", expandOption, "countOption", countOption);
-                Map<String, QueryOption> queryOptions = UtilMisc.toMap("selectOption", selectOption, "expandOption", expandOption);
-                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet);
-                Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                        "sapContextId", sapContextId, "locale", locale);
-                if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(csdlEntityType.getDraftEntityName())) {
-                    DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, startEdmEntityType);
-                    responseEntity = draftHandler.readEntityData(csdlEntityType, keyMap, queryOptions);
-                } else {
-                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                    responseEntity = ofbizOdataReader.readEntityData(keyMap, queryOptions);
-                }
-            } catch (OfbizODataException e) {
-                e.printStackTrace();
-                throw new ODataApplicationException(e.getMessage(),
-                        Integer.parseInt(e.getODataErrorCode()), locale, e.getODataErrorCode());
-            }
-            responseEdmEntityType = responseEdmEntitySet.getEntityType();
-        }
-        if (segmentCount == 2 || segmentCount == 3) {
-            Debug.logInfo("Entering the second segment", module);
-            if (segmentCount == 3) {
-                //如果是三段式 startEdmEntitySet要调整为第二段
-                startEdmEntitySet = (EdmEntitySet) startEdmEntitySet.getRelatedBindingTarget(resourceParts.get(1).toString());
-                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
-                keyMap = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
-                if (UtilValidate.isEmpty(keyMap)) {
-                    //第二段不含主键 查询获取第二段的主键
-                    keyMap = Util.getNavigationKey(uriResourceEntitySet.getEntityType(), uriResourceEntitySet.getKeyPredicates(), uriResourceNavigation.getSegmentValue(), edmProvider, delegator);
-                }
-            }
-
-            UriResource navSegment = resourceParts.get(segmentCount - 1);
-            if (navSegment instanceof UriResourceNavigation) {
-                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) navSegment;
-                EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-                OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-                responseEdmEntityType = edmNavigationProperty.getType();
-                if (!edmNavigationProperty.containsTarget()) {
-                    responseEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
-                } else {
-                    responseEdmEntitySet = startEdmEntitySet;
-                }
-                List<UriParameter> navKeyPredicates = uriResourceNavigation.getKeyPredicates();
-                if (navKeyPredicates.isEmpty()) { // e.g. DemoService.svc/Products(1)/Category
-                    Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                            "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                            "locale", locale);
-
-                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
-                            "edmNavigationProperty", edmNavigationProperty);
-                    try {
-                        Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap,
-                                "selectOption", selectOption, "expandOption", expandOption, "countOption", countOption);
-                        Map<String, QueryOption> queryOptions = UtilMisc.toMap("selectOption", selectOption, "expandOption", expandOption);
-                        OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                        responseEntity = ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, queryOptions);
-                    } catch (OfbizODataException e) {
-                        e.printStackTrace();
-                        throw new ODataApplicationException(e.getMessage(),
-                                Integer.parseInt(e.getODataErrorCode()), locale, e.getODataErrorCode());
-                    }
-                } else {
-                    try {
-                        Map<String, QueryOption> queryOptions = UtilMisc.toMap("selectOption", selectOption, "expandOption", expandOption);
-                        Map<String, Object> navKeyMap = Util.uriParametersToMap(navKeyPredicates, responseEdmEntityType);
-                        if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(navCsdlEntityType.getDraftEntityName())) {
-                            DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, startEdmEntityType);
-                            responseEntity = draftHandler.getRelatedEntityData(keyMap, edmNavigationProperty, navKeyMap, queryOptions);
-                        } else {
-                            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                                    "sapContextId", sapContextId, "locale", locale);
-                            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", responseEdmEntitySet);
-                            Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", navKeyMap,
-                                    "selectOption", selectOption, "expandOption", expandOption,
-                                    "countOption", countOption);
-                            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                            responseEntity = ofbizOdataReader.readEntityData(navKeyMap, queryOptions);
-                        }
-                    } catch (OfbizODataException e) {
-                        e.printStackTrace();
-                        throw new ODataApplicationException(e.getMessage(),
-                                Integer.parseInt(e.getODataErrorCode()), locale);
-                    }
-                    responseEdmEntityType = responseEdmEntitySet.getEntityType();
-                }
-            } // end of if (navSegment instanceof UriResourceNavigation)
-            if (navSegment instanceof UriResourceFunction) {
-                Map<String, Object> boundFunctionResult = processBoundFunction(uriInfo);
-                responseEntity = (Entity) boundFunctionResult.get("entity");
-                responseEdmEntityType = (EdmEntityType) boundFunctionResult.get("entityType");
-            }
-        }
-        if (responseEntity == null) {
-            throw new ODataApplicationException("The request resource is not found.",
-                    HttpStatusCode.NOT_FOUND.getStatusCode(), locale, HttpStatusCode.NOT_FOUND.getStatusCode() + "");
-        }
-        serializeEntity(oDataRequest, oDataResponse, responseEdmEntitySet, responseEdmEntityType,
-                responseContentType, expandOption, selectOption, responseEntity);
-        oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
-        oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
-    }
-
-    private Map<String, Object> processBoundFunction(UriInfo uriInfo)
-            throws ODataApplicationException {
-        List<UriResource> resourceParts = uriInfo.getUriResourceParts();
-        Map<String, Object> result = new HashMap<>();
-        Entity responseEntity;
-        EdmEntityType responseEdmEntityType;
-        UriResourceNavigation uriResourceNavigation = null;
-        if (resourceParts.size() > 2) { // 先只支持2段
-            uriResourceNavigation = (UriResourceNavigation) resourceParts.get(1);
-        }
-        UriResourcePartTyped boundEntity = (UriResourcePartTyped) resourceParts.get(0);
-        UriResourceFunction uriResourceFunction = (UriResourceFunction) resourceParts.get(resourceParts.size() - 1);
-        List<UriParameter> parameters = uriResourceFunction.getParameters();
-        try {
-            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                    "locale", locale);
-            FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-            responseEntity = ofbizOdataReader.processBoundFunctionEntity(uriResourceFunction, parameters,
-                    boundEntity, uriResourceNavigation, uriInfo.getAliases());
-            responseEdmEntityType = (EdmEntityType) uriResourceFunction.getType();
-
-        } catch (OfbizODataException e) {
-            throw new ODataApplicationException(e.getMessage(),
-                    Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH, e.getODataErrorCode());
-        }
-        EdmFunction function = uriResourceFunction.getFunction();
-        if (responseEntity == null && !function.getReturnType().isNullable()) {
-            // 返回值是必须的, code = 404
-            throw new ODataApplicationException("The action could not be executed. The return entity cannot be null.",
-                    HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT, HttpStatusCode.NOT_FOUND.getStatusCode() + "");
-        }
-        result.put("entity", responseEntity);
-        result.put("entityType", responseEdmEntityType);
-        return result;
     }
 
     private void serializeEntity(ODataRequest oDataRequest, ODataResponse oDataResponse, EdmBindingTarget edmBindingTarget,
                                  EdmEntityType edmEntityType, ContentType contentType,
                                  ExpandOption expandOption, SelectOption selectOption, Entity entity)
             throws SerializerException {
-        //响应时排除二进制数据
+        //Remove stream property
         entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
-        // serialize
-        String selectList = odata.createUriHelper().buildContextURLSelectList(edmEntityType, expandOption,
-                selectOption);
-        InputStream entityStream = null;
+        String selectList = odata.createUriHelper().buildContextURLSelectList(edmEntityType, expandOption, selectOption);
+        String typeName = edmBindingTarget != null ? edmBindingTarget.getName() : edmEntityType.getName();
         try {
-            ContextURL contextUrl;
-            String typeName = null;
-            if (edmBindingTarget != null) {
-                typeName = edmBindingTarget.getName();
-            } else {
-                typeName = edmEntityType.getName();
-            }
-            contextUrl = ContextURL.with().serviceRoot(new URI(oDataRequest.getRawBaseUri() + "/"))
+            ContextURL contextUrl = ContextURL.with().serviceRoot(new URI(oDataRequest.getRawBaseUri() + "/"))
                     .entitySetOrSingletonOrType(typeName).selectList(selectList).suffix(Suffix.ENTITY).build();
             // expand and select currently not supported
             EntitySerializerOptions options = EntitySerializerOptions.with().contextURL(contextUrl).select(selectOption)
                     .expand(expandOption).build();
-
             ODataSerializer serializer = odata.createSerializer(contentType);
-            SerializerResult serializerResult = serializer.entity(serviceMetadata, edmEntityType,
-                    entity, options);
-            entityStream = serializerResult.getContent();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // configure the response object
-        oDataResponse.setContent(entityStream);
-    }
-
-    private Entity processImportFunctionEntity(UriInfo uriInfo,
-                                               Map<String, QueryOption> queryOptions)
-            throws ODataApplicationException {
-        List<UriResource> resourcePaths = uriInfo.asUriInfoResource().getUriResourceParts();
-        UriResourceFunction uriResourceFunction = (UriResourceFunction) resourcePaths.get(0);
-        List<UriParameter> uriParameters = uriResourceFunction.getParameters();
-        FunctionProcessor functionProcessor = getFunctionProcessor(queryOptions);
-        try {
-            return functionProcessor.processImportFunctionEntity(uriResourceFunction, uriParameters, uriInfo.getAliases());
-        } catch (OfbizODataException e) {
-            e.printStackTrace();
-            throw new ODataApplicationException("Cannot execute ImportFunction Entity. " + e.getMessage(),
-                    Integer.parseInt(e.getODataErrorCode()), locale, e.getODataErrorCode());
-        }
-    }
-
-    private FunctionProcessor getFunctionProcessor(Map<String, QueryOption> queryOptions) {
-        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                "locale", locale);
-        return new FunctionProcessor(odataContext, queryOptions, null);
-    }
-
-    private void readFunctionImportInternal(final ODataRequest oDataRequest, final ODataResponse oDataResponse,
-                                            final UriInfo uriInfo, final ContentType responseContentType)
-            throws ODataApplicationException, SerializerException {
-
-        // 1st step: Analyze the URI and fetch the entity returned by the function
-        // import
-        // Function Imports are always the first segment of the resource path
-        final UriResource firstSegment = uriInfo.getUriResourceParts().get(0);
-
-        if (!(firstSegment instanceof UriResourceFunction)) {
-            throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(),
-                    locale);
-        }
-
-        final UriResourceFunction uriResourceFunction = (UriResourceFunction) firstSegment;
-        Entity entity = null;
-        try {
-            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                    "locale", locale);
-            FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-            entity = ofbizOdataReader.readFunctionImportEntity(uriResourceFunction);
-        } catch (ODataException e) {
-            e.printStackTrace();
-        }
-
-        if (entity == null) {
-            throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
-        }
-
-        // 2nd step: Serialize the response entity
-        final EdmEntityType edmEntityType = (EdmEntityType) uriResourceFunction.getFunction().getReturnType().getType();
-        ContextURL contextURL;
-        try {
-            contextURL = ContextURL.with().serviceRoot(new URI(oDataRequest.getRawBaseUri() + "/")).type(edmEntityType)
-                    .build();
+            SerializerResult serializerResult = serializer.entity(serviceMetadata, edmEntityType, entity, options);
+            // configure the response object
+            oDataResponse.setContent(serializerResult.getContent());
         } catch (URISyntaxException e) {
             e.printStackTrace();
-            throw new ODataApplicationException("Something wrong", HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(),
-                    locale);
         }
-        final EntitySerializerOptions opts = EntitySerializerOptions.with().contextURL(contextURL).build();
-        final ODataSerializer serializer = odata.createSerializer(responseContentType);
-        final SerializerResult serializerResult = serializer.entity(serviceMetadata, edmEntityType, entity, opts);
-
-        // 3rd configure the response object
-        oDataResponse.setContent(serializerResult.getContent());
-        oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
-        oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
     }
 
     @Override
@@ -708,11 +354,13 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet, "edmNavigationProperty", edmNavigationProperty);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, UtilMisc.toMap("keyMap", keyMap), edmParams);
+//                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, UtilMisc.toMap("keyMap", keyMap), edmParams);
                 if (UtilValidate.isNotEmpty(keyPredicates)) {
                     //Collection  即使传递了子对象id，也要确认是否是当前主对象的关联数据
                     Map<String, Object> navigationKeyMap = Util.uriParametersToMap(keyPredicates, responseEdmEntityType);
-                    EntityCollection relEntity = ofbizOdataReader.findRelatedEntityCollectionByCondition(keyMap, edmNavigationProperty, EntityCondition.makeCondition(navigationKeyMap));
+                    OdataReader reader = new OdataReader(getOdataContext(), UtilMisc.toMap("keyMap", keyMap), edmParams);
+                    Entity entity = reader.findOne(keyMap, null);
+                    EntityCollection relEntity = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), navigationKeyMap);
                     if (relEntity == null || relEntity.getEntities().size() < 1) {
                         //不存在的子对象
                         throw new ODataApplicationException("Relation data not found: " + navigationKeyMap, HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
@@ -726,7 +374,10 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                     updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
                 } else {
                     //NoCollection 先查询，判断要创建还是更新
-                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
+//                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
+                    OdataReader reader = new OdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+                    OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
+                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmNavigationProperty);
                     if (relatedEntity == null) {
                         //create
                         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
@@ -776,66 +427,36 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         return uriResourceEntitySet.getKeyPredicates();
     }
 
+    private Map<String, Object> getOdataContext() {
+        return UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
+    }
+
     @Override
     public void readMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException {
         try {
-            List<UriResource> resourceParts = uriInfo.getUriResourceParts();
-            resourceParts = resourceParts.subList(0, resourceParts.size() - 1);
-            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                    "locale", locale);
-            Property property;
-            CsdlProperty streamCsdlProperty;
-            Map<String, Object> dataResourcePK;
-            if (resourceParts.size() == 1) {
-                UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
-                EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
-                dataResourcePK = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
-                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-                //根据定义查询媒体数据字段
-                streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
-                if (streamCsdlProperty == null) {
-                    throw new ODataApplicationException("The media stream field is not defined.", HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
-                }
-                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet());
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
-                Entity responseEntity = ofbizOdataReader.readEntityData(dataResourcePK, null);
-                property = responseEntity.getProperty(streamCsdlProperty.getName());
-            } else {
-                //多段式查询媒体数据
-                Map<String, Object> resourceMap = OfbizOdataReader.getEntityAndNavigationFromResource(resourceParts, odataContext);
-                //Entity
-                EdmEntitySet edmEntitySet = (EdmEntitySet) resourceMap.get("edmEntitySet");
-                Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
-                //Navigation
-                EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
-                Map<String, Object> navKeyMap = (Map<String, Object>) resourceMap.get("navKeyMap");
-                OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-                //根据定义的字段查询媒体数据
-                streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
-                if (streamCsdlProperty == null) {
-                    throw new ODataApplicationException("The media stream field is not defined.", HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
-                }
-                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
-                        "edmNavigationProperty", edmNavigationProperty);
-                Map<String, QueryOption> queryParams = UtilMisc.toMap("keyMap", keyMap);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryParams, edmParams);
-                Entity responseEntity = ofbizOdataReader.readRelatedEntityOne(keyMap, edmNavigationProperty, navKeyMap);
-                property = responseEntity.getProperty(streamCsdlProperty.getName());
-                Property dataResourceId = responseEntity.getProperty("dataResourceId");
-                dataResourcePK = UtilMisc.toMap("dataResourceId", dataResourceId.getValue());
+            OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
+            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo);
+            UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
+            OdataOfbizEntity responseEntity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
+            EdmEntityType responseEdmEntityType = uriResourceDataInfo.getEdmEntityType();
+            OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(responseEdmEntityType.getFullQualifiedName());
+            CsdlProperty streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
+            if (streamCsdlProperty == null) {
+                throw new ODataApplicationException("The media stream field is not defined.", HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
             }
             //响应给客户端，ContentType为字段mimeType的属性值，如果没有指定那么使用对应DateResource的mimeType
             String mimeType = streamCsdlProperty.getMimeType();
             if (mimeType == null) {
                 mimeType = EntityQuery.use(delegator).from("DataResource")
-                        .select("mimeTypeId").where(dataResourcePK).queryOne().getString("mimeTypeId");
+                        .select("mimeTypeId").where(responseEntity.getKeyMap()).queryOne().getString("mimeTypeId");
             }
             //未找到媒体对应的响应类型mimeType
             if (mimeType == null) {
                 throw new ODataApplicationException("The media response type was not specified.",
                         HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
             }
+            Property property = responseEntity.getProperty(streamCsdlProperty.getName());
             if (property != null && property.getValue() != null) {
                 final byte[] bytes = (byte[]) property.getValue();
                 final InputStream responseContent = odata.createFixedFormatSerializer().binary(bytes);

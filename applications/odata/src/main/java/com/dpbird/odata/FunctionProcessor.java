@@ -105,6 +105,49 @@ public class FunctionProcessor extends OfbizOdataReader{
         return result;
     }
 
+    public Entity processFunctionEntity(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+        EdmFunction edmFunction = uriResourceFunction.getFunction();
+        OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
+        //Invoke method.
+        Object result = OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlFunction.getOfbizMethod(), paramMap, edmBindingTarget);
+        Entity responseEntity = resultToEntity((EdmEntityType) edmFunction.getReturnType().getType(), edmProvider, result);
+        if (responseEntity != null) {
+            OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                    queryOptions, UtilMisc.toList(responseEntity), locale, userLogin);
+        }
+        return responseEntity;
+    }
+
+    public EntityCollection processFunctionEntityCollection(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+        EdmFunction edmFunction = uriResourceFunction.getFunction();
+        OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
+        //Invoke method.
+        EntityCollection entityCollection = new EntityCollection();
+        List<Entity> entities = entityCollection.getEntities();
+        List<Object> resultList = (List) OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlFunction.getOfbizMethod(), paramMap, edmBindingTarget);
+        for (Object result : resultList) {
+            Entity entity = resultToEntity((EdmEntityType) edmFunction.getReturnType().getType(), edmProvider, result);
+            entities.add(entity);
+        }
+        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                queryOptions, entities, locale, userLogin);
+        return entityCollection;
+    }
+
+    //转换Function的返回结果
+    private Entity resultToEntity(EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider, Object result) throws OfbizODataException {
+        if (result instanceof GenericValue) {
+            return OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider, edmEntityType, (GenericValue) result, locale);
+        } else if (result instanceof Map) {
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            return Util.mapToEntity(csdlEntityType, (Map<String, Object>) result);
+        } else {
+            // TODO: 目前硬编码ShoppingCart
+            return this.objectToEntity(edmEntityType.getFullQualifiedName(), result);
+        }
+    }
+
+
     public OdataOfbizEntity processBoundFunctionEntity(UriResourceFunction uriResourceFunction, List<UriParameter> uriParameters,
                                                        UriResourcePartTyped boundEntity, UriResourceNavigation uriResourceNavigation, List<AliasQueryOption> aliases)
             throws OfbizODataException {
@@ -130,7 +173,6 @@ public class FunctionProcessor extends OfbizOdataReader{
         } else {
             // TODO: 目前硬编码ShoppingCart
             entity = this.objectToEntity(csdlFunction.getReturnType().getTypeFQN(), result);
-
         }
         if (entity != null) {
             OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
@@ -185,7 +227,7 @@ public class FunctionProcessor extends OfbizOdataReader{
         if (queryOptions.get("filterOption") != null) {
             FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
-            Util.filterEntityCollection(entityCollection, filterOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
+//            Util.filterEntityCollection(entityCollection, filterOption, null, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
         }
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         return entityCollection;
@@ -667,7 +709,8 @@ public class FunctionProcessor extends OfbizOdataReader{
         return new Property(null, null, ValueType.COMPLEX, complexValue);
     }
 
-    public Entity processImportFunctionEntity(UriResourceFunction uriResourceFunction,
+
+    public Entity processImportFunctionEntity_deprecated(UriResourceFunction uriResourceFunction,
                                               List<UriParameter> uriParameters, List<AliasQueryOption> aliases) throws OfbizODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
@@ -750,7 +793,7 @@ public class FunctionProcessor extends OfbizOdataReader{
         if (queryOptions.get("filterOption") != null) {
             FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmFunction.getReturnType().getType().getFullQualifiedName());
-            Util.filterEntityCollection(responseEntityCollection, filterOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
+//            Util.filterEntityCollection(responseEntityCollection, filterOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale);
         }
         Util.pageEntityCollection(responseEntityCollection, skipValue, topValue);
         return responseEntityCollection;
@@ -765,32 +808,22 @@ public class FunctionProcessor extends OfbizOdataReader{
      * @return list
      */
     public static <T>List<T> listToPage(List<T> list, int topOption, int skipOption) {
-        //skip比数据长度大 说明全部跳过了
         if (UtilValidate.isNotEmpty(skipOption) && list.size() <= skipOption) {
             return new ArrayList<>();
         }
-        //只存在top
         if (UtilValidate.isNotEmpty(topOption) && UtilValidate.isEmpty(skipOption)) {
-            //数据量没top大 ? 全部返回 : 截取 0-top
             return list.size() <= topOption ? list : new ArrayList<>(list.subList(0, topOption));
         }
 
-        //只存在skip
         if (UtilValidate.isNotEmpty(skipOption) && UtilValidate.isEmpty(topOption)) {
             return new ArrayList<>(list.subList(skipOption, list.size()));
         }
-
-        //top和skip同时存在
         if (UtilValidate.isNotEmpty(skipOption) && UtilValidate.isNotEmpty(topOption)) {
-            //skip之后的数据没top大,返回skip之后所有的数据
             if (list.size() - skipOption <= topOption) {
                 return new ArrayList<>(list.subList(skipOption, list.size()));
             }
-            //正常截取
             return new ArrayList<>(list.subList(skipOption, skipOption + topOption));
         }
-
-        //top和skip都没有值时返回原数据
         return list;
     }
 }

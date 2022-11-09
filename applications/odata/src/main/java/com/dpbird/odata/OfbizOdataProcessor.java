@@ -56,7 +56,6 @@ public class OfbizOdataProcessor {
     public static final String module = OfbizOdataProcessor.class.getName();
     public static final int MAX_ROWS = 10000;
     public static final int EXTRA_QUERY_MAX_RAW = 1000;
-    public static final int DAYS_BEFORE = -100;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
     protected GenericValue userLogin;
@@ -71,11 +70,7 @@ public class OfbizOdataProcessor {
     protected ModelEntity modelEntity = null; // targetModelEntity
     protected DynamicViewHolder dynamicViewHolder = null;
     protected String entityName = null; // targetEntityName
-    protected boolean isOdataView = false;
     protected EdmEntityType edmEntityType; // targetEdmEntityType
-//    protected EdmEntityType startEdmEntityType;
-    protected EntityCondition extraOptionCondition;
-    protected EntityFindOptions efo = null;
     protected Set<String> fieldsToSelect = null;
     protected Set<String> groupBySet = null;
     protected Set<String> aggregateSet = null;
@@ -84,8 +79,6 @@ public class OfbizOdataProcessor {
     protected List<String> orderBy;
     protected String sapContextId;
     protected boolean filterByDate = false;
-
-    protected Map<String, Object> extraOption;
     protected Map<String, Object> odataContext;
     protected Map<String, QueryOption> queryOptions;
     protected Map<String, Object> edmParams;
@@ -102,10 +95,10 @@ public class OfbizOdataProcessor {
         this.httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         this.edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         this.serviceMetadata = (ServiceMetadata) odataContext.get("serviceMetadata");
+        this.sapContextId = (String) odataContext.get("sapContextId");
         if (UtilValidate.isNotEmpty(edmParams) && edmParams.get("entityName") != null) {
             this.entityName = (String) edmParams.get("entityName");
         }
-        this.sapContextId = (String) odataContext.get("sapContextId");
         try {
             retrieveModelEntity();
             retrieveFindOption();
@@ -121,52 +114,12 @@ public class OfbizOdataProcessor {
 
     }
 
-    private Map<String, QueryOption> retrieveQueryOptions(Map<String, Object> queryParams) {
-        if (queryParams == null) {
-            return null;
-        }
-        Map<String, QueryOption> result = new HashMap<>();
-        Set<Map.Entry<String, Object>> entrySet = queryParams.entrySet();
-        Iterator<Map.Entry<String, Object>> it = entrySet.iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Object> entry = it.next();
-            if (entry.getValue() instanceof QueryOption) {
-                result.put(entry.getKey(), (QueryOption) entry.getValue());
-            }
-        }
-        return result;
-    }
-
     protected void retrieveEntityCondition() throws ODataException {
-        EntityCondition moreCondition = null; // 这个变量暂时不用
         //处理filter和search查询
         entityCondition = parseFilterOption();
         EntityCondition searchCondition = processSearchOption();
         if (searchCondition != null) {
             entityCondition = Util.appendCondition(entityCondition, searchCondition);
-        }
-//        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("searchOption") != null) {
-//            entityCondition = Util.appendCondition(entitySearchCondition, filterCondition);
-            //search并没有使用dynamicViewHolder那就允许search和filter结合使用
-//            if (dynamicViewHolder == null) {
-//                EntityCondition filterCondition = parseFilterOption(queryOptions);
-//                if (filterCondition != null) {
-//                    entityCondition = EntityCondition.makeCondition(UtilMisc.toList(entityCondition, filterCondition), EntityOperator.AND);
-//                }
-//            }
-//        } else {
-//            entityCondition = parseFilterOption();
-//        }
-        if (extraOption != null) {
-            EntityCondition extraCondition = EntityCondition.makeCondition(extraOption);
-            if (entityCondition == null) {
-                entityCondition = extraCondition;
-            } else {
-                List<EntityCondition> exprs = new ArrayList<EntityCondition>();
-                exprs.add(extraCondition);
-                exprs.add(entityCondition);
-                entityCondition = EntityCondition.makeCondition(exprs, EntityOperator.AND);
-            }
         }
         EntityCondition entitySetCondition = null;
         //检查是否是多段式的apply查询 如果是就不添加主对象的EntitySetCondition
@@ -266,10 +219,6 @@ public class OfbizOdataProcessor {
                     entityCondition = EntityCondition.makeCondition(entityCondition, EntityOperator.AND, draftCondition);
                 }
             }
-        }
-        // EntityCondition最终成型
-        if (moreCondition != null) {
-            entityCondition = EntityCondition.makeCondition(entityCondition, EntityOperator.AND, moreCondition);
         }
     }
 
@@ -423,20 +372,8 @@ public class OfbizOdataProcessor {
     }
 
     protected void retrieveFindOption() {
-        efo = new EntityFindOptions();
         topValue = getTopOption(queryOptions);
-        int maxRows = topValue;
         skipValue = getSkipOption(queryOptions);
-        if (skipValue > 0) {
-            maxRows = topValue + skipValue;
-        }
-        if (maxRows > 0) {
-            if (!this.filterByDate) { // 如果有需要过滤fromDate和thruDate的，全取出来，由EntityUtil来过滤，今后考虑动态加上查询条件来过滤
-                efo.setMaxRows(maxRows);
-            }
-        } else { // 设置一个系统最大值，以防系统崩溃
-            efo.setMaxRows(MAX_ROWS);
-        }
     }
 
     protected int getTopOption(Map<String, QueryOption> queryOptions) {
@@ -705,9 +642,7 @@ public class OfbizOdataProcessor {
                         (String) odataContext.get("sapContextId"), edmProvider);
             }
         }
-        // entityName = FakedNavigation.lookupEntity(edmEntityType, edmTypeFilter, null, null, searchOption);
-        isOdataView = OdataView.isOdataView(delegator, this.entityName);
-        if (!isOdataView && this.entityName != null) {
+        if (this.entityName != null) {
             try {
                 this.modelEntity = delegator.getModelReader().getModelEntity(this.entityName);
             } catch (GenericEntityException e) {
@@ -915,6 +850,12 @@ public class OfbizOdataProcessor {
         }
         return e1;
     }
+    protected void addExpandOption(ExpandOption expandOption, List<Entity> entities, EdmEntityType edmEntityType, Map<String, Object> edmParams)
+            throws OfbizODataException {
+        for (Entity entity : entities) {
+            addExpandOption(expandOption, (OdataOfbizEntity) entity, edmEntityType, edmParams);
+        }
+    }
 
     protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType, Map<String, Object> edmParams)
             throws OfbizODataException {
@@ -1010,17 +951,19 @@ public class OfbizOdataProcessor {
                                            EdmNavigationProperty edmNavigationProperty, Map<String, Object> edmParams,
                                            FilterOption filterOption, OrderByOption orderByOption,
                                            ExpandOption nestedExpandOption, SelectOption selectOption, SearchOption searchOption) throws OfbizODataException {
-        OfbizOdataReader embeddedReader;
         Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                 "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
-        Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("filterOption", filterOption,
-                "expandOption", nestedExpandOption, "orderByOption", orderByOption, "selectOption", selectOption, "searchOption", searchOption);
+        Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption, "orderByOption", orderByOption,
+                "selectOption", selectOption, "searchOption", searchOption);
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
         if (edmParams != null && edmParams.get("edmBindingTarget") != null) {
             embeddedEdmParams.put("edmBindingTarget", edmParams.get("edmBindingTarget"));
         }
-        embeddedReader = new OfbizOdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
-        return embeddedReader.findRelatedEntityCollection(entity, edmNavigationProperty, embeddedQueryOptions, false);
+//        OfbizOdataReader embeddedReader = new OfbizOdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
+//        return embeddedReader.findRelatedEntityCollection(entity, edmNavigationProperty, embeddedQueryOptions, false);
+        OdataReader reader = new OdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
+        embeddedQueryOptions.put("filterOption", filterOption);
+        return reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null);
     }
 
     private void expandNonCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,

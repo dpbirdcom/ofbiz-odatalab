@@ -1389,6 +1389,10 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(functionElement.getAttribute("OfbizService"))) {
             ofbizService = functionElement.getAttribute("OfbizService");
         }
+        boolean isComposable = false;
+        if (UtilValidate.isNotEmpty(functionElement.getAttribute("IsComposable"))) {
+            isComposable = "true".equals(functionElement.getAttribute("IsComposable"));
+        }
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, name);
         List<? extends Element> functionChildren = UtilXml.childElementList(functionElement);
         List<CsdlParameter> parameters = new ArrayList<>();
@@ -1406,6 +1410,7 @@ public class EdmConfigLoader {
         OfbizCsdlFunction ofbizCsdlFunction;
         ofbizCsdlFunction = createFunction(fullQualifiedName, parameters, csdlReturnType, isBound);
         ofbizCsdlFunction.setOfbizMethod(ofbizService);
+        ofbizCsdlFunction.setComposable(isComposable);
         return ofbizCsdlFunction;
     }
 
@@ -1936,7 +1941,8 @@ public class EdmConfigLoader {
             if (expression.contains("=")) {
                 String[] keyValue = expression.split("=");
                 if (UtilValidate.isNotEmpty(keyValue)) {
-                    entityCondition = EntityCondition.makeCondition(keyValue[0], keyValue[1]);
+                    String value = "null".equals(keyValue[1]) ? null : keyValue[1];
+                    entityCondition = EntityCondition.makeCondition(keyValue[0], value);
                 }
                 if (conditionMap != null) {
                     conditionMap.put(keyValue[0], keyValue[1]);
@@ -1980,7 +1986,8 @@ public class EdmConfigLoader {
                                                         List<CsdlNavigationProperty> csdlNavigationProperties,
                                                         List<CsdlPropertyRef> csdlPropertyRefs, boolean autoId, boolean filterByDate,
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
-                                                        EntityCondition entityCondition, String labelPrefix, Locale locale, String searchOption, boolean groupBy, boolean hasStream) {
+                                                        EntityCondition entityCondition, String labelPrefix, Locale locale, String searchOption,
+                                                        boolean groupBy, boolean hasStream) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
