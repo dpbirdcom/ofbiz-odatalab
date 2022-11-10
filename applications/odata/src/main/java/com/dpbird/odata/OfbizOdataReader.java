@@ -431,13 +431,15 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
-
-        GenericValue genericValue = null;
         try {
             Debug.logInfo("keyMap = " + keyMap, module);
             Debug.logInfo("navigationProperty = " + edmNavigationProperty.getName(), module);
             if (entity == null) {
-                genericValue = delegator.findOne(entityName, keyMap, false);
+                GenericValue genericValue = delegator.findOne(entityName, keyMap, false);
+                //如果是正在编辑的实体并且Navigation不存在Draft 那么肯定没有数据
+                if (genericValue == null) {
+                    return new EntityCollection();
+                }
                 entity = makeEntityFromGv(genericValue);
                 //这里只有通过语义化字段做Navigation时才需要添加，如果不是就没必要
                 if (ofbizCsdlNavigationProperty.getHandler() != null) {
