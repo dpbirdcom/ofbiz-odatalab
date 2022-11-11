@@ -20,8 +20,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.order.shoppingcart.CartItemModifyException;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
-import org.apache.olingo.commons.api.data.Entity;
-import org.apache.olingo.commons.api.data.Parameter;
+import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
@@ -139,22 +138,22 @@ public class ActionFunctionEvents {
         return party.getRelated("PartyRole", null, null, false);
     }
 
-    public static Object testBoundSetFunctionPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSetFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
-        return party.getString("partyId") + otherParm;
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return party.getPropertyValue("partyId") + otherParm;
     }
 
-    public static Object testBoundSetFunctionOdataQuery(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSetFunctionOdataQuery(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
         List<GenericValue> genericValues = OdataEntityQuery.use(delegator).from("OrderHeader")
                 .groupBy("statusId", "orderTypeId", "currencyUom")
@@ -171,85 +170,86 @@ public class ActionFunctionEvents {
             Debug.log("=======");
         }
 
-        GenericValue party = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
-        return party.getString("partyId") + otherParm;
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return party.getPropertyValue("partyId") + otherParm;
     }
 
-    public static Object testBoundSetFunctionPrimitiveCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
-
-        GenericValue party = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
-        return new ArrayList<>(Arrays.asList(party.getString("partyId"), "param1", "param2"));
+    public static Object testBoundSetFunctionPrimitiveCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return new ArrayList<>(Arrays.asList(party.getPropertyValue("partyId"), "param1", "param2"));
     }
 
-    public static Object testBoundSetParamAliasPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSetParamAliasPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
-        List<BigDecimal> otherParm = (List<BigDecimal>) functionParameters.get("otherParm");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
+        List<BigDecimal> otherParm = (List<BigDecimal>) actionParameters.get("otherParm");
         Debug.log(">>>>>>otherParm = " + otherParm);
-        return party.getString("partyId") + otherParm.toString();
+        return party.getPropertyValue("partyId") + otherParm.toString();
     }
 
-    public static Object testBoundSetParamAliasPrimitiveCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testBoundSetParamAliasPrimitiveCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
-        List<String> otherParm = (List<String>) functionParameters.get("otherParm");
+        List<String> otherParm = (List<String>) actionParameters.get("otherParm");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
         Debug.log(">>>>>>otherParm = " + otherParm);
-        return new ArrayList<>(Arrays.asList(party.getString("partyId"), "param1", "param2"));
+        return new ArrayList<>(Arrays.asList(party.getPropertyValue("partyId"), "param1", "param2"));
     }
 
-    public static Object testBoundSetParamAliasEntity(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSetParamAliasEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
-        List<String> otherParm = (List<String>) functionParameters.get("otherParm");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        List<String> otherParm = (List<String>) actionParameters.get("otherParm");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
         Debug.log(">>>>>>otherParm = " + otherParm.toString());
-        GenericValue party = (GenericValue) boundObject;
-        return party.getRelatedOne("CreatedByUserLogin", false);
+        GenericValue partygv = party.getGenericValue();
+        return partygv.getRelatedOne("CreatedByUserLogin", false);
     }
 
-    public static Object testBoundSetParamAliasEntityCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testBoundSetParamAliasEntityCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-//        GenericValue party = (GenericValue) boundObject;
         GenericValue party = delegator.findOne("Party", UtilMisc.toMap("partyId", "10030"), false);
         List<String> otherParm = (List<String>) functionParameters.get("otherParm");
         Debug.log(">>>>>>otherParm = " + otherParm.toString());
         return party.getRelated("PartyRole", null, null, false);
     }
 
-    public static Object testBoundSetParamAliasComplex(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSetParamAliasComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
-        List<String> otherParm = (List<String>) functionParameters.get("otherParm");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        OdataOfbizEntity entity = (OdataOfbizEntity) actionParameters.get("party");
+        List<String> otherParm = (List<String>) actionParameters.get("otherParm");
         Debug.log(">>>>>>otherParm = " + otherParm.toString());
-        GenericValue party = (GenericValue) boundObject;
+        GenericValue party = entity.getGenericValue();
         return UtilMisc.toMap("testObjectOneId", party.getString("partyId"),
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
     }
 
-    public static Object testBoundSetParamAliasComplexCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testBoundSetParamAliasComplexCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
+        OdataOfbizEntity entity = (OdataOfbizEntity) functionParameters.get("party");
+        GenericValue party = entity.getGenericValue();
         List<String> otherParm = (List<String>) functionParameters.get("otherParm");
         Debug.log(">>>>>>otherParm = " + otherParm.toString());
         Map<String, Object> map1 = UtilMisc.toMap("testObjectOneId", party.getString("partyId"),
@@ -262,12 +262,12 @@ public class ActionFunctionEvents {
         return resultList;
     }
 
-    public static Object testBoundSetDateParamAliasComplexCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
-
-        GenericValue party = (GenericValue) boundObject;
+    public static Object testBoundSetDateParamAliasComplexCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        OdataOfbizEntity entity = (OdataOfbizEntity) functionParameters.get("party");
+        GenericValue party = (GenericValue) entity.getGenericValue();
         List<Timestamp> otherParm = (List<Timestamp>) functionParameters.get("otherParm");
         for (Timestamp timestamp : otherParm) {
             Debug.log(">>>>>>timestamp = " + timestamp.toString());
@@ -284,23 +284,27 @@ public class ActionFunctionEvents {
 
 
 
-    public static Object testBoundSingletonFunctionPrimitiveCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject) {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
+    public static Object testBoundSingletonFunctionPrimitiveCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
 
-        GenericValue userLogin = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
+        OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
+        String otherParm = (String) actionParameters.get("otherParm");
         return new ArrayList<>(Arrays.asList("param1", "param2", "param3"));
     }
 
-    public static Object testBoundSingletonFunctionPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSingletonFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-
-        GenericValue userLogin = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
-        return userLogin.getString("partyId") + otherParm;
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        ComplexValue complexValue = new ComplexValue();
+        List<Property> value = complexValue.getValue();
+        value.add(new Property(null, "testProperty1", ValueType.PRIMITIVE, "test_String"));
+        value.add(new Property(null, "testProperty2", ValueType.PRIMITIVE, new BigDecimal("11.22")));
+        new Property("com.dpbird.TestComplexProperty", "testComplex", ValueType.COMPLEX, complexValue);
+        OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return userLogin.getPropertyValue("partyId") + otherParm;
     }
 
     public static Object testBoundSetFunctionEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
@@ -332,39 +336,33 @@ public class ActionFunctionEvents {
         return party.getRelatedOne("CreatedByUserLogin", false);
     }
 
-    public static Object testBoundSetFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+    public static Object testBoundSetFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         String otherParm = (String) actionParameters.get("otherParm");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
         //PartyInfo
-        return UtilMisc.toMap("partyId", keyMap.get("partyId"), "displayName", otherParm);
+        return UtilMisc.toMap("partyId", party.getKeyMap().get("partyId"), "displayName", otherParm);
     }
 
-    public static Object testBoundSetFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+    public static Object testBoundSetFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         String otherParm = (String) actionParameters.get("otherParm");
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
         //PartyInfo
         List<Map<String, Object>> mapList = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            mapList.add(UtilMisc.toMap("partyId", keyMap.get("partyId"), "displayName", otherParm));
+            mapList.add(UtilMisc.toMap("partyId", party.getKeyMap().get("partyId"), "displayName", otherParm));
         }
         return mapList;
     }
-    public static Object testBoundSingletonFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+    public static Object testBoundSingletonFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         String otherParm = (String) actionParameters.get("otherParm");
         //PartyInfo
         return UtilMisc.toMap("partyId", edmBindingTarget.getName(), "displayName", otherParm);
     }
 
-    public static Object testBoundSingletonFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                      EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                      Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+    public static Object testBoundSingletonFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         String otherParm = (String) actionParameters.get("otherParm");
         //PartyInfo
@@ -388,27 +386,21 @@ public class ActionFunctionEvents {
         return party.getGenericValue().getRelated("PartyRole", null, null, false);
     }
 
-    public static Object testBoundSetFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+    public static Object testBoundSetFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("Product").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
-    public static Object testImportFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+    public static Object testImportFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderHeader").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
-    public static Object testImportFunctionEntityCollectionFilterManyKey(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap)
+    public static Object testImportFunctionEntityCollectionFilterManyKey(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderItem").queryPagedList(1, 100);
@@ -426,14 +418,14 @@ public class ActionFunctionEvents {
         return userLogin.getRelatedOne("Party", false);
     }
 
-    public static Object testBoundSingletonFunctionEntityCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
+    public static Object testBoundSingletonFunctionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
 
-        GenericValue userLogin = (GenericValue) boundObject;
-        String otherParm = (String) functionParameters.get("otherParm");
-        GenericValue party = userLogin.getRelatedOne("Party", false);
+        OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
+        String otherParm = (String) actionParameters.get("otherParm");
+        GenericValue party = userLogin.getGenericValue().getRelatedOne("Party", false);
         return party.getRelated("PartyRole", null, null, false);
     }
 
@@ -662,27 +654,28 @@ public class ActionFunctionEvents {
     }
 
 
-    public static Object testBoundSetFunctionComplex(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
+    public static Object testBoundSetFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
-        String otherParm = (String) parameters.get("otherParm");
-        return UtilMisc.toMap("testObjectOneId", party.getString("partyId"),
+        OdataOfbizEntity party = (OdataOfbizEntity) actionParameters.get("party");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return UtilMisc.toMap("testObjectOneId", party.getPropertyValue("partyId"),
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
     }
 
-    public static Object testBoundSetFunctionComplexCollection(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
+    public static Object testBoundSetFunctionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue product = (GenericValue) boundObject;
-        String otherParm = (String) parameters.get("otherParm");
-        List<GenericValue> productFeatureAndAppls = product.getRelated("ProductFeatureAndAppl", null, null, false);
+        OdataOfbizEntity product = (OdataOfbizEntity) actionParameters.get("product");
+        GenericValue productGV = product.getGenericValue();
+        String otherParm = (String) actionParameters.get("otherParm");
+        List<GenericValue> productFeatureAndAppls = productGV.getRelated("ProductFeatureAndAppl", null, null, false);
         List<Map<String, Object>> result = new ArrayList<>();
         Map<String, Object> data1 = new HashMap<>();
         List<GenericValue> features = new ArrayList<>();
@@ -701,21 +694,21 @@ public class ActionFunctionEvents {
         return result;
     }
 
-    public static Object testBoundSingletonFunctionComplex(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
+    public static Object testBoundSingletonFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) boundObject;
-        String otherParm = (String) parameters.get("otherParm");
-        return UtilMisc.toMap("testObjectOneId", userLogin.getString("partyId"),
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
+        String otherParm = (String) actionParameters.get("otherParm");
+        return UtilMisc.toMap("testObjectOneId", userLogin.getPropertyValue("partyId"),
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
     }
 
-    public static Object testBoundSingletonFunctionComplexCollection(HttpServletRequest request, Map<String, Object> parameters, Object boundObject) {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) boundObject;
-        String otherParm = (String) parameters.get("otherParm");
+    public static Object testBoundSingletonFunctionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
+        String otherParm = (String) actionParameters.get("otherParm");
         Map<String, Object> map1 = UtilMisc.toMap("testObjectOneId", "system",
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
         Map<String, Object> map2 = UtilMisc.toMap("testObjectOneId", "system",
@@ -726,31 +719,30 @@ public class ActionFunctionEvents {
         return resultList;
     }
 
-    public static Object testImportFunctionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters)
+    public static Object testImportFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         String partyId = (String) actionParameters.get("partyId");
 
         String otherParm = (String) actionParameters.get("otherParm");
         return "passed in " + otherParm + ", " + partyId;
     }
 
-    public static Object testImportFunctionPrimitiveCollection(HttpServletRequest request, Map<String, Object> actionParameters) {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testImportFunctionPrimitiveCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String partyId = (String) actionParameters.get("partyId");
 
         String otherParm = (String) actionParameters.get("otherParm");
         return new ArrayList<>(Arrays.asList(partyId,"param1","param2"));
     }
 
-    public static Object testCollectionParamEntity(HttpServletRequest request, Map<String, Object> actionParameters) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testCollectionParamEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String partyId = (String) actionParameters.get("partyId");
         Object otherParm1 = actionParameters.get("otherParm");
         List<BigDecimal> strings = (List<BigDecimal>) otherParm1;
@@ -761,10 +753,10 @@ public class ActionFunctionEvents {
         return party.getRelatedOne("CreatedByUserLogin", false);
     }
 
-    public static Object testCollectionParamEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testCollectionParamEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String partyId = (String) actionParameters.get("partyId");
         Object otherParm1 = actionParameters.get("otherParm");
         List<String> strings = (List<String>) otherParm1;
@@ -775,10 +767,10 @@ public class ActionFunctionEvents {
         return party.getRelated("PartyRole", null, null, false);
     }
 
-    public static Object testCollectionParamComplex(HttpServletRequest request, Map<String, Object> actionParameters) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testCollectionParamComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String partyId = (String) actionParameters.get("partyId");
         Object otherParm1 = actionParameters.get("otherParm");
         List<BigDecimal> strings = (List<BigDecimal>) otherParm1;
@@ -789,10 +781,10 @@ public class ActionFunctionEvents {
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
     }
 
-    public static Object testCollectionParamComplexCollection(HttpServletRequest request, Map<String, Object> actionParameters) throws GenericEntityException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+    public static Object testCollectionParamComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String partyId = (String) actionParameters.get("partyId");
         Object otherParm1 = actionParameters.get("otherParm");
         List<String> strings = (List<String>) otherParm1;
@@ -809,23 +801,20 @@ public class ActionFunctionEvents {
         return resultList;
     }
 
-    public static Object testImportFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
-                                                    EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                    Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
+    public static Object testImportFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
-        String partyId = (String) functionParameters.get("partyId");
+        String partyId = (String) actionParameters.get("partyId");
 
-        String otherParm = (String) functionParameters.get("otherParm");
+        String otherParm = (String) actionParameters.get("otherParm");
         return UtilMisc.toMap("testObjectOneId", partyId,
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
     }
-    public static Object testImportFunctionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
-                                                   EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                   Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException,ODataException {
-        String partyId = (String) functionParameters.get("partyId");
-        String otherParm = (String) functionParameters.get("otherParm");
+
+    public static Object testImportFunctionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException,ODataException {
+        String partyId = (String) actionParameters.get("partyId");
+        String otherParm = (String) actionParameters.get("otherParm");
         Map<String, Object> map1 = UtilMisc.toMap("testObjectOneId", partyId,
                 "amount", BigDecimal.TEN, "testDate", UtilDateTime.nowTimestamp());
         Map<String, Object> map2 = UtilMisc.toMap("testObjectOneId", partyId,
@@ -849,17 +838,13 @@ public class ActionFunctionEvents {
         return party.getRelatedOne("CreatedByUserLogin", false);
     }
 
-    public static Object testImportFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
-                                                          EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                          Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+    public static Object testImportFunctionSemanticEntity(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget) {
         String otherParm = (String) functionParameters.get("otherParm");
         String partyId = (String) functionParameters.get("partyId");
         return UtilMisc.toMap("partyId", partyId, "displayName", otherParm);
     }
 
-   public static Object testImportFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters,
-                                                                   EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                                   Map<String, Object> keyMap, Map<String, Object> navKeyMap) {
+   public static Object testImportFunctionSemanticEntityCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget) {
         String otherParm = (String) functionParameters.get("otherParm");
         String partyId = (String) functionParameters.get("partyId");
        //PartyInfo
@@ -870,11 +855,11 @@ public class ActionFunctionEvents {
        return mapList;
     }
 
-   public static Object testImportFunctionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters)
+   public static Object testImportFunctionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws GenericEntityException, GenericServiceException, CartItemModifyException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         String otherParm = (String) actionParameters.get("otherParm");
         String partyId = (String) actionParameters.get("partyId");
         GenericValue party = delegator.findOne("Party", false, UtilMisc.toMap("partyId", partyId));
@@ -920,13 +905,14 @@ public class ActionFunctionEvents {
         return party;
     }
 
-    public static Object testBoundFunctionBaseType(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
+    public static Object testBoundFunctionBaseType(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws ODataException {
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-        GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
 
-        GenericValue party = (GenericValue) boundObject;
+        OdataOfbizEntity entity = (OdataOfbizEntity) actionParameters.get("party");
+        GenericValue party = entity.getGenericValue();
         String otherParm = (String) actionParameters.get("otherParm");
         return party;
     }

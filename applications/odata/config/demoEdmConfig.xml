@@ -74,6 +74,10 @@
 		<Property Name="testDecimal" Type="BigDecimal" Nullable="true"/>
 		<Property Name="testLong" Type="Long"/>
 	</ComplexType>
+	<ComplexType Name="TestComplexProperty">
+		<Property Name="testProperty1" Type="String" Nullable="false"/>
+		<Property Name="testProperty2" Type="BigDecimal" Scale="3" Nullable="true"/>
+	</ComplexType>
 	<ComplexType Name="TestParentComplexType" OfbizClass="com.dpbird.test.TestParentComplexType">
 		<Property Name="testString" Type="String" Nullable="false"/>
 		<Property Name="testDecimal" Type="BigDecimal" Nullable="true"/>
@@ -450,6 +454,7 @@
 		<Property Name="semanticProductId1" Type="String"/>
 		<Property Name="semanticProductId2" Type="String"/>
 		<Property Name="semanticPartyId1" Type="String"/>
+		<Property Name="testComplex" Type="TestComplexProperty"/>
 <!--		<NavigationProperty Name="Product" Type="Product" AutoBinding="true" IsCollection="true"-->
 <!--							Handler="component://odata/groovyScripts/demo/Facility/Product.groovy"/>-->
 <!--		<NavigationProperty Name="Party" Type="Party" AutoBinding="true" IsCollection="false"-->
@@ -833,7 +838,7 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="TestObjectOne" IsCollection="true"/>
 	</Function>
-	<Function Name="testBoundSetFunctionPrimitive" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionPrimitive">
+	<Function Name="testBoundSetFunctionPrimitive" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionPrimitive">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Edm.String"/>
@@ -863,7 +868,7 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="UserLogin" />
 	</Function>
-	<Function Name="testBoundSetFunctionEntity" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionEntity">
+	<Function Name="testBoundSetFunctionEntity" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionEntity">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="UserLogin" />
@@ -908,7 +913,7 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Party"/>
 	</Function>
-	<Function Name="testBoundSingletonFunctionEntityCollection" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonFunctionEntityCollection">
+	<Function Name="testBoundSingletonFunctionEntityCollection" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSingletonFunctionEntityCollection">
 		<Parameter Name="userLogin" Type="UserLogin" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="PartyRole" IsCollection="true"/>

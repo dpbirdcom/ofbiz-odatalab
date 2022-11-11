@@ -13,11 +13,9 @@ import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
-import org.apache.ofbiz.content.data.DataResourceWorker;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
@@ -26,7 +24,10 @@ import org.apache.olingo.commons.api.data.ContextURL.Suffix;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
-import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
+import org.apache.olingo.commons.api.edm.EdmEntitySet;
+import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
@@ -42,9 +43,7 @@ import org.apache.olingo.server.api.serializer.ODataSerializer;
 import org.apache.olingo.server.api.serializer.SerializerException;
 import org.apache.olingo.server.api.serializer.SerializerResult;
 import org.apache.olingo.server.api.uri.*;
-import org.apache.olingo.server.api.uri.queryoption.CountOption;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
-import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.apache.olingo.server.api.uri.queryoption.SelectOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,7 +51,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class OfbizEntityProcessor implements MediaEntityProcessor {
 
@@ -278,7 +280,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         }
         try {
             OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo);
+            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = resourceDataInfos.get(resourceDataInfos.size() - 1);
             Entity responseEntity = (Entity) uriResourceDataInfo.getEntityData();
             //response
@@ -436,7 +438,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     public void readMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException {
         try {
             OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo);
+            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
             OdataOfbizEntity responseEntity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
             EdmEntityType responseEdmEntityType = uriResourceDataInfo.getEdmEntityType();

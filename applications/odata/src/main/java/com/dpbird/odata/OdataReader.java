@@ -2,19 +2,17 @@ package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.EntityHandler;
-import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.handler.NavigationLinkHandler;
 import org.apache.fop.util.ListUtil;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.base.util.UtilProperties;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.base.util.collections.PagedList;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityFieldMap;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelRelation;
@@ -22,13 +20,10 @@ import org.apache.ofbiz.entity.model.ModelViewEntity;
 import org.apache.ofbiz.entity.util.EntityListIterator;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
-import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
-import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
 
@@ -48,13 +43,12 @@ public class OdataReader extends OfbizOdataProcessor {
     /**
      * 查询EntityCount数据
      *
-     * @param edmBindingTarget  要查询的实体
-     * @param relatedCollection 多段式查询时子对象的范围
+     * @param edmEntityType     要查询的实体
+     * @param relatedCollection 多段式查询时子对象的范围 TODO: 或许不需要这个
      * @return count
      */
-    public Long findCount(EdmBindingTarget edmBindingTarget, EntityCollection relatedCollection)
-            throws ODataException {
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
+    public Long findCount(EdmEntityType edmEntityType, EntityCollection relatedCollection) throws OfbizODataException {
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityNameToFind = OdataProcessorHelper.getEntityNameToFind(csdlEntityType, (String) odataContext.get("sapContextId"), edmProvider);
         if (relatedCollection != null) {
             EntityCondition relatedCondition = Util.getEntityCollectionQueryCond(relatedCollection, dynamicViewHolder != null);
@@ -329,12 +323,10 @@ public class OdataReader extends OfbizOdataProcessor {
     /**
      * 遍历查询所有的UriResource的数据
      *
-     * @param uriInfo Request uriInfo
      * @return 返回每一段的结果
      */
-    public List<UriResourceDataInfo> readUriResource(UriInfo uriInfo) throws OfbizODataException {
+    public List<UriResourceDataInfo> readUriResource(List<UriResource> uriResourceParts, List<AliasQueryOption> aliases) throws OfbizODataException {
         List<UriResourceDataInfo> resourceDataInfoList = new ArrayList<>();
-        List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
         Map<String, QueryOption> queryOptions = new HashMap<>();
         for (int i = 0; i < uriResourceParts.size(); i++) {
             //只有最后一段需要使用queryOption
@@ -362,7 +354,7 @@ public class OdataReader extends OfbizOdataProcessor {
                 resourceDataInfoList.add(uriResourceDataInfo);
             }
             if (resourcePart instanceof UriResourceFunction) {
-                UriResourceDataInfo uriResourceDataInfo = readUriResourceFunction(resourcePart, resourceDataInfoList, uriInfo.getAliases());
+                UriResourceDataInfo uriResourceDataInfo = readUriResourceFunction(resourcePart, resourceDataInfoList, aliases, queryOptions);
                 resourceDataInfoList.add(uriResourceDataInfo);
             }
         }
@@ -418,7 +410,7 @@ public class OdataReader extends OfbizOdataProcessor {
     }
 
     private UriResourceDataInfo readUriResourceFunction(UriResource uriResource, List<UriResourceDataInfo> resourceDataInfoList,
-                                                        List<AliasQueryOption> aliasParam) throws OfbizODataException {
+                                                        List<AliasQueryOption> aliasParam, Map<String, QueryOption> queryOption) throws OfbizODataException {
         UriResourceFunction uriResourceFunction = (UriResourceFunction) uriResource;
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         EdmEntityType returnEdmEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
@@ -438,7 +430,7 @@ public class OdataReader extends OfbizOdataProcessor {
             parameters.put(boundParamName, boundParam);
         }
         UriResourceDataInfo currentUriResourceData = new UriResourceDataInfo(edmBindingTarget, returnEdmEntityType, uriResource, null);
-        FunctionProcessor functionProcessor = new FunctionProcessor(odataContext, new HashMap<>(), null);
+        FunctionProcessor functionProcessor = new FunctionProcessor(odataContext, queryOption, null);
         if (edmFunction.getReturnType().isCollection()) {
             EntityCollection entityCollection = functionProcessor.processFunctionEntityCollection(uriResourceFunction, parameters, edmBindingTarget);
             currentUriResourceData.setEntityData(entityCollection);
@@ -534,13 +526,11 @@ public class OdataReader extends OfbizOdataProcessor {
      * @return 子对象数据集
      */
     public Entity findRelatedOne(Entity entity, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
-        String resource = edmProvider.getComponentName() + "Edm.properties";
-        String handlerPath = edmProvider.getWebapp() + "." + edmEntityType.getName() + "." + edmNavigationProperty.getName();
-        String handlerImpl = EntityUtilProperties.getPropertyValue(resource, handlerPath, delegator);
         Entity relEntity;
-        if (UtilValidate.isNotEmpty(handlerImpl)) {
+        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+        if (UtilValidate.isNotEmpty(navigationHandler)) {
             //自定义查询 从接口实例中获取数据
-            relEntity = findRelatedOneByHandler(entity, edmNavigationProperty);
+            relEntity = findRelatedOneByHandler(entity, edmNavigationProperty, navigationHandler);
         } else {
             //ofbiz查询
             relEntity = findRelatedOneByRelation(entity, edmNavigationProperty);
@@ -554,19 +544,19 @@ public class OdataReader extends OfbizOdataProcessor {
         return relEntity;
     }
 
-    public Entity findRelatedOneByHandler(Entity entity, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
+    public Entity findRelatedOneByHandler(Entity entity, EdmNavigationProperty edmNavigationProperty, NavigationHandler navigationHandler) throws OfbizODataException {
         //从LinkHandler获取参数
         NavigationLinkHandler navigationLinkHandler = HandlerFactory.getNavigationLinkHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+        if (UtilValidate.isEmpty(navigationLinkHandler)) {
+            throw new OfbizODataException("Could not find the interface instance to obtain the parameter");
+        }
         Map<String, Object> handlerParam = navigationLinkHandler.getHandlerParam(odataContext, (OdataOfbizEntity) entity, edmNavigationProperty);
         //从NavigationHandler获取数据
-        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         List<? extends Map<String, Object>> navigationData = navigationHandler.getNavigationData(odataContext, handlerParam, queryOptions);
-        Entity resultEntity = null;
-        //转换成Entity返回
         if (UtilValidate.isNotEmpty(navigationData)) {
-            resultEntity = findResultToEntity(edmNavigationProperty.getType(), navigationData.get(0));
+            return findResultToEntity(edmNavigationProperty.getType(), navigationData.get(0));
         }
-        return resultEntity;
+        return null;
     }
 
     public Entity findRelatedOneByRelation(Entity entity, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
@@ -596,12 +586,11 @@ public class OdataReader extends OfbizOdataProcessor {
                                             Map<String, QueryOption> queryOptions, Map<String, Object> navPrimaryKey) throws OfbizODataException {
         EntityCollection entityCollection = new EntityCollection();
         List<Entity> entityList;
-        String resource = edmProvider.getComponentName() + "Edm.properties";
-        String handlerPath = edmProvider.getWebapp() + "." + edmEntityType.getName() + "." + edmNavigationProperty.getName();
-        String handlerImpl = EntityUtilProperties.getPropertyValue(resource, handlerPath, delegator);
-        if (UtilValidate.isNotEmpty(handlerImpl)) {
+        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+
+        if (UtilValidate.isNotEmpty(navigationHandler)) {
             //自定义查询 从接口实例中获取数据
-            entityList = findRelatedListByHandler(entity, edmNavigationProperty);
+            entityList = findRelatedListByHandler(entity, edmNavigationProperty, navigationHandler);
         } else {
             //ofbiz查询
             entityList = findRelatedListByRelation(entity, edmNavigationProperty);
@@ -645,16 +634,17 @@ public class OdataReader extends OfbizOdataProcessor {
         return entityCollection;
     }
 
-    public List<Entity> findRelatedListByHandler(Entity entity, EdmNavigationProperty edmNavigationProperty) throws
-            OfbizODataException {
+    public List<Entity> findRelatedListByHandler(Entity entity, EdmNavigationProperty edmNavigationProperty, NavigationHandler navigationHandler)
+            throws OfbizODataException {
         //从LinkHandler获取参数
         List<Entity> resultEntities = new ArrayList<>();
         NavigationLinkHandler navigationLinkHandler = HandlerFactory.getNavigationLinkHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+        if (UtilValidate.isEmpty(navigationLinkHandler)) {
+            throw new OfbizODataException("Could not find the interface instance to obtain the parameter");
+        }
         Map<String, Object> linkParameter = navigationLinkHandler.getHandlerParam(odataContext, (OdataOfbizEntity) entity, edmNavigationProperty);
         //从NavigationHandler获取数据
-        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         List<? extends Map<String, Object>> navigationData = navigationHandler.getNavigationData(odataContext, linkParameter, queryOptions);
-        //转换成Entity返回
         for (Map<String, Object> navigationDatum : navigationData) {
             Entity navigationEntity = findResultToEntity(edmNavigationProperty.getType(), navigationDatum);
             resultEntities.add(navigationEntity);
