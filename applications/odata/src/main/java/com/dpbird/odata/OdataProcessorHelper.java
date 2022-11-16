@@ -1074,9 +1074,8 @@ public class OdataProcessorHelper {
                 }
                 //Attribute已经存在, 更新或删除
                 if (UtilValidate.isNotEmpty(attributeEntity)) {
-                    String updateService = Util.getEntityActionService(attrEntityName, "update", delegator);
-                    String deleteService = Util.getEntityActionService(attrEntityName, "delete", delegator);
-                    String serviceName = entry.getValue() == null ? deleteService : updateService;
+                    String action = entry.getValue() == null ? "delete" : "update";
+                    String serviceName = Util.getEntityActionService(attrEntityName, action, delegator);
                     dispatcher.runSync(serviceName, paramMap);
                 }
             }
