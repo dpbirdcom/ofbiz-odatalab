@@ -2,6 +2,8 @@ package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.ofbizHandler.OfbizEntityHandler;
+import com.dpbird.odata.ofbizHandler.OfbizNavigationHandler;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
@@ -28,7 +30,8 @@ public class HandlerFactory {
             List<String> handlerValues = Collections.singletonList(edmEntityType.getName());
             String handlerImpl = getHandlerImpl(edmProvider, handlerValues, delegator);
             if (UtilValidate.isEmpty(handlerImpl)) {
-                return null;
+                //Default handler
+                return new OfbizEntityHandler();
             }
             Class<?> implClass = Class.forName(handlerImpl);
             if (EntityHandler.class.isAssignableFrom(implClass)) {
@@ -52,35 +55,12 @@ public class HandlerFactory {
             List<String> handlerValues = Arrays.asList(edmEntityType.getName(), edmNavigationProperty.getName());
             String handlerImpl = getHandlerImpl(edmProvider, handlerValues, delegator);
             if (UtilValidate.isEmpty(handlerImpl)) {
-                return null;
+                //Default handler
+                return new OfbizNavigationHandler();
             }
             Class<?> implClass = Class.forName(handlerImpl);
             if (NavigationHandler.class.isAssignableFrom(implClass)) {
                 return (NavigationHandler) implClass.newInstance();
-            }
-            throw new OfbizODataException("The wrong instance: " + handlerImpl);
-        } catch (ReflectiveOperationException e) {
-            throw new OfbizODataException(e.getMessage());
-        }
-    }
-
-    /**
-     * 获取一个NavigationLinkHandler的实例
-     *
-     * @param edmEntityType 主实体
-     * @param edmNavigationProperty 关联实体
-     */
-    public static NavigationLinkHandler getNavigationLinkHandler(EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
-                                                                 OfbizAppEdmProvider edmProvider, Delegator delegator) throws OfbizODataException {
-        try {
-            List<String> handlerValues = Arrays.asList(edmEntityType.getName(), edmNavigationProperty.getName(), "Link");
-            String handlerImpl = getHandlerImpl(edmProvider, handlerValues, delegator);
-            if (UtilValidate.isEmpty(handlerImpl)) {
-                return null;
-            }
-            Class<?> implClass = Class.forName(handlerImpl);
-            if (NavigationLinkHandler.class.isAssignableFrom(implClass)) {
-                return (NavigationLinkHandler) implClass.newInstance();
             }
             throw new OfbizODataException("The wrong instance: " + handlerImpl);
         } catch (ReflectiveOperationException e) {

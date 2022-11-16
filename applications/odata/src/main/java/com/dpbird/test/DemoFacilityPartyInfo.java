@@ -11,31 +11,23 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
-import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @date 2022/11/4
  */
-public class DemoFacilityPartyHandler implements NavigationHandler {
+public class DemoFacilityPartyInfo implements NavigationHandler {
 
     @Override
-    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
-        try {
-            Delegator delegator = (Delegator) odataContext.get("delegator");
-            GenericValue party = EntityQuery.use(delegator).from("Party").queryFirst();
-            EntityCondition condition = EntityCondition.makeCondition("partyId", EntityOperator.EQUALS, party.getString("partyId"));
-            return UtilMisc.toMap("condition", condition);
-        } catch (GenericEntityException e) {
-            e.printStackTrace();
-            throw new OfbizODataException(e.getMessage());
-        }
+    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+        List<String> infoNames = UtilMisc.toList("fromFacility_1","fromFacility_2","fromFacility_3");
+        return UtilMisc.toMap("infoNames", infoNames);
     }
 
     @Override
@@ -52,5 +44,4 @@ public class DemoFacilityPartyHandler implements NavigationHandler {
     public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
 
     }
-
 }

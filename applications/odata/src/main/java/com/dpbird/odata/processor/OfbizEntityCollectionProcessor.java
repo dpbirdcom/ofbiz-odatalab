@@ -124,7 +124,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 //只是简单的EntitySet 直接查询count
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) lastUriResource;
                 OdataReader reader = new OdataReader(getOdataContext(), quernOptions, UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet()));
-                count = reader.findCount(uriResourceEntitySet.getEntitySet().getEntityType(), null);
+                count = reader.findCount(uriResourceEntitySet.getEntitySet().getEntityType());
             } else {
                 //多段式查询
                 OdataReader reader = new OdataReader(getOdataContext(), quernOptions, null);

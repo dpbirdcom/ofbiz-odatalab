@@ -2,12 +2,14 @@ package com.dpbird.test;
 
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.handler.EntityHandler;
+import com.dpbird.odata.handler.HandlerResults;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,11 +30,13 @@ public class DemoSimpleFacilityHandler implements EntityHandler {
         }
     }
 
+
     @Override
-    public List<GenericValue> findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
-        Delegator delegator = (Delegator) odataContext.get("delegator");
+    public HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions,  Map<String, Object> navigationParam) throws OfbizODataException {
         try {
-            return EntityQuery.use(delegator).from("Facility").queryList();
+            Delegator delegator = (Delegator) odataContext.get("delegator");
+            List<GenericValue> genericValueList = EntityQuery.use(delegator).from("Facility").queryList();
+            return new HandlerResults(genericValueList.size(), genericValueList);
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }

@@ -379,7 +379,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 //                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
                     OdataReader reader = new OdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
                     OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
-                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmNavigationProperty);
+                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmEntitySet.getEntityType(), edmNavigationProperty);
                     if (relatedEntity == null) {
                         //create
                         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());

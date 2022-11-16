@@ -4,6 +4,9 @@ import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.edm.Edm;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
+import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
@@ -17,11 +20,12 @@ public interface NavigationHandler {
     /**
      * 读取关联实体的数据
      *
-     * @param linkParameter 查询关联数据参数
+     * @param entity 主实体
      * @param queryOptions  queryOptions
      * @return 关联实体数据
      */
-    List<? extends Map<String, Object>> getNavigationData(Map<String, Object> odataContext, Map<String, Object> linkParameter, Map<String, QueryOption> queryOptions) throws OfbizODataException;
+    Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                           EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException;
 
     /**
      * 创建Navigation的数据
