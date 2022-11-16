@@ -142,6 +142,10 @@ public class DataModifyActions {
                         UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {
                     OdataProcessorHelper.updateAttrGenericValue(csdlEntityType, draftGenericValue, userLogin, keyMap, dispatcher, delegator);
                 }
+                OdataOfbizEntity entityToWrite = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, draftGenericValue, locale);
+                OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+                OdataProcessorHelper.createSemanticFields(delegator, dispatcher, edmProvider,
+                        entityToWrite, entityCreated, locale, userLogin);
             }
             return genericValue;
         } catch (GenericEntityException | GenericServiceException | ODataException e) {

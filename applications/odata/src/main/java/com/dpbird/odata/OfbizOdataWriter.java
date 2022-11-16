@@ -176,7 +176,7 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 				edmBindingTarget, edmTypeFilter, newGenericValue, locale);
 
 		// 创建语义话字段对应的数据库表的字段
-		OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, this.edmProvider,
+		OdataProcessorHelper.createSemanticFields(delegator, dispatcher, this.edmProvider,
 				entityToWrite, entityCreated, locale, userLogin);
 
 		// 因为要返回所创建的Entity，所以，某些语义话字段可能是计算字段，也需要返回

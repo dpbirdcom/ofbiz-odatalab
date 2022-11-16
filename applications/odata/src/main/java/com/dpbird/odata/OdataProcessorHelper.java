@@ -1324,8 +1324,7 @@ public class OdataProcessorHelper {
         return isChanged;
     }
 
-    public static void createSemanticFields(HttpServletRequest httpServletRequest, Delegator delegator,
-                                            LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
+    public static void createSemanticFields(Delegator delegator, LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
                                             Entity entityToWrite, OdataOfbizEntity entityCreated,
                                             Locale locale, GenericValue userLogin) throws OfbizODataException {
         String type = entityCreated.getType(); // type是FullQualifiedName
