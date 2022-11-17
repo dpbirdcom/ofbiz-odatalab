@@ -1,8 +1,10 @@
 package com.dpbird.test;
 
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.UriResourceDataInfo;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.handler.NavigationHandler;
+import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
@@ -22,10 +24,12 @@ import java.util.Map;
 /**
  * @date 2022/11/4
  */
-public class DemoFacilityPartyInfo implements NavigationHandler {
+public class DemoFacilityPartyInfoHandler implements NavigationHandler {
 
     @Override
-    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
+                                                  Map<String, QueryOption> queryOptions, List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
+        Debug.log(">>> resourceDataInfos: " + resourceDataInfos);
         List<String> infoNames = UtilMisc.toList("fromFacility_1","fromFacility_2","fromFacility_3");
         return UtilMisc.toMap("infoNames", infoNames);
     }

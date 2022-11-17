@@ -362,7 +362,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                     Map<String, Object> navigationKeyMap = Util.uriParametersToMap(keyPredicates, responseEdmEntityType);
                     OdataReader reader = new OdataReader(getOdataContext(), UtilMisc.toMap("keyMap", keyMap), edmParams);
                     Entity entity = reader.findOne(keyMap, null);
-                    EntityCollection relEntity = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), navigationKeyMap);
+                    EntityCollection relEntity = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), navigationKeyMap, null);
                     if (relEntity == null || relEntity.getEntities().size() < 1) {
                         //不存在的子对象
                         throw new ODataApplicationException("Relation data not found: " + navigationKeyMap, HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
@@ -379,7 +379,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 //                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
                     OdataReader reader = new OdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
                     OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
-                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmEntitySet.getEntityType(), edmNavigationProperty);
+                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmEntitySet.getEntityType(), edmNavigationProperty, null);
                     if (relatedEntity == null) {
                         //create
                         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());

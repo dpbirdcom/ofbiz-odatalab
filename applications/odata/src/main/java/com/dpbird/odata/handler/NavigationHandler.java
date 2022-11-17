@@ -1,6 +1,7 @@
 package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.UriResourceDataInfo;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.olingo.commons.api.data.Entity;
@@ -21,11 +22,15 @@ public interface NavigationHandler {
      * 读取关联实体的数据
      *
      * @param entity 主实体
+     * @param edmEntityType  主实体EdmEntityType
+     * @param edmNavigationProperty  EdmNavigationProperty
      * @param queryOptions  queryOptions
+     * @param uriResourceDataInfos 所有之前的UriResource数据
      * @return 关联实体数据
      */
     Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                           EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException;
+                                           EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
+                                           List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
 
     /**
      * 创建Navigation的数据

@@ -479,7 +479,7 @@ public class DraftHandler {
 //                return ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, queryOptions);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
-                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
+                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null, null);
             } catch (GenericEntityException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR), e.getMessage());
             }

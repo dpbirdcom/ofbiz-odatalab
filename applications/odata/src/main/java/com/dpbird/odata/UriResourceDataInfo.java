@@ -56,4 +56,14 @@ public class UriResourceDataInfo {
     public void setEntityData(Object entityData) {
         this.entityData = entityData;
     }
+
+    @Override
+    public String toString() {
+        return "UriResourceDataInfo{" +
+                "edmBindingTarget=" + edmBindingTarget +
+                ", edmEntityType=" + edmEntityType +
+                ", uriResource=" + uriResource +
+                ", entityData=" + entityData +
+                '}';
+    }
 }

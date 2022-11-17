@@ -1,6 +1,7 @@
 package com.dpbird.odata.ofbizHandler;
 
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.UriResourceDataInfo;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.ofbiz.entity.GenericValue;
@@ -9,6 +10,7 @@ import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,7 +22,7 @@ public class OfbizNavigationHandler implements NavigationHandler {
 
     @Override
     public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+                                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions, List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
         navigationParam.put("edmEntityType", edmEntityType);

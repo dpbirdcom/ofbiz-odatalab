@@ -19,6 +19,7 @@ import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
+import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
 import org.apache.ofbiz.entity.util.EntityQuery;
@@ -2029,43 +2030,39 @@ public class Util {
 	}
 
 	//获取一个数据集合的查询条件
-	public static EntityCondition getEntityCollectionQueryCond(EntityCollection entityCollection, boolean addPrefix) {
+	public static EntityCondition getEntityCollectionQueryCond(EntityCollection entityCollection) {
 		List<GenericValue> genericValueList = new ArrayList<>();
 		for (Entity entity : entityCollection) {
 			OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
 			genericValueList.add(ofbizEntity.getGenericValue());
 		}
-		return getGenericValuesQueryCond(genericValueList, addPrefix);
+		return getGenericValuesQueryCond(genericValueList);
 	}
 	//获取一个数据集合的查询条件
-	public static EntityCondition getGenericValuesQueryCond(List<GenericValue> genericValues, boolean addPrefix) {
+	public static EntityCondition getGenericValuesQueryCond(List<GenericValue> genericValues) {
 		if (UtilValidate.isEmpty(genericValues)) {
 			return null;
 		}
-		StringBuilder querySql = new StringBuilder();
 		ModelEntity modelEntity = genericValues.get(0).getModelEntity();
 		List<ModelField> pkFields = modelEntity.getPkFields();
-		List<String> pkNames = new ArrayList<>();
-		String prefix = addPrefix ? modelEntity.getEntityName() + "." : "";
-		for (ModelField modelField : pkFields) {
-			pkNames.add(prefix + modelField.getColName());
-		}
-		String fieldStr = pkNames.toString().replace("[", "(").replace("]", ")");
-		querySql.append(fieldStr); //columns
-		querySql.append(" IN ");
-
-		List<String> pkValues = new ArrayList<>();
-		for (GenericValue genericValue : genericValues) {
-			List<String> pkValue = new ArrayList<>();
-			for (ModelField modelField : pkFields) {
-				String value = genericValue.get(modelField.getName()).toString();
-				pkValue.add("'" + value + "'");
+		if (pkFields.size() == 1) {
+			//单主键使用in
+			String pkName = modelEntity.getFirstPkFieldName();
+			List<Object> primaryKeyList = EntityUtil.getFieldListFromEntityList(genericValues, pkName, true);
+			return EntityCondition.makeCondition(pkName, EntityOperator.IN, primaryKeyList);
+		} else {
+			List<EntityCondition> conditionList = new ArrayList<>();
+			//多主键使用多个and拼接
+			for (GenericValue genericValue : genericValues) {
+				List<EntityCondition> currentConditions = new ArrayList<>();
+				for (ModelField pkField : pkFields) {
+					String pkName = pkField.getName();
+					currentConditions.add(EntityCondition.makeCondition(pkName, EntityOperator.EQUALS, genericValue.get(pkField.getName())));
+				}
+				conditionList.add(EntityCondition.makeCondition(currentConditions, EntityOperator.AND));
 			}
-			pkValues.add(pkValue.toString());
+			return EntityCondition.makeCondition(conditionList, EntityOperator.OR);
 		}
-		String valueStr = pkValues.toString().replaceAll("\\[", "(").replace("]", ")");
-		querySql.append(valueStr); //values
-		return EntityCondition.makeConditionWhere(querySql.toString());
 	}
 
 	/**
@@ -2177,7 +2174,7 @@ public class Util {
 		try {
 			//获取现有数据集的主键 只在这个范围之内做查询
 			ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-			EntityCondition primaryKeyCond = getEntityCollectionQueryCond(entityCollection, false);
+			EntityCondition primaryKeyCond = getEntityCollectionQueryCond(entityCollection);
 			//解析FilterOption表达式
 			DynamicViewEntity dynamicViewEntity = null;
 			EntityCondition entityCondition = null;

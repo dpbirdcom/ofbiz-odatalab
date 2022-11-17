@@ -18,6 +18,7 @@ import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +60,8 @@ public class OfbizEntityHandler implements EntityHandler {
             OdataOfbizEntity entity = (OdataOfbizEntity) navigationParam.get("entity");
             EdmEntityType edmEntityType = (EdmEntityType) navigationParam.get("edmEntityType");
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) navigationParam.get("edmNavigationProperty");
-            OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmEntityType));
+            Map<String, Object> edmParam = UtilMisc.toMap("edmEntityType", edmEntityType);
+            OdataReader reader = new OdataReader(odataContext, new HashMap<>(), edmParam);
             List<GenericValue> relatedList = reader.findRelatedGenericValue(entity, edmNavigationProperty);
             if (UtilValidate.isEmpty(relatedList)) {
                 return handlerResults;

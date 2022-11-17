@@ -3,8 +3,10 @@ package com.dpbird.test;
 import com.dpbird.odata.OdataProcessorHelper;
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.UriResourceDataInfo;
 import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.edm.OdataOfbizEntity;
+import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
@@ -30,8 +32,10 @@ import java.util.Map;
 public class DemoFacilityProductHandler implements NavigationHandler {
 
     @Override
-    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
+                                                  Map<String, QueryOption> queryOptions, List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
         try {
+            Debug.log(">>> resourceDataInfos: " + resourceDataInfos);
             Delegator delegator = (Delegator) odataContext.get("delegator");
             List<GenericValue> genericValueList = EntityQuery.use(delegator).from("Product").maxRows(5).queryList();
             List<String> productIds = EntityUtil.getFieldListFromEntityList(genericValueList, "productId", false);
