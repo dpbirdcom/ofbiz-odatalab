@@ -87,7 +87,7 @@ public class OfbizOdataReader extends OfbizOdataProcessor {
             if (entityCollection == null || UtilValidate.isEmpty(entityCollection.getEntities())) {
                 return 0L;
             }
-            EntityCondition queryCondition = Util.getEntityCollectionQueryCond(entityCollection, dynamicViewEntity != null);
+            EntityCondition queryCondition = Util.getEntityCollectionQueryCond(entityCollection);
             entityCondition = Util.appendCondition(entityCondition, queryCondition);
             if (dynamicViewEntity == null) {
                 return EntityQuery.use(delegator).from(entityNameToFind).where(entityCondition).queryCount();
