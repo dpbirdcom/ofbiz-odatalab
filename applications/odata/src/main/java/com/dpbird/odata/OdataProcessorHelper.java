@@ -1624,7 +1624,7 @@ public class OdataProcessorHelper {
                         String fieldName = ofbizCsdlProperty.getOfbizFieldName();
                         Property property = entityToWrite.getProperty(ofbizCsdlProperty.getName());
                         if (property != null) {
-                            if (property.getValue() != null) {
+                            if (UtilValidate.isNotEmpty(property.getValue())) {
                                 allNull = false;
                             }
                             fieldMap.put(fieldName, property.getValue());
