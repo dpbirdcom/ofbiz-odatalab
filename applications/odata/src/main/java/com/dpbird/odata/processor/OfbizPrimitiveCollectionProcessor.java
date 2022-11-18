@@ -65,7 +65,7 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
         EdmPrimitiveType edmPrimitiveType;
         try {
             UriResource lastUriResource = ListUtil.getLast(resourcePaths);
-            OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), null);
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>());
             if (lastUriResource instanceof UriResourceFunction) {
                 //Function
                 UriResourceFunction resourceFunction = (UriResourceFunction) lastUriResource;
@@ -76,7 +76,7 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
                 if (edmFunction.isBound()) {
                     //添加Bound参数
                     List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
-                    List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriResourceList, uriInfo.getAliases());
+                    List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, uriInfo.getAliases());
                     UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
                     String boundParamName = edmFunction.getParameterNames().get(0);
                     Object entityData = uriResourceDataInfo.getEntityData();
@@ -95,7 +95,7 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
                 UriResourcePrimitiveProperty resourceProperty = (UriResourcePrimitiveProperty) lastUriResource;
                 edmPrimitiveType = (EdmPrimitiveType) resourceProperty.getType();
                 List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
-                List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriResourceList, uriInfo.getAliases());
+                List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, uriInfo.getAliases());
                 UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
                 Entity entity = (Entity) uriResourceDataInfo.getEntityData();
                 property = entity.getProperty(lastUriResource.getSegmentValue());

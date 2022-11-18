@@ -279,8 +279,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
         try {
-            OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo));
+            List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = resourceDataInfos.get(resourceDataInfos.size() - 1);
             Entity responseEntity = (Entity) uriResourceDataInfo.getEntityData();
             //response
@@ -437,8 +437,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void readMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException {
         try {
-            OdataReader reader = new OdataReader(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo));
+            List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
             OdataOfbizEntity responseEntity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
             EdmEntityType responseEdmEntityType = uriResourceDataInfo.getEdmEntityType();

@@ -84,8 +84,8 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
         try {
             Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
             if (queryOptions.get("applyOption") == null) {
-                OdataReader reader = new OdataReader(getOdataContext(), queryOptions, null);
-                List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions);
+                List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
                 UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) uriResourceDataInfo.getEntityData();
                 serializeEntityCollection(oDataRequest, oDataResponse, uriResourceDataInfo.getEdmEntityType(),
@@ -127,8 +127,8 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 count = reader.findCount(uriResourceEntitySet.getEntitySet().getEntityType());
             } else {
                 //多段式查询
-                OdataReader reader = new OdataReader(getOdataContext(), quernOptions, null);
-                List<UriResourceDataInfo> resourceDataInfos = reader.readUriResource(resourceParts, uriInfo.getAliases());
+                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), quernOptions);
+                List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, uriInfo.getAliases());
                 UriResourceDataInfo lastResourceData = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) lastResourceData.getEntityData();
                 count = (long) entityCollection.getEntities().size();

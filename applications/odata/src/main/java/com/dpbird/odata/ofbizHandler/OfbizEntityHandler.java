@@ -62,14 +62,10 @@ public class OfbizEntityHandler implements EntityHandler {
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) navigationParam.get("edmNavigationProperty");
             Map<String, Object> edmParam = UtilMisc.toMap("edmEntityType", edmEntityType);
             OdataReader reader = new OdataReader(odataContext, new HashMap<>(), edmParam);
-            List<GenericValue> relatedList = reader.findRelatedGenericValue(entity, edmNavigationProperty);
-            if (UtilValidate.isEmpty(relatedList)) {
-                return handlerResults;
+            List<GenericValue> relatedList = reader.findRelatedGenericValue(entity, edmNavigationProperty, primaryKeyCond);
+            if (UtilValidate.isNotEmpty(relatedList)) {
+                handlerResults = new HandlerResults(relatedList.size(), relatedList);
             }
-            if (primaryKeyCond != null) {
-                relatedList = EntityUtil.filterByCondition(relatedList, primaryKeyCond);
-            }
-            handlerResults = new HandlerResults(relatedList.size(), relatedList);
         }
         return handlerResults;
     }
