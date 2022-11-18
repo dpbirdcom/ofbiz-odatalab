@@ -6,7 +6,8 @@
     <default-resource-name>ProductEntityLabels</default-resource-name>
 
 
-    <entity entity-name="DraftAdministrativeData" package-name="com.dpbird.draft">
+    <entity entity-name="DraftAdministrativeData"
+            package-name="com.dpbird.draft" no-auto-stamp="true">
         <field name="draftUUID" type="id" /><!-- draftUUID会用作sapContextId -->
         <field name="creationDateTime" type="date-time" />
         <field name="createdByUser" type="id" />

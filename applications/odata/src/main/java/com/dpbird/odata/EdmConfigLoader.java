@@ -2229,6 +2229,9 @@ public class EdmConfigLoader {
             modelEntity.setEntityName(draftEntityName);
             modelEntity.setTableName(draftEntityName);
             modelEntity.setPackageName("com.dpbird.draft");
+            //ofbiz会在删除数据时创建主键删除记录，并且draft表会发生频繁的删除操作(Discard)，
+            //数据量大时非常影响速度，而且对于draft表来说是不必要的，这个属性可以防止这个问题 不去创建删除记录
+            modelEntity.setNoAutoStamp(true);
             //Draft固定字段
             modelEntity.addField(ModelField.create(modelEntity, "draftUUID", "id", true));
             modelEntity.addField(ModelField.create(modelEntity, "isActiveEntity", "id", false));
