@@ -16,7 +16,6 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityFindOptions;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
-import org.apache.ofbiz.order.shoppingcart.CartItemModifyException;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Parameter;
@@ -32,7 +31,7 @@ import java.util.*;
 
 public class ActionFunctionEvents {
     public static Object testBoundSetActionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -43,7 +42,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionEntity(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -54,7 +53,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -107,7 +106,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -117,7 +116,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionEntity(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -127,7 +126,7 @@ public class ActionFunctionEvents {
     }
 
      public static Object testBoundSingletonActionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -138,7 +137,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -149,7 +148,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionOdataQuery(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -185,7 +184,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -208,7 +207,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasEntity(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -231,7 +230,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasComplex(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -292,7 +291,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonFunctionPrimitive(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -302,7 +301,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionEntity(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -356,7 +355,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionEntityCollection(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -369,7 +368,7 @@ public class ActionFunctionEvents {
     public static Object testBoundSetFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
                                                                     EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
                                                                     Map<String, Object> keyMap, Map<String, Object> navKeyMap)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("Product").queryPagedList(1, 100);
         return pagedList.getData();
@@ -378,7 +377,7 @@ public class ActionFunctionEvents {
     public static Object testImportFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
                                                                     EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
                                                                     Map<String, Object> keyMap, Map<String, Object> navKeyMap)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderHeader").queryPagedList(1, 100);
         return pagedList.getData();
@@ -387,14 +386,14 @@ public class ActionFunctionEvents {
     public static Object testImportFunctionEntityCollectionFilterManyKey(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
                                                                     EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
                                                                     Map<String, Object> keyMap, Map<String, Object> navKeyMap)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderItem").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
     public static Object testBoundSingletonFunctionEntity(HttpServletRequest request, Map<String, Object> functionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -415,7 +414,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionVoid(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -426,7 +425,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionVoid(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -436,7 +435,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -456,7 +455,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionComplex(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -480,7 +479,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionEntity(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -492,7 +491,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -526,7 +525,7 @@ public class ActionFunctionEvents {
 
 
     public static Object testImportActionVoid(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -537,7 +536,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionComplex(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -549,7 +548,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionComplexCollection(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         GenericValue party = (GenericValue) boundObject;
         String otherParm = (String) actionParameters.get("otherParm");
         Map<String, Object> map1 = UtilMisc.toMap("testObjectOneId", party.getString("partyId"),
@@ -571,7 +570,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionComplex(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
 
@@ -598,7 +597,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testChangeSetBoundSetAction(HttpServletRequest request, Map<String, Object> actionParameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue product = (GenericValue) boundObject;
@@ -640,7 +639,7 @@ public class ActionFunctionEvents {
 
 
     public static Object testBoundSetFunctionComplex(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -652,7 +651,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionComplexCollection(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -679,7 +678,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonFunctionComplex(HttpServletRequest request, Map<String, Object> parameters, Object boundObject)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) boundObject;
@@ -704,7 +703,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportFunctionPrimitive(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -814,7 +813,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportFunctionEntity(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
@@ -847,7 +846,7 @@ public class ActionFunctionEvents {
     }
 
    public static Object testImportFunctionEntityCollection(HttpServletRequest request, Map<String, Object> actionParameters)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");

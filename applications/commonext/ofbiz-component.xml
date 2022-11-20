@@ -37,18 +37,18 @@ under the License.
     <service-resource type="model" loader="main" location="servicedef/services.xml"/>
     <service-resource type="eca" loader="main" location="servicedef/secas.xml"/>
     
-    <webapp name="ofbizsetup"
-        title="Setup"
-        server="default-server"
-        location="webapp/ofbizsetup"
-        base-permission="OFBTOOLS,SETUP"
-        mount-point="/ofbizsetup"/>
-    
-    <webapp name="ordermgr-js"
-        title="ordermgr-js"
-        server="default-server"
-        location="webapp/ordermgr-js"
-        mount-point="/ordermgr-js"
-        app-bar-display="false"/>
+<!--    <webapp name="ofbizsetup"-->
+<!--        title="Setup"-->
+<!--        server="default-server"-->
+<!--        location="webapp/ofbizsetup"-->
+<!--        base-permission="OFBTOOLS,SETUP"-->
+<!--        mount-point="/ofbizsetup"/>-->
+<!--    -->
+<!--    <webapp name="ordermgr-js"-->
+<!--        title="ordermgr-js"-->
+<!--        server="default-server"-->
+<!--        location="webapp/ordermgr-js"-->
+<!--        mount-point="/ordermgr-js"-->
+<!--        app-bar-display="false"/>-->
     
 </ofbiz-component>
