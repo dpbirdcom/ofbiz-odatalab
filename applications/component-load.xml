@@ -20,18 +20,18 @@ under the License.
 
 <component-loader xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/component-loader.xsd">
-    <load-component component-location="datamodel"/>
-    <load-component component-location="party"/>
-    <load-component component-location="securityext"/>
-    <load-component component-location="content"/>
-    <load-component component-location="workeffort"/>
-    <load-component component-location="product"/>
-    <load-component component-location="manufacturing"/>
-    <load-component component-location="accounting"/>
-    <load-component component-location="humanres"/>
-    <load-component component-location="order"/>
-    <load-component component-location="marketing"/>
-    <load-component component-location="odata"/>
+<!--    <load-component component-location="datamodel"/>-->
+<!--    <load-component component-location="party"/>-->
+<!--    <load-component component-location="securityext"/>-->
+<!--    <load-component component-location="content"/>-->
+<!--    <load-component component-location="workeffort"/>-->
+<!--    <load-component component-location="product"/>-->
+<!--    <load-component component-location="manufacturing"/>-->
+<!--    <load-component component-location="accounting"/>-->
+<!--    <load-component component-location="humanres"/>-->
+<!--    <load-component component-location="order"/>-->
+<!--    <load-component component-location="marketing"/>-->
 <!-- common component used by most other components last because it uses info from most components-->
     <load-component component-location="commonext"/>
+    <load-component component-location="odata"/>
 </component-loader>
