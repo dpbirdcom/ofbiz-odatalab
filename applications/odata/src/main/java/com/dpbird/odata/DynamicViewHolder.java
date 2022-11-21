@@ -14,6 +14,9 @@ import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.entity.model.ModelViewEntity;
 import org.apache.ofbiz.service.LocalDispatcher;
+import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.UriResourceLambdaVariable;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -72,6 +75,40 @@ public class DynamicViewHolder {
         if (relAlias != null) {
             addRelAlias(null, relAlias);
         }
+    }
+
+
+    public String addLambdaMultiParts(List<UriResource> resourceParts) throws OfbizODataException {
+        UriResourceLambdaVariable lambdaVariable = (UriResourceLambdaVariable) resourceParts.get(0);
+        EdmEntityType lambdaEntityType = (EdmEntityType) lambdaVariable.getType();
+        OfbizCsdlEntityType currentCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(lambdaEntityType.getFullQualifiedName());
+
+        String returnEntityAlias = null;
+        for (int i = 1; i < resourceParts.size() - 1; i++) {
+            String resourcePart = resourceParts.get(i).getSegmentValue();
+            OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty) currentCsdlEntityType.getNavigationProperty(resourcePart);
+            String relEntityOfbizName = navigationProperty.getTypeFQN().getName();
+
+            //添加当前的ViewLink
+            EntityTypeRelAlias relAlias = navigationProperty.getRelAlias();
+            EntityCondition relCondition = relAlias.getRelationsCondition().get(resourcePart);
+            if (relCondition != null) {
+                //如果有条件，这些条件的字段也要加到Alias中
+                ModelViewEntity.ViewEntityCondition viewEntityCondition = new ModelViewEntity.ViewEntityCondition(dynamicViewEntity.makeModelViewEntity(delegator), null, false, false, null, resourcePart, null, relCondition);
+                if (!hasMemberEntity(relEntityOfbizName, relEntityOfbizName)) {
+                    dynamicViewEntity.addMemberEntity(relEntityOfbizName, relEntityOfbizName);
+                    ModelViewEntity.ViewConditionList conditionList = (ModelViewEntity.ViewConditionList) viewEntityCondition.whereCondition;
+                    for (ModelViewEntity.ViewCondition viewCondition : conditionList.conditionList) {
+                        ModelViewEntity.ViewConditionExpr expr = (ModelViewEntity.ViewConditionExpr) viewCondition;
+                        dynamicViewEntity.addAlias(relEntityOfbizName, expr.fieldName, expr.fieldName, null, null, false, null);
+                    }
+                }
+            }
+            //处理 RelAlias
+            returnEntityAlias = addRelAlias(null, relAlias);
+            currentCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+        }
+        return returnEntityAlias;
     }
 
     /**

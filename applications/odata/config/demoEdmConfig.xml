@@ -306,6 +306,7 @@
 		<NavigationProperty Name="PartyAttribute" Type="PartyAttribute" IsCollection="true" FilterByDate="false"/>
 		<NavigationProperty Name="Person" Type="Person" AutoBinding="true"/>
 		<NavigationProperty Name="PartyGroup"/>
+		<NavigationProperty Name="PartyContactMech"/>
 		<NavigationProperty Name="PartyRoleType" Type="RoleType" IsCollection="true" FilterByDate="false" Relations="PartyRole/RoleType"/>
 		<NavigationProperty Name="ContactMechParty" Type="ContactMech" IsCollection="true" Relations="PartyContactMech/ContactMech" ContainsTarget="true"/>
 	</EntityType>
@@ -326,7 +327,9 @@
 		<Property Name="gender" Type="Gender"/>
 	</EntityType>
 	<EntityType Name="PartyProfileDefault" AutoProperties="true"/>
-	<EntityType Name="PartyContactMech" AutoProperties="true"/>
+	<EntityType Name="PartyContactMech" AutoProperties="true">
+		<NavigationProperty Name="ContactMech"/>
+	</EntityType>
 	<EntityType Name="PartyContactMechPurpose" AutoProperties="true"/>
 	<EntityType Name="PartyIdentification" AutoProperties="true"/>
 	<EntityType Name="PartyRole" AutoProperties="true" SearchOption="roleTypeId">
@@ -434,7 +437,6 @@
 	<EntityType Name="ProductStoreRole" AutoProperties="true"/>
 	<EntityType Name="WebSite" AutoProperties="true"/>
 	<EntityType Name="WebSitePathAlias" AutoProperties="true"/>
-	<EntityType Name="PartyContactMech" AutoProperties="true"/>
 	<EntityType Name="PartyAndContactMech" AutoProperties="true"/>
 	<EntityType Name="PartyContactMechPurpose" AutoProperties="true"/>
 	<EntityType Name="PartyRoleAndPartyDetail" AutoProperties="true"/>
