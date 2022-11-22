@@ -65,6 +65,20 @@ public class AnnotationCheck {
         }
     }
 
+
+    /**
+     * 检查当前的请求是否需要If-Match或If-None-Match
+     */
+    public static void checkIfMatch(Delegator delegator, OfbizAppEdmProvider edmProvider, ODataRequest request, EdmEntitySet edmEntitySet,
+                                    GenericValue genericValue) throws ODataApplicationException {
+        // 1.先验证当前请求是否缺少必须的If-Match
+        requiredPrecondition(request, edmProvider, edmEntitySet);
+        // 2.如果带有If-Match 进行匹配验证
+        if (request.getHeader("If-Match") != null || request.getHeader("If-None-Match") != null) {
+            matchEtag(genericValue, request);
+        }
+    }
+
     /**
      * 检查request是否是否缺少必须的If-Match
      */

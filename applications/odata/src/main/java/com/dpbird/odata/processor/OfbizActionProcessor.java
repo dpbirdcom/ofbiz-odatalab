@@ -1087,8 +1087,37 @@ public class OfbizActionProcessor
         List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
         //如果是BoundSetAction，检查If-Match
         if(uriResourceParts.get(0) instanceof UriResourceEntitySet) {
-            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
-            AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getKeyPredicates());
+            EdmEntitySet edmEntitySet;
+            List<UriParameter> keyPredicates;
+            if (uriResourceParts.size() == 1) {
+                UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+                edmEntitySet = uriResourceEntitySet.getEntitySet();
+                keyPredicates = uriResourceEntitySet.getKeyPredicates();
+                AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, keyPredicates);
+            } else {
+                //TODO: 暂时仅支持两段式
+                UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+                UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResourceParts.get(uriResourceParts.size() - 1);
+                EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
+                edmEntitySet = Util.getNavigationTargetEntitySet(uriResourceEntitySet.getEntitySet(), edmNavigationProperty);
+                if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
+                    keyPredicates = resourceNavigation.getKeyPredicates();
+                    AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, keyPredicates);
+                } else {
+                    try {
+                        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
+                        Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet(),
+                                "edmNavigationProperty", edmNavigationProperty);
+                        OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, new HashMap<>(), edmParams);
+                        Map<String, Object> primaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+                        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(primaryKey, resourceNavigation.getProperty(), null);
+                        AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, ofbizEntity.getGenericValue());
+                    } catch (OfbizODataException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
     }
 
