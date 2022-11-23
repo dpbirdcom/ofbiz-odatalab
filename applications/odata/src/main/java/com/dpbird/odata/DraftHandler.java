@@ -30,6 +30,7 @@ import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.core.uri.queryoption.ExpandOptionImpl;
 import org.apache.olingo.server.core.uri.queryoption.LevelsOptionImpl;
 
+import java.net.URI;
 import java.util.*;
 
 public class DraftHandler {
@@ -256,14 +257,17 @@ public class DraftHandler {
         }
         EntityCollection entityCollection = new EntityCollection();
         List<Entity> entityList = entityCollection.getEntities();
-        if (navDraftGenericValues != null) {
-            for (GenericValue elementGV : navDraftGenericValues) {
-                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, elementGV, locale);
-                if (navCsdlEntityType.isAutoId()) {
-                    rowEntity = procEntityWithAutoId(elementGV, rowEntity);
-                }
-                entityList.add(rowEntity);
+        for (GenericValue elementGV : navDraftGenericValues) {
+            OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, elementGV, locale);
+            if (UtilValidate.isEmpty(rowEntity)) {
+                continue;
             }
+            if (navCsdlEntityType.isAutoId()) {
+                rowEntity = procEntityWithAutoId(elementGV, rowEntity);
+            }
+            URI entityId = Util.createId(edmNavigationProperty.getName(), edmNavigationProperty.getType(), navCsdlEntityType, elementGV);
+            rowEntity.setId(entityId);
+            entityList.add(rowEntity);
         }
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             for (Entity entity : entityList) {
