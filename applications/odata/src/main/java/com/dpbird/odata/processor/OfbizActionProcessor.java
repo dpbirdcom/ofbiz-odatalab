@@ -1097,7 +1097,7 @@ public class OfbizActionProcessor
             } else {
                 //TODO: 暂时仅支持两段式
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
-                UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResourceParts.get(uriResourceParts.size() - 1);
+                UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResourceParts.get(1);
                 EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
                 edmEntitySet = Util.getNavigationTargetEntitySet(uriResourceEntitySet.getEntitySet(), edmNavigationProperty);
                 if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
