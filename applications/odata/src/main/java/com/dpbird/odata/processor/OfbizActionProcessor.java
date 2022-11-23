@@ -1089,7 +1089,7 @@ public class OfbizActionProcessor
         if(uriResourceParts.get(0) instanceof UriResourceEntitySet) {
             EdmEntitySet edmEntitySet;
             List<UriParameter> keyPredicates;
-            if (uriResourceParts.size() == 1) {
+            if (uriResourceParts.size() <= 2) {
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
                 edmEntitySet = uriResourceEntitySet.getEntitySet();
                 keyPredicates = uriResourceEntitySet.getKeyPredicates();
