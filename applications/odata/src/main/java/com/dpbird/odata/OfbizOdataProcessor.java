@@ -111,7 +111,11 @@ public class OfbizOdataProcessor {
         } catch (ODataException e) {
             e.printStackTrace();
         }
+    }
 
+    private Map<String, Object> getOdataContext() {
+        return UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
     }
 
     protected void retrieveEntityCondition() throws ODataException {
@@ -159,14 +163,14 @@ public class OfbizOdataProcessor {
                                 condition = fieldCondition.split("!=");
                                 String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0]);
                                 entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, condition[1]));
-                            } else if (fieldCondition.contains("=")){
+                            } else if (fieldCondition.contains("=")) {
                                 condition = fieldCondition.split("=");
                                 String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0]);
                                 entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.EQUALS, condition[1]));
                             } else if (fieldCondition.contains(" in ")) {
                                 EntityComparisonOperator<?, ?> operator;
                                 //是not in
-                                if(fieldCondition.contains(" not in ")) {
+                                if (fieldCondition.contains(" not in ")) {
                                     condition = fieldCondition.split(" not in ");
                                     operator = EntityOperator.NOT_IN;
                                 } else {
@@ -305,7 +309,7 @@ public class OfbizOdataProcessor {
                 String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias);
 
                 String aliasPropertyName = option.substring(option.lastIndexOf("/") + 1);
-                aliasPropertyName = aliasPropertyName.replace("[", "").replace("]","");
+                aliasPropertyName = aliasPropertyName.replace("[", "").replace("]", "");
                 ArrayList<String> navEntityProperties = new ArrayList<>(Arrays.asList(aliasPropertyName.split(",")));
                 for (String navEntityProperty : navEntityProperties) {
                     String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, navEntityProperty);
@@ -533,7 +537,7 @@ public class OfbizOdataProcessor {
             List<OrderByItem> orderItemList = ((OrderByOption) queryOptions.get("orderByOption")).getOrders();
             for (OrderByItem orderByItem : orderItemList) {
                 Expression expression = orderByItem.getExpression();
-                if(expression.toString().contains("$count")) {
+                if (expression.toString().contains("$count")) {
                     //这里不支持根据子对象数量排序 会在查询结果后处理
                     continue;
                 }
@@ -850,14 +854,8 @@ public class OfbizOdataProcessor {
         }
         return e1;
     }
-    protected void addExpandOption(ExpandOption expandOption, List<Entity> entities, EdmEntityType edmEntityType)
-            throws OfbizODataException {
-        for (Entity entity : entities) {
-            addExpandOption(expandOption, (OdataOfbizEntity) entity, edmEntityType);
-        }
-    }
 
-    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType)
+    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType, List<UriResourceDataInfo> expandUriResourceInfo)
             throws OfbizODataException {
         if (expandOption == null) {
             return;
@@ -874,17 +872,17 @@ public class OfbizOdataProcessor {
             List<String> navigationNames = edmEntityType.getNavigationPropertyNames();
             for (String navigationName : navigationNames) {
                 EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
-                addExpandNavigation(entity, edmEntityType, navigationProperty, expandLevel);
+                addExpandNavigation(entity, edmEntityType, navigationProperty, expandLevel, expandUriResourceInfo);
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
-                addExpandItem(entity, expandItem, edmEntityType);
+                addExpandItem(entity, expandItem, edmEntityType, expandUriResourceInfo);
             } // end for (ExpandItem expandItem : expandItems)
         }
         Debug.logInfo("finished adding all expand items", module);
     }
 
-    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmEntityType edmEntityType) throws OfbizODataException {
+    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmEntityType edmEntityType, List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
         EdmNavigationProperty edmNavigationProperty = null;
         LevelsExpandOption levelsExpandOption = expandItem.getLevelsOption();
         int expandLevel = 1;
@@ -902,10 +900,6 @@ public class OfbizOdataProcessor {
         String navPropName = edmNavigationProperty.getName();
         Debug.logInfo("adding expand option with name = " + navPropName, module);
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-            FilterOption filterOption = expandItem.getFilterOption();
-            OrderByOption orderByOption = expandItem.getOrderByOption();
-            SelectOption selectOption = expandItem.getSelectOption();
-            SearchOption searchOption = expandItem.getSearchOption();
             ExpandOption nestedExpandOption = expandItem.getExpandOption(); // expand nested in expand
             if (nestedExpandOption == null && expandLevel > 1) {
                 ExpandOptionImpl expandOptionImpl = new ExpandOptionImpl();
@@ -914,21 +908,21 @@ public class OfbizOdataProcessor {
                 expandOptionImpl.addExpandItem(expandItem);
                 nestedExpandOption = expandOptionImpl;
             }
-            expandCollection(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, searchOption);
+            Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption, "orderByOption", expandItem.getOrderByOption(),
+                    "selectOption", expandItem.getSelectOption(), "searchOption", expandItem.getSearchOption(), "filterOption", expandItem.getFilterOption());
+            expandCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions, expandUriResourceInfo);
         } else { // expand对象不是collection
             // 此处改过
-            FilterOption filterOption = expandItem.getFilterOption();
-            OrderByOption orderByOption = expandItem.getOrderByOption();
-            ExpandOption nestedExpandOption = expandItem.getExpandOption(); // expand nested in expand
-            SelectOption selectOption = expandItem.getSelectOption(); // expand nested in expand
-            expandNonCollection(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption);
+            Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", expandItem.getExpandOption(),
+                    "orderByOption", expandItem.getOrderByOption(), "selectOption", expandItem.getSelectOption(), "filterOption", expandItem.getFilterOption());
+            expandNonCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions, expandUriResourceInfo);
         } // end expand对象不是collection
     }
 
     // expand=*时会调用此方法
     private void addExpandNavigation(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty,
-                                     int expandLevel) throws OfbizODataException {
+                                     int expandLevel, List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
         ExpandOption nestedExpandOption = null;
         if (expandLevel > 1) {
             ExpandOptionImpl expandOptionImpl = new ExpandOptionImpl();
@@ -940,31 +934,26 @@ public class OfbizOdataProcessor {
             expandOptionImpl.addExpandItem(expandItemImpl);
             nestedExpandOption = expandOptionImpl;
         }
+        Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption);
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-            expandCollection(entity, edmEntityType, edmNavigationProperty, null, null, nestedExpandOption, null, null);
+            expandCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions, expandUriResourceInfo);
         } else { // expand对象不是collection
-            expandNonCollection(entity, edmEntityType, edmNavigationProperty, null, null, nestedExpandOption, null);
+            expandNonCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions, expandUriResourceInfo);
         } // end expand对象不是collection
     }
 
     private EntityCollection getExpandData(OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                           EdmNavigationProperty edmNavigationProperty,
-                                           FilterOption filterOption, OrderByOption orderByOption,
-                                           ExpandOption nestedExpandOption, SelectOption selectOption, SearchOption searchOption) throws OfbizODataException {
-        Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
-        Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption, "orderByOption", orderByOption,
-                "selectOption", selectOption, "searchOption", searchOption, "filterOption", filterOption);
+                                           EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> embeddedQueryOptions,
+                                           List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-        OdataReader reader = new OdataReader(embeddedOdataContext, embeddedQueryOptions, embeddedEdmParams);
-        return reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null, null);
+        OdataReader reader = new OdataReader(getOdataContext(), embeddedQueryOptions, embeddedEdmParams);
+        return reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null, expandUriResourceInfo);
     }
 
     private void expandNonCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                     EdmNavigationProperty edmNavigationProperty,
-                                     FilterOption filterOption, OrderByOption orderByOption,
-                                     ExpandOption nestedExpandOption, SelectOption selectOption) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, null);
+                                     EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
+                                     List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions, expandUriResourceInfo);
         if (null != expandEntityCollection && UtilValidate.isNotEmpty(expandEntityCollection.getEntities())) {
             Entity expandEntity = expandEntityCollection.getEntities().get(0);
             expandEntityCollection.setCount(expandEntityCollection.getEntities().size());
@@ -983,10 +972,9 @@ public class OfbizOdataProcessor {
     }
 
     private void expandCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                  EdmNavigationProperty edmNavigationProperty,
-                                  FilterOption filterOption, OrderByOption orderByOption,
-                                  ExpandOption nestedExpandOption, SelectOption selectOption, SearchOption searchOption) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, filterOption, orderByOption, nestedExpandOption, selectOption, searchOption);
+                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
+                                  List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions, expandUriResourceInfo);
         String navPropName = edmNavigationProperty.getName();
         Link link = new Link();
         link.setTitle(navPropName);

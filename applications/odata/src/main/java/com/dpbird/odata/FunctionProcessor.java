@@ -1,12 +1,16 @@
 package com.dpbird.odata;
 
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlFunction;
+import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.server.api.uri.UriResourceFunction;
+import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
@@ -23,15 +27,23 @@ public class FunctionProcessor extends OdataReader {
     /**
      * return Entity
      */
-    public Entity processFunctionEntity(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+    public Entity processFunctionEntity(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap,
+                                        EdmBindingTarget edmBindingTarget, List<UriResourceDataInfo> resourceDataInfoList) throws OfbizODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
+        EdmEntityType returnEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
         //Invoke method.
+        odataContext.put("uriResources", resourceDataInfoList);
         Object result = OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlFunction.getOfbizMethod(), paramMap, edmBindingTarget);
-        Entity responseEntity = resultToEntity((EdmEntityType) edmFunction.getReturnType().getType(), edmProvider, result);
+        Entity responseEntity = resultToEntity(returnEntityType, edmProvider, result);
         if (responseEntity != null) {
             OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                     queryOptions, UtilMisc.toList(responseEntity), locale, userLogin);
+        }
+        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
+            List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
+            expandResourceDataInfo.add(new UriResourceDataInfo(null, returnEntityType, null, responseEntity));
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, returnEntityType, expandResourceDataInfo);
         }
         return responseEntity;
     }
@@ -39,12 +51,14 @@ public class FunctionProcessor extends OdataReader {
     /**
      * return EntityCollection
      */
-    public EntityCollection processFunctionEntityCollection(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+    public EntityCollection processFunctionEntityCollection(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap,
+                                                            EdmBindingTarget edmBindingTarget, List<UriResourceDataInfo> resourceDataInfoList) throws OfbizODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
         //Invoke method.
         EntityCollection entityCollection = new EntityCollection();
         EdmEntityType returnEdmEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
+        odataContext.put("uriResources", resourceDataInfoList);
         List<Object> resultList = (List) OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlFunction.getOfbizMethod(), paramMap, edmBindingTarget);
         List<Entity> entities = entityCollection.getEntities();
         for (Object result : resultList) {
@@ -60,6 +74,14 @@ public class FunctionProcessor extends OdataReader {
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 queryOptions, entities, locale, userLogin);
+        //expand
+        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
+            for (Entity entity : entities) {
+                List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
+                expandResourceDataInfo.add(new UriResourceDataInfo(null, returnEdmEntityType, uriResourceFunction, entity));
+                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, returnEdmEntityType, expandResourceDataInfo);
+            }
+        }
         return entityCollection;
     }
 

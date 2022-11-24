@@ -571,7 +571,9 @@
 		<NavigationProperty Name="OrderAdjustment" AutoBinding="true" FilterByDate="false"/>
 		<NavigationProperty Name="OrderItemAttribute" AutoBinding="true"/>
 	</EntityType>
-	<EntityType Name="OrderType" AutoProperties="true"/>
+	<EntityType Name="OrderType" AutoProperties="true">
+		<NavigationProperty Name="OrderHeader"/>
+	</EntityType>
 	<EntityType Name="OrderRole" AutoProperties="true"/>
 	<EntityType Name="OrderItemAttribute" AutoProperties="true"/>
 	<EntityType Name="ProductPromo" AutoProperties="true"/>

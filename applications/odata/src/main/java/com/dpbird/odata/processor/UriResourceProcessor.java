@@ -144,10 +144,10 @@ public class UriResourceProcessor {
         UriResourceDataInfo currentUriResourceData = new UriResourceDataInfo(edmBindingTarget, returnEdmEntityType, uriResource, null);
         FunctionProcessor functionProcessor = new FunctionProcessor(odataContext, queryOption, null);
         if (edmFunction.getReturnType().isCollection()) {
-            EntityCollection entityCollection = functionProcessor.processFunctionEntityCollection(uriResourceFunction, parameters, edmBindingTarget);
+            EntityCollection entityCollection = functionProcessor.processFunctionEntityCollection(uriResourceFunction, parameters, edmBindingTarget, resourceDataInfoList);
             currentUriResourceData.setEntityData(entityCollection);
         } else {
-            Entity entity = functionProcessor.processFunctionEntity(uriResourceFunction, parameters, edmBindingTarget);
+            Entity entity = functionProcessor.processFunctionEntity(uriResourceFunction, parameters, edmBindingTarget, resourceDataInfoList);
             currentUriResourceData.setEntityData(entity);
         }
         return currentUriResourceData;
