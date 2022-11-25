@@ -37,9 +37,13 @@ public class UriResourceProcessor {
      *
      * @return 返回每一段的结果
      */
-    public List<UriResourceDataInfo> readUriResource(List<UriResource> uriResourceParts, List<AliasQueryOption> aliases) throws OfbizODataException {
+    public List<UriResourceDataInfo> readUriResource(List<UriResource> uriResourcePartList, List<AliasQueryOption> aliases) throws OfbizODataException {
         List<UriResourceDataInfo> resourceDataInfoList = new ArrayList<>();
         Map<String, QueryOption> queryOptions = new HashMap<>();
+        List<UriResource> uriResourceParts = new ArrayList<>(uriResourcePartList);
+        if (ListUtil.getLast(uriResourcePartList) instanceof UriResourceAction) {
+            uriResourceParts = uriResourcePartList.subList(0, uriResourcePartList.size() - 1);
+        }
         for (int i = 0; i < uriResourceParts.size(); i++) {
             //只有最后一段需要使用queryOption
             if (i == uriResourceParts.size() - 1) {
@@ -48,14 +52,19 @@ public class UriResourceProcessor {
             UriResource resourcePart = uriResourceParts.get(i);
             if (resourcePart instanceof UriResourceEntitySet) {
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourcePart;
-                //如果不含主键 并且下一段是Function时是空数据
-                if (UtilValidate.isEmpty(uriResourceEntitySet.getKeyPredicates()) &&
-                        uriResourceParts.size() > i + 1 && uriResourceParts.get(i + 1) instanceof UriResourceFunction) {
-                    resourceDataInfoList.add(new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
-                } else {
-                    UriResourceDataInfo uriResourceDataInfo = readUriResourceEntitySet(resourcePart, queryOptions);
-                    resourceDataInfoList.add(uriResourceDataInfo);
+                //如果不含主键 并且下一段是Function、Action时是空数据
+                if (UtilValidate.isEmpty(uriResourceEntitySet.getKeyPredicates())) {
+                    if (uriResourceParts.size() > i + 1 && uriResourceParts.get(i + 1) instanceof UriResourceFunction) {
+                        resourceDataInfoList.add(new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
+                        continue;
+                    }
+                    if (i == uriResourceParts.size() - 1 && ListUtil.getLast(uriResourcePartList) instanceof UriResourceAction) {
+                        resourceDataInfoList.add(new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
+                        continue;
+                    }
                 }
+                UriResourceDataInfo uriResourceDataInfo = readUriResourceEntitySet(resourcePart, queryOptions);
+                resourceDataInfoList.add(uriResourceDataInfo);
             }
             if (resourcePart instanceof UriResourceSingleton) {
                 UriResourceDataInfo uriResourceDataInfo = readUriResourceSingleton(resourcePart, queryOptions);

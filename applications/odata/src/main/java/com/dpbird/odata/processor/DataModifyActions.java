@@ -390,7 +390,7 @@ public class DataModifyActions {
         return Util.retrievePkMap(delegator, serviceParams, result, entityName);
     }
 
-    public static void discardAction(Map<String, Object> editContext) throws ODataException {
+    public static void discardAction(Map<String, Object> editContext) throws OfbizODataException {
         ODataRequest oDataRequest = (ODataRequest) editContext.get("odataRequest");
         String sapContextId = oDataRequest.getHeader("SAP-ContextId");
         if (UtilValidate.isEmpty(sapContextId)) {
@@ -400,7 +400,7 @@ public class DataModifyActions {
             clearEntityDraft(editContext, sapContextId);
         } catch (GenericEntityException e) {
             e.printStackTrace();
-            throw new ODataException(e.getMessage());
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
