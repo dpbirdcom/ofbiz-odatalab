@@ -1,6 +1,7 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -8,6 +9,7 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
@@ -26,10 +28,12 @@ import java.util.Map;
 public class UriResourceProcessor {
     private final Map<String, Object> odataContext;
     private final Map<String, QueryOption> queryOptions;
+    private final String sapContextId;
 
-    public UriResourceProcessor(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions) {
+    public UriResourceProcessor(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions, String sapContextId) {
         this.odataContext = odataContext;
         this.queryOptions = queryOptions;
+        this.sapContextId = sapContextId;
     }
 
     /**
@@ -85,9 +89,16 @@ public class UriResourceProcessor {
     private UriResourceDataInfo readUriResourceEntitySet(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResource;
         EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
-        Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType());
-        OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
-        Object entityData = UtilValidate.isEmpty(primaryKey) ? reader.findList() : reader.findOne(primaryKey, queryOptions);
+        EdmEntityType edmEntityType = edmEntitySet.getEntityType();
+        Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
+        Object entityData;
+        if (sapContextId != null && UtilValidate.isNotEmpty(primaryKey)) {
+            DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
+            entityData = draftHandler.readEntityData(edmEntityType, primaryKey, queryOptions);
+        } else {
+            OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+            entityData = UtilValidate.isEmpty(primaryKey) ? reader.findList() : reader.findOne(primaryKey, queryOptions);
+        }
         return new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), uriResource, entityData);
     }
 
@@ -104,28 +115,43 @@ public class UriResourceProcessor {
         UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResource;
         EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
         EdmEntityType navigationEntityType = edmNavigationProperty.getType();
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationEntityType.getFullQualifiedName());
+
         Map<String, Object> navigationPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), navigationEntityType);
         //last uriResource
         UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
-        Entity entity = (Entity) uriResourceDataInfo.getEntityData();
+        OdataOfbizEntity entity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
         EdmEntityType edmEntityType = uriResourceDataInfo.getEdmEntityType();
+        OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         EdmEntitySet navigationTargetEntitySet = null;
         if (uriResourceDataInfo.getEdmBindingTarget() != null) {
             navigationTargetEntitySet = Util.getNavigationTargetEntitySet(uriResourceDataInfo.getEdmBindingTarget(), edmNavigationProperty);
         }
         UriResourceDataInfo currentUriResourceData = new UriResourceDataInfo(navigationTargetEntitySet, navigationEntityType, uriResource, null);
-        //query
-        OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
-        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         boolean isCollection = resourceIsCollection(uriResourceDataInfo.getUriResource(), uriResource, edmProvider);
-        if (isCollection) {
-            EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey, resourceDataInfos);
-            Object entityData = UtilValidate.isEmpty(navigationPrimaryKey) ?
-                    relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
-            currentUriResourceData.setEntityData(entityData);
+        if (sapContextId != null && UtilValidate.isNotEmpty(navCsdlEntityType.getDraftEntityName())) {
+            //draft
+            DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
+            if (isCollection && UtilValidate.isEmpty(navigationPrimaryKey)) {
+                EntityCollection draftRelatedEntities = draftHandler.findRelatedEntityCollection(ofbizCsdlEntityType, entity.getKeyMap(), edmNavigationProperty, queryOptions);
+                currentUriResourceData.setEntityData(draftRelatedEntities);
+            } else {
+                Entity draftRelatedEntity = draftHandler.getRelatedEntityData(entity.getKeyMap(), edmNavigationProperty, navigationPrimaryKey, queryOptions);
+                currentUriResourceData.setEntityData(draftRelatedEntity);
+            }
         } else {
-            Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, resourceDataInfos);
-            currentUriResourceData.setEntityData(entityData);
+            //real
+            OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
+            if (isCollection) {
+                EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey, resourceDataInfos);
+                Object entityData = UtilValidate.isEmpty(navigationPrimaryKey) ?
+                        relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
+                currentUriResourceData.setEntityData(entityData);
+            } else {
+                Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, resourceDataInfos);
+                currentUriResourceData.setEntityData(entityData);
+            }
         }
         return currentUriResourceData;
     }

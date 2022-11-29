@@ -53,7 +53,7 @@ public class AnnotationCheck {
             requiredPrecondition(request, edmProvider, edmEntitySet);
 
             // 2.如果带有If-Match 进行匹配验证
-            if (request.getHeader("If-Match") != null || request.getHeader("If-None-Match") != null) {
+                if (request.getHeader("If-Match") != null || request.getHeader("If-None-Match") != null) {
                 Map<String, Object> primaryKey = Util.uriParametersToMap(keyPredicates, edmEntitySet.getEntityType());
                 OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
                 GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)

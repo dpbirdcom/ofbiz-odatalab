@@ -5,6 +5,7 @@ import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerResults;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
@@ -44,6 +45,21 @@ public class DemoPartyInfoHandler implements EntityHandler {
             }
             return new HandlerResults(infoNames.size(), resultList);
         }
+    }
+
+    @Override
+    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext) {
+
     }
 
 }

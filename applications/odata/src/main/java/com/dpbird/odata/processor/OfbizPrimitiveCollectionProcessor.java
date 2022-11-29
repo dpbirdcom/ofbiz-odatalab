@@ -65,7 +65,7 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
         EdmPrimitiveType edmPrimitiveType;
         try {
             UriResource lastUriResource = ListUtil.getLast(resourcePaths);
-            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>());
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
             if (lastUriResource instanceof UriResourceFunction) {
                 //Function
                 UriResourceFunction resourceFunction = (UriResourceFunction) lastUriResource;

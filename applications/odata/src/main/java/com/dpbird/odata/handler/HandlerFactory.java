@@ -2,8 +2,6 @@ package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
-import com.dpbird.odata.ofbizHandler.OfbizEntityHandler;
-import com.dpbird.odata.ofbizHandler.OfbizNavigationHandler;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
@@ -31,7 +29,7 @@ public class HandlerFactory {
             String handlerImpl = getHandlerImpl(edmProvider, handlerValues, delegator);
             if (UtilValidate.isEmpty(handlerImpl)) {
                 //Default handler
-                return new OfbizEntityHandler();
+                return new DefaultEntityHandler();
             }
             Class<?> implClass = Class.forName(handlerImpl);
             if (EntityHandler.class.isAssignableFrom(implClass)) {
@@ -56,7 +54,7 @@ public class HandlerFactory {
             String handlerImpl = getHandlerImpl(edmProvider, handlerValues, delegator);
             if (UtilValidate.isEmpty(handlerImpl)) {
                 //Default handler
-                return new OfbizNavigationHandler();
+                return new DefaultNavigationHandler();
             }
             Class<?> implClass = Class.forName(handlerImpl);
             if (NavigationHandler.class.isAssignableFrom(implClass)) {

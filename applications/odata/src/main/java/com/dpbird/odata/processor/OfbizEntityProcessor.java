@@ -279,7 +279,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
         try {
-            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo));
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
             List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = resourceDataInfos.get(resourceDataInfos.size() - 1);
             Entity responseEntity = (Entity) uriResourceDataInfo.getEntityData();
@@ -437,7 +437,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void readMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException {
         try {
-            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo));
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
             List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
             OdataOfbizEntity responseEntity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();

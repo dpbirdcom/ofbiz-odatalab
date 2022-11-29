@@ -24,6 +24,7 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.*;
@@ -56,6 +57,17 @@ public class DraftHandler {
         this.csdlEntityType = csdlEntityType;
         this.edmEntityType = edmEntityType;
         this.sapContextId = sapContextId;
+    }
+
+    public DraftHandler(Map<String, Object> odataContext, String sapContextId, EdmEntityType edmEntityType) throws OfbizODataException {
+        this.delegator = (Delegator) odataContext.get("delegator");
+        this.dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
+        this.userLogin = (GenericValue) odataContext.get("userLogin");
+        this.locale = (Locale) odataContext.get("locale");
+        this.edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        this.edmEntityType = edmEntityType;
+        this.sapContextId = sapContextId;
+        this.csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
     }
 
     public OdataOfbizEntity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite)
@@ -599,6 +611,12 @@ public class DraftHandler {
             }
         }
         return result;
+    }
+    
+    public OdataOfbizEntity readEntityData(EdmEntityType edmEntityType, Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)
+            throws OfbizODataException {
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        return readEntityData(csdlEntityType, keyMap, queryOptions);
     }
 
     public OdataOfbizEntity readEntityData(OfbizCsdlEntityType csdlEntityType, Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)

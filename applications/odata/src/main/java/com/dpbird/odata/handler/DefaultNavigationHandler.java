@@ -1,4 +1,4 @@
-package com.dpbird.odata.ofbizHandler;
+package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.UriResourceDataInfo;
@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * @date 2022/11/14
  */
-public class OfbizNavigationHandler implements NavigationHandler {
+public class DefaultNavigationHandler implements NavigationHandler {
 
     @Override
     public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,

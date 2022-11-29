@@ -7,6 +7,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
@@ -40,5 +41,20 @@ public class DemoSimpleFacilityHandler implements EntityHandler {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+    @Override
+    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext) {
+
     }
 }

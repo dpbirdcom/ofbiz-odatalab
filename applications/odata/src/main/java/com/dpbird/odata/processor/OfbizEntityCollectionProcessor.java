@@ -84,7 +84,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
         try {
             Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
             if (queryOptions.get("applyOption") == null) {
-                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions);
+                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions, sapContextId);
                 List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
                 UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) uriResourceDataInfo.getEntityData();
@@ -127,7 +127,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 count = reader.findCount(uriResourceEntitySet.getEntitySet().getEntityType());
             } else {
                 //多段式查询
-                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), quernOptions);
+                UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), quernOptions, sapContextId);
                 List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, uriInfo.getAliases());
                 UriResourceDataInfo lastResourceData = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) lastResourceData.getEntityData();

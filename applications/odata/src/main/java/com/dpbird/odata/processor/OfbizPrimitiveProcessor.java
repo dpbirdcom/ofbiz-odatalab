@@ -122,7 +122,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
     private Property readProperty(List<UriResource> resourcePaths, List<AliasQueryOption> aliases) throws OfbizODataException {
         Property property;
         UriResource lastUriResource = ListUtil.getLast(resourcePaths);
-        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>());
+        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
         if (lastUriResource instanceof UriResourceFunction) {
             //Function
             UriResourceFunction resourceFunction = (UriResourceFunction) lastUriResource;

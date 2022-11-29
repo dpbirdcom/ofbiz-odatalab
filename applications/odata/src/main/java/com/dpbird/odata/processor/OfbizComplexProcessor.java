@@ -144,7 +144,7 @@ public class OfbizComplexProcessor implements ComplexProcessor, ComplexCollectio
         Property property;
         List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
         UriResource lastUriResource = ListUtil.getLast(resourcePaths);
-        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>());
+        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
         if (lastUriResource instanceof UriResourceFunction) {
             //Function
             UriResourceFunction resourceFunction = (UriResourceFunction) lastUriResource;

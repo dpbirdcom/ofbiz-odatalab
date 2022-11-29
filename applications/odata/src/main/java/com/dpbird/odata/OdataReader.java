@@ -329,14 +329,17 @@ public class OdataReader extends OfbizOdataProcessor {
         OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
         if (filterOption != null || orderbyOption != null) {
             Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, navCsdlEntityType,
-                    edmProvider, delegator, dispatcher, userLogin, locale);
+                    edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entityIter : entityCollection.getEntities()) {
-                List<UriResourceDataInfo> expandResourceInfo = new ArrayList<>(resourceDataInfos);
+                List<UriResourceDataInfo> expandResourceInfo = new ArrayList<>();
+                if (resourceDataInfos != null) {
+                    expandResourceInfo.addAll(resourceDataInfos);
+                }
                 UriResourceDataInfo uriResourceDataInfo = new UriResourceDataInfo(null, edmNavigationProperty.getType(), null, entityIter);
                 expandResourceInfo.add(uriResourceDataInfo);
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entityIter, edmNavigationProperty.getType(), expandResourceInfo);

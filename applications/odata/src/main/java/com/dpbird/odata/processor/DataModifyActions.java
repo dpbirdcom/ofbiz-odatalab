@@ -391,7 +391,7 @@ public class DataModifyActions {
     }
 
     public static void discardAction(Map<String, Object> editContext) throws OfbizODataException {
-        ODataRequest oDataRequest = (ODataRequest) editContext.get("odataRequest");
+        ODataRequest oDataRequest = (ODataRequest) editContext.get("oDataRequest");
         String sapContextId = oDataRequest.getHeader("SAP-ContextId");
         if (UtilValidate.isEmpty(sapContextId)) {
             throw new OfbizODataException("We need session contextId while calling discardAction!");

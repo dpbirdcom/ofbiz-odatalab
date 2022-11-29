@@ -6,6 +6,8 @@ import com.dpbird.odata.edm.OfbizCsdlEntitySet;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import com.dpbird.odata.processor.DataModifyActions;
+import org.apache.fop.util.ListUtil;
+import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -613,9 +615,7 @@ public class ProcessorServices {
         return draftAdminData;
     }
 
-    public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                Map<String, Object> keyMap, Map<String, Object> navKeyMap) throws GenericEntityException, GenericServiceException, ODataException {
+    public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -657,18 +657,26 @@ public class ProcessorServices {
                 draftGenericValue, (Locale) oDataContext.get("locale"));
     }
 
-    public static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                 EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                 Map<String, Object> keyMap,
-                                                 Map<String, Object> navKeyMap) throws ODataException {
+    public static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
+            throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        //bound entity
+        OdataOfbizEntity ofbizEntity = null;
+        for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
+            if (entry.getValue() instanceof Entity) {
+                ofbizEntity = (OdataOfbizEntity) entry.getValue();
+                break;
+            }
+        }
+        if (ofbizEntity == null) {
+            throw new OfbizODataException("The entity to edit was not found.", String.valueOf(HttpStatus.SC_NOT_FOUND));
+        }
+        Map<String, Object> keyMap = ofbizEntity.getKeyMap();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         String draftEntityName = csdlEntityType.getDraftEntityName();
-
         EdmEntitySet edmEntitySet = (EdmEntitySet) edmBindingTarget;
         EdmEntityType startEdmEntityType = edmEntitySet.getEntityType();
         OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(startEdmEntityType.getFullQualifiedName());
@@ -711,10 +719,7 @@ public class ProcessorServices {
     }
 
     // saveAction will load data from mem database and store into real database
-    public static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters,
-                                                 EdmBindingTarget edmBindingTarget, EdmNavigationProperty edmNavigationProperty,
-                                                 Map<String, Object> keyMap,
-                                                 Map<String, Object> navKeyMap) throws ODataException {
+    public static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws ODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");

@@ -173,9 +173,10 @@ under the License.
     <service name="dpbird.processActionEntityService" engine="java"
              location="com.dpbird.odata.services.ActionService" invoke="actionEntity" auth="true">
         <description>处理返回值为entity的Action</description>
-        <attribute name="queryOptions" type="Map" mode="IN"/>
         <attribute name="odataContext" type="Map" mode="IN"/>
         <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="queryOptions" type="Map" mode="IN" optional="true" />
+        <attribute name="sapContextId" type="String" mode="IN" optional="true"/>
         <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
         <attribute name="entityResult" type="com.dpbird.odata.OFbizEntityActionResult" mode="OUT" optional="true"/>
     </service>
@@ -183,9 +184,9 @@ under the License.
     <service name="dpbird.processActionEntityCollectionService" engine="java"
              location="com.dpbird.odata.services.ActionService" invoke="actionEntityCollection" auth="true">
         <description>处理返回值为entityCollection的Action</description>
-        <attribute name="queryOptions" type="Map" mode="IN"/>
         <attribute name="odataContext" type="Map" mode="IN"/>
         <attribute name="resourcePaths" type="List" mode="IN"/>
+        <attribute name="queryOptions" type="Map" mode="IN"/>
         <attribute name="requestFormat" type="org.apache.olingo.commons.api.format.ContentType" mode="IN"/>
         <attribute name="entityCollection" type="org.apache.olingo.commons.api.data.EntityCollection" mode="OUT" optional="true"/>
     </service>

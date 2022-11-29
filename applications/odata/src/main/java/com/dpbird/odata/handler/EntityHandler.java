@@ -1,6 +1,7 @@
 package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
+import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
@@ -17,7 +18,7 @@ public interface EntityHandler {
      * @param odataContext     odataContext
      * @param edmBindingTarget EdmBindingTarget
      * @param primaryKey       主键
-     * @return 返回单挑数据
+     * @return 返回单条数据
      */
     Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey)
             throws OfbizODataException;
@@ -33,4 +34,32 @@ public interface EntityHandler {
      */
     HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
                             Map<String, QueryOption> queryOptions, Map<String, Object> navigationParam) throws OfbizODataException;
+
+    /**
+     * 创建实体数据
+     *
+     * @param entityToWrite 要创建的数据
+     * @param odataContext odataContext
+     * @return 返回已创建的数据
+     */
+    Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext);
+
+    /**
+     * 更新实体数据
+     *
+     * @param entityToWrite 要更新的数据
+     * @param odataContext odataContext
+     * @return 返回已更新的数据
+     */
+    Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext);
+
+    /**
+     * 删除实体数据
+     *
+     * @param entityToDelete 要删除的数据
+     * @param odataContext odataContext
+     */
+    void delete(Entity entityToDelete, Map<String, Object> odataContext);
+
+
 }

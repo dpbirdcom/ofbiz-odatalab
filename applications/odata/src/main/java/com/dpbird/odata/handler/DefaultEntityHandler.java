@@ -1,4 +1,4 @@
-package com.dpbird.odata.ofbizHandler;
+package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OdataProcessorHelper;
 import com.dpbird.odata.OdataReader;
@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @date 2022/11/14
  */
-public class OfbizEntityHandler implements EntityHandler {
+public class DefaultEntityHandler implements EntityHandler {
 
     @Override
     public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) throws OfbizODataException {
@@ -68,5 +68,20 @@ public class OfbizEntityHandler implements EntityHandler {
             }
         }
         return handlerResults;
+    }
+
+    @Override
+    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext) {
+        return null;
+    }
+
+    @Override
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext) {
+
     }
 }
