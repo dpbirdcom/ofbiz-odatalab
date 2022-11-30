@@ -755,6 +755,10 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             }
             throw new ODataApplicationException(e.getMessage(),
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+        } finally {
+            if (UtilValidate.isNotEmpty(sapContextId)) {
+                oDataResponse.setHeader("SAP-ContextId", sapContextId);
+            }
         }
         if (updatedEntity == null) {
             throw new ODataApplicationException("The request resource is not found.",
@@ -763,10 +767,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
 
         this.serializeEntity(oDataRequest, oDataResponse, responseEdmEntitySet, responseEdmEntityType, responseContentType,
                 null, null, updatedEntity);
-        // 3. configure the response object
-        if (UtilValidate.isNotEmpty(sapContextId)) {
-            oDataResponse.setHeader("SAP-ContextId", sapContextId);
-        }
         oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
         oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
     }

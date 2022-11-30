@@ -14,6 +14,7 @@ import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.model.*;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
@@ -343,6 +344,18 @@ public class ProcessorServices {
                 if (subDraftUUIDs.contains(possibleDraftGenericValue.getString("draftUUID"))) {
                     draftGenericValue = possibleDraftGenericValue;
                     break;
+                }
+            }
+            //没有找到编辑的数据 或许是在编辑第二层子对象
+            if (UtilValidate.isEmpty(draftGenericValue)) {
+                GenericValue nextDraft = EntityQuery.use(delegator).from(draftEntityName).where(keyMap).queryFirst();
+                if (UtilValidate.isNotEmpty(nextDraft)) {
+                    GenericValue draftAdmin = EntityQuery.use(delegator).from("DraftAdministrativeData").where("draftUUID", nextDraft.getString("draftUUID")).queryFirst();
+                    GenericValue parentDraftAdmin = EntityQuery.use(delegator).from("DraftAdministrativeData").where("draftUUID", draftAdmin.getString("parentDraftUUID")).queryFirst();
+                    //上级数据的parentUUID应该是当前的sapContextId
+                    if (parentDraftAdmin.getString("parentDraftUUID").equals(sapContextId)) {
+                        draftGenericValue = nextDraft;
+                    }
                 }
             }
         } else {
