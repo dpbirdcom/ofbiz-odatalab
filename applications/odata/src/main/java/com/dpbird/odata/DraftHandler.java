@@ -265,8 +265,8 @@ public class DraftHandler {
             if (navCsdlEntityType.isAutoId()) {
                 rowEntity = procEntityWithAutoId(elementGV, rowEntity);
             }
-            URI entityId = Util.createId(edmNavigationProperty.getName(), edmNavigationProperty.getType(), navCsdlEntityType, elementGV);
-            rowEntity.setId(entityId);
+//            URI entityId = Util.createId(edmNavigationProperty.getName(), edmNavigationProperty.getType(), navCsdlEntityType, elementGV);
+//            rowEntity.setId(entityId);
             entityList.add(rowEntity);
         }
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
