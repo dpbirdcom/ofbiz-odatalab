@@ -26,21 +26,37 @@ public class DefaultNavigationHandler implements NavigationHandler {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
         navigationParam.put("edmEntityType", edmEntityType);
+        navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         return navigationParam;
     }
 
     @Override
-    public GenericValue createNavigationData(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntityToCreate, Map<String, QueryOption> queryOptions) {
-        return null;
+    public Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                              EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos)
+            throws OfbizODataException {
+        Map<String, Object> navigationParam = new HashMap<>();
+        navigationParam.put("entity", entity);
+        navigationParam.put("edmEntityType", edmEntityType);
+        navigationParam.put("edmNavigationProperty", edmNavigationProperty);
+        return navigationParam;
     }
 
     @Override
-    public void deleteNavigationData(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
-
+    public Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+        Map<String, Object> navigationParam = new HashMap<>();
+        navigationParam.put("entity", entity);
+        navigationParam.put("edmEntityType", edmEntityType);
+        navigationParam.put("edmNavigationProperty", edmNavigationProperty);
+        return navigationParam;
     }
 
     @Override
     public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
+
+    }
+
+    @Override
+    public void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
 
     }
 }

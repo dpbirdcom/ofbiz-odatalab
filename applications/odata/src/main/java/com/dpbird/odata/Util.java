@@ -2257,6 +2257,9 @@ public class Util {
             Map<String, Object> keyMap = Util.uriParametersToMap(resourceEntitySet.getKeyPredicates(), resourceEntitySet.getEntityType());
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(resourceEntitySet.getEntityType().getFullQualifiedName());
             GenericValue mainGenericValue = delegator.findOne(ofbizCsdlEntityType.getOfbizEntity(), keyMap, true);
+            if (UtilValidate.isEmpty(mainGenericValue)) {
+                return null;
+            }
             ModelRelation relation = modelEntity.getRelation(uriResourceParts.get(1).getSegmentValue());
             for (ModelKeyMap relKeyMap : relation.getKeyMaps()) {
                 Object relValue = mainGenericValue.get(relKeyMap.getFieldName());

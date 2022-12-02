@@ -149,7 +149,7 @@ public class UriResourceProcessor {
                         relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
                 currentUriResourceData.setEntityData(entityData);
             } else {
-                Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, resourceDataInfos);
+                Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, queryOptions, resourceDataInfos);
                 currentUriResourceData.setEntityData(entityData);
             }
         }

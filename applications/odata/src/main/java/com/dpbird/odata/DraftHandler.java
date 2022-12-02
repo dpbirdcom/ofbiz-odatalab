@@ -77,8 +77,7 @@ public class DraftHandler {
         if (csdlEntityType.isAutoId()) {
             fieldMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
         } else {
-            fieldMap = new HashMap<>();
-            fieldMap.putAll(keyMap);
+            fieldMap = new HashMap<>(keyMap);
         }
         fieldMap.putAll(Util.entityToMap(entityToWrite));
 

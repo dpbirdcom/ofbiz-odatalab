@@ -310,6 +310,7 @@
 		<NavigationProperty Name="PartyAttribute" Type="PartyAttribute" IsCollection="true" FilterByDate="false"/>
 		<NavigationProperty Name="Person" Type="Person" AutoBinding="true"/>
 		<NavigationProperty Name="PartyGroup"/>
+		<NavigationProperty Name="PartyContent"/>
 		<NavigationProperty Name="PartyRoleType" Type="RoleType" IsCollection="true" FilterByDate="false" Relations="PartyRole/RoleType"/>
 		<NavigationProperty Name="ContactMechParty" Type="ContactMech" IsCollection="true" Relations="PartyContactMech/ContactMech" ContainsTarget="true"/>
 	</EntityType>
@@ -437,6 +438,9 @@
 		<NavigationProperty Name="Party"/>
 	</EntityType>
 	<EntityType Name="ProductStoreRole" AutoProperties="true"/>
+	<EntityType Name="PartyContent" AutoProperties="true">
+		<NavigationProperty Name="Content"/>
+	</EntityType>
 	<EntityType Name="WebSite" AutoProperties="true"/>
 	<EntityType Name="WebSitePathAlias" AutoProperties="true"/>
 	<EntityType Name="PartyContactMech" AutoProperties="true"/>
@@ -1135,6 +1139,7 @@
 		<EntitySet Name="SimpleFacilities" EntityType="SimpleFacility"/>
 		<EntitySet Name="PartyTypes" EntityType="PartyType"/>
 		<EntitySet Name="ProductPriceTypes" EntityType="ProductPriceType"/>
+		<EntitySet Name="PartyContents" EntityType="PartyContent"/>
 		<EntitySet Name="ProductPriceChanges" EntityType="ProductPriceChange"/>
 		<EntitySet Name="ContactMechAttributes" EntityType="ContactMechAttribute"/>
 		<EntitySet Name="ContactMechAndAttrs" EntityType="ContactMechAndAttr" EntityCondition="contactMechTypeId=null"/>

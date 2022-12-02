@@ -44,17 +44,18 @@ public class DemoSimpleFacilityHandler implements EntityHandler {
     }
 
     @Override
-    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext) {
+    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
         return null;
     }
 
     @Override
-    public Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext) {
+    public Map<String, Object> update(Map<String, Object> primaryKey, Entity entityToWrite, Map<String, Object> odataContext,
+                                      EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
         return null;
     }
 
     @Override
-    public void delete(Entity entityToDelete, Map<String, Object> odataContext) {
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget) {
 
     }
 }

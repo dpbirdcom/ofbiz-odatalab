@@ -7,6 +7,7 @@ import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
+import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.ArrayList;
@@ -48,17 +49,18 @@ public class DemoPartyInfoHandler implements EntityHandler {
     }
 
     @Override
-    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext) {
+    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
         return null;
     }
 
     @Override
-    public Map<String, Object> update(Entity entityToWrite, Map<String, Object> odataContext) {
+    public Map<String, Object> update(Map<String, Object> primaryKey, Entity entityToWrite, Map<String, Object> odataContext,
+                                      EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
         return null;
     }
 
     @Override
-    public void delete(Entity entityToDelete, Map<String, Object> odataContext) {
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget) {
 
     }
 

@@ -33,23 +33,30 @@ public interface NavigationHandler {
                                            List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
 
     /**
-     * 创建Navigation的数据
+     * 获取创建参数
      *
-     * @param entity               主实体
-     * @param nestedEntityToCreate 要创建的实体
-     * @param queryOptions         queryOptions
-     * @return 返回创建的数据
+     * @param entity 主实体
+     * @param edmEntityType 主实体EdmEntityType
+     * @param edmNavigationProperty EdmNavigationProperty
+     * @param uriResourceDataInfos queryOptions
+     * @return 创建参数
      */
-    GenericValue createNavigationData(Map<String, Object> odataContext, OdataOfbizEntity entity,
-                                      OdataOfbizEntity nestedEntityToCreate, Map<String, QueryOption> queryOptions);
+    Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+
 
     /**
-     * 删除Navigation的数据
+     * 获取更新参数
      *
-     * @param entity       主实体
-     * @param nestedEntity 要删除的关联实体
+     * @param entity 主实体
+     * @param edmEntityType 主实体EdmEntityType
+     * @param edmNavigationProperty EdmNavigationProperty
+     * @param uriResourceDataInfos queryOptions
+     * @return 更新参数
      */
-    void deleteNavigationData(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity);
+    Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+
 
     /**
      * 关联实体数据
@@ -58,6 +65,14 @@ public interface NavigationHandler {
      * @param nestedEntity 要关联的实体
      */
     void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity);
+
+    /**
+     * 解除关联实体数据
+     *
+     * @param entity       主实体
+     * @param nestedEntity 要关联的实体
+     */
+    void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity);
 
 
 }

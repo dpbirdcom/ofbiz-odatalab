@@ -73,7 +73,7 @@ public class OdataReader extends OfbizOdataProcessor {
         List<Entity> entities = entityCollection.getEntities();
         //print
         Util.printDynamicView(dynamicViewEntity, entityCondition, module);
-        //多段式的apply 添加关联外键的查询条件
+        //多段式的apply 添加关联外键的查询条件 TODO: 需要支持无限段的apply查询
         if (uriResourceParts.size() > 1) {
             EntityCondition applyCondition = Util.procApplyCondition(uriResourceParts, delegator, edmProvider, modelEntity);
             if (applyCondition == null) {
@@ -275,22 +275,25 @@ public class OdataReader extends OfbizOdataProcessor {
      * @param edmNavigationProperty 要查询的NavigationProperty
      * @return 子对象数据集
      */
-    public Entity findRelatedOne(Entity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+    public Entity findRelatedOne(Entity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
+                                 Map<String, QueryOption> queryOptionMap, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
         //从Navigation接口实例中获取查询参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> navigationParam = navigationHandler.getNavigationParam(odataContext, (OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, queryOptions, uriResourceDataInfos);
-        navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         HandlerResults handlerList = entityHandler.findList(odataContext, null, queryOptions, navigationParam);
         List<? extends Map<String, Object>> resultData = handlerList.getResultData();
+        if (resultData == null) {
+            return null;
+        }
         Entity relEntity = findResultToEntity(edmNavigationProperty.getType(), resultData.get(0));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), UtilMisc.toList(relEntity), locale, userLogin);
-        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
+                UtilMisc.toMap("selectOption", queryOptionMap.get("selectOption")), UtilMisc.toList(relEntity), locale, userLogin);
+        if (UtilValidate.isNotEmpty(queryOptionMap) && queryOptionMap.get("expandOption") != null) {
             List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(uriResourceDataInfos);
             expandResourceDataInfo.add(new UriResourceDataInfo(null, edmNavigationProperty.getType(), null, relEntity));
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) relEntity, edmNavigationProperty.getType(), expandResourceDataInfo);
+            addExpandOption((ExpandOption) queryOptionMap.get("expandOption"), (OdataOfbizEntity) relEntity, edmNavigationProperty.getType(), expandResourceDataInfo);
         }
         return relEntity;
     }
@@ -331,6 +334,7 @@ public class OdataReader extends OfbizOdataProcessor {
             Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, navCsdlEntityType,
                     edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
+        entityCollection.setCount(entityCollection.getEntities().size());
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);

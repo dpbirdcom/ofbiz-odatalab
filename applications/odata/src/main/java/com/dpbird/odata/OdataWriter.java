@@ -1,6 +1,9 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
+import com.dpbird.odata.handler.EntityHandler;
+import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -14,9 +17,7 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.ex.ODataException;
-import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.OData;
-import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ServiceMetadata;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.uri.UriParameter;
@@ -27,37 +28,94 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import java.util.*;
 import java.util.Map.Entry;
 
-public class OfbizOdataWriter extends OfbizOdataProcessor {
-	public static final String module = OfbizOdataWriter.class.getName();
+public class OdataWriter extends OfbizOdataProcessor {
+	public static final String module = OdataWriter.class.getName();
 
 	private EdmBindingTarget edmBindingTarget;
-	private EdmEntityType edmTypeFilter;
 	EdmNavigationProperty edmNavigationProperty;
-	private List<UriParameter> keyParams;
-	private Map<String, Object> keyMap;
-	private List<UriParameter> navKeyParams;
-	private Map<String, Object> navKeyMap;
 	private Entity entityToWrite;
-	private String rawServiceUri;
-	private ServiceMetadata serviceMetadata;
-	// private EdmWebConfig edmWebConfig;
+	private final String rawServiceUri;
+	private final ServiceMetadata serviceMetadata;
 	private boolean isCreatable = true;
 
-	public OfbizOdataWriter(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions, Map<String, Object> edmParams) {
+	public OdataWriter(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions, Map<String, Object> edmParams) {
 		super(odataContext, queryOptions, edmParams);
 		if (UtilValidate.isNotEmpty(edmParams)) {
 			this.edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
-			this.edmTypeFilter = (EdmEntityType) edmParams.get("edmTypeFilter");
 			this.edmNavigationProperty = (EdmNavigationProperty) edmParams.get("edmNavigationProperty");
 			this.entityToWrite = (Entity) edmParams.get("entityToWrite");
-			this.rawServiceUri = (String) edmParams.get("rawServiceUri");
 		}
 		this.oData = (OData) odataContext.get("oData");
 		this.serviceMetadata = (ServiceMetadata) odataContext.get("serviceMetadata");
 		this.edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+		this.rawServiceUri = (String) odataContext.get("rawServiceUri");
 		if (this.entityToWrite != null) {
 			processEntitySetValues();
 		}
+	}
+
+	public OdataOfbizEntity createEntityData(Entity entityToWrite) throws OfbizODataException {
+		EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+		addEntitySetCondition(entityToWrite);
+		//通过接口实例创建实体数据
+		EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
+		Map<String, Object> created = entityHandler.create(entityToWrite, odataContext, edmBindingTarget, null);
+		OdataOfbizEntity entityCreated = resultToEntity(edmEntityType, created);
+		//因为要返回所创建的Entity，所以添加语义化字段
+		OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, this.edmProvider,
+				queryOptions, Collections.singletonList(entityCreated), locale, userLogin);
+
+		// 2.1.) Apply binding links
+		applyBindingLinks(entityCreated, entityToWrite);
+		// 2.2.) Create nested entities
+		createNestedEntities(entityCreated, entityToWrite);
+		return entityCreated;
+	}
+
+
+	public Entity createRelatedEntity(Entity entity, Entity entityToWrite) throws OfbizODataException {
+		EdmEntityType edmEntityType = this.edmBindingTarget.getEntityType();
+		//获取创建参数
+		NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+		Map<String, Object> insertParam = navigationHandler.getInsertParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
+				edmNavigationProperty, null);
+		//创建
+		EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
+		Map<String, Object> created = entityHandler.create(entityToWrite, odataContext, edmBindingTarget, insertParam);
+		OdataOfbizEntity entityCreated = resultToEntity(edmNavigationProperty.getType(), created);
+
+		// 2.1.) Apply binding links
+		applyBindingLinks(entityCreated, entityToWrite);
+		// 2.2.) Create nested entities
+		createNestedEntities(entityCreated, entityToWrite);
+		return entityCreated;
+	}
+
+	public OdataOfbizEntity updateEntityData(Map<String, Object> primaryKey, Entity entityToWrite)
+			throws OfbizODataException {
+		EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+		EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
+		Map<String, Object> update = entityHandler.update(primaryKey, entityToWrite, odataContext, edmBindingTarget, null);
+		OdataOfbizEntity updatedEntity = resultToEntity(edmEntityType, update);
+		// Apply binding links
+		updatedEntity = Util.mergeEntity(updatedEntity, entityToWrite);
+		this.applyBindingLinks(updatedEntity, entityToWrite);
+
+		// Create nested entities
+		createNestedEntities(updatedEntity, entityToWrite);
+		return updatedEntity;
+	}
+
+	public Entity updateRelatedEntity(Entity entity, Entity entityToWrite, Map<String, Object> primaryKey) throws OfbizODataException {
+		EdmEntityType edmEntityType = this.edmBindingTarget.getEntityType();
+		//获取创建参数
+		NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
+		Map<String, Object> updateParam = navigationHandler.getUpdateParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
+				edmNavigationProperty, null);
+		//创建
+		EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
+		Map<String, Object> updateResult = entityHandler.update(primaryKey, entityToWrite, odataContext, edmBindingTarget, updateParam);
+		return resultToEntity(edmNavigationProperty.getType(), updateResult);
 	}
 
 	private void processEntitySetValues() {
@@ -110,86 +168,6 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 				entityToWrite.addProperty(property);
 			}
 		}
-	}
-
-	public OdataOfbizEntity createEntityData(Entity entityToWrite) throws OfbizODataException {
-		OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, edmBindingTarget.getName());
-		String entitySetHandler = csdlEntitySet.getHandler();
-		EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
-		addEntitySetCondition(entityToWrite); // 如果EntitySet有condition，将其转换成Property设置到entityToWrite
-		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-		String entityTypeHandler = csdlEntityType.getHandlerClass();
-		GenericValue newGenericValue = null;
-		/*********** create genericValue **********************************/
-		try {
-			// 先groovy validate输入参数
-			boolean validateChecked = false;
-			if (UtilValidate.isNotEmpty(entitySetHandler)) {
-				GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
-				try {
-					groovyHelper.inValidateCreateGenericValue(entitySetHandler, entityToWrite);
-					validateChecked = true;
-				} catch (MissingMethodExceptionNoStack e){
-					Debug.logInfo(e.getMessage(), module);
-				}
-			}
-			if (!validateChecked && UtilValidate.isNotEmpty(entityTypeHandler)) {
-				GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
-				try {
-					groovyHelper.inValidateCreateGenericValue(entityTypeHandler, entityToWrite);
-					validateChecked = true;
-				} catch (MissingMethodExceptionNoStack e){
-					Debug.logInfo(e.getMessage(), module);
-				}
-			}
-
-			// 然后groovy创建数据
-			if (UtilValidate.isNotEmpty(entitySetHandler)) {
-				GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
-				try {
-					newGenericValue = groovyHelper.createGenericValue(entitySetHandler, entityToWrite);
-				} catch (MissingMethodExceptionNoStack e){
-					Debug.logInfo(e.getMessage(), module);
-				}
-			}
-			if (newGenericValue == null && UtilValidate.isNotEmpty(entityTypeHandler)) {
-				GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
-				try {
-					newGenericValue = groovyHelper.createGenericValue(entityTypeHandler, entityToWrite);
-				} catch (MissingMethodExceptionNoStack e){
-					Debug.logInfo(e.getMessage(), module);
-				}
-			}
-
-			// 如果groovy没有创建成功，用OdataProcessorHelper创建
-			if (newGenericValue == null){
-				newGenericValue = OdataProcessorHelper.createGenericValue(dispatcher, delegator, edmEntityType,
-						entityToWrite, edmProvider, userLogin);
-			}
-		} catch(GenericServiceException e){
-			throw new OfbizODataException(e.getMessage());
-		}
-
-		/*********** end create genericValue ******************************/
-
-		OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
-				edmBindingTarget, edmTypeFilter, newGenericValue, locale);
-
-		// 创建语义话字段对应的数据库表的字段
-		OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, this.edmProvider,
-				entityToWrite, entityCreated, locale, userLogin);
-
-		// 因为要返回所创建的Entity，所以，某些语义话字段可能是计算字段，也需要返回
-		OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, this.edmProvider,
-				queryOptions, Collections.singletonList(entityCreated), locale, userLogin);
-
-		// 2.1.) Apply binding links
-		applyBindingLinks(entityCreated, entityToWrite);
-
-		// 2.2.) Create nested entities
-		createNestedEntities(entityCreated, entityToWrite);
-
-		return entityCreated;
 	}
 	
 	private List<Entity> createNestedEntities(OdataOfbizEntity entityCreated, Entity entityToWrite) throws OfbizODataException {
@@ -288,6 +266,7 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 					final OdataOfbizEntity nestedEntity = readEntityByBindingLink(bindingLink, nestedEntitySet, rawServiceUri);
 					sequenceNum = sequenceNum + 10L;
 					if (UtilValidate.isNotEmpty(handler)) {
+						//TODO: Handler Impl
 						GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
 						groovyHelper.bindNavigationLink(handler, entityCreated, nestedEntity);
 
@@ -300,6 +279,7 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 			} else if (!edmNavigationProperty.isCollection() && link.getBindingLink() != null) {
 				final OdataOfbizEntity nestedEntity = readEntityByBindingLink(link.getBindingLink(), nestedEntitySet, rawServiceUri);
 				if (UtilValidate.isNotEmpty(handler)) {
+					//TODO: Handler impl
 					GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
 					groovyHelper.bindNavigationLink(handler, entityCreated, nestedEntity);
 
@@ -319,7 +299,7 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 	@Deprecated
 	private void createLink(EdmNavigationProperty edmNavigationProperty, Entity newEntity, Entity newNestedEntity) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	private void setLinks(final Entity entity, final String navigationPropertyName, List<Entity> targets) {
@@ -367,49 +347,6 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 		}
 		return OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
 				entitySetResource.getEntitySet(), null, genericValue, locale);
-	}
-
-	public Entity createRelatedEntityData(Map<String, Object> keyMap, Entity entityToWrite) throws OfbizODataException {
-		
-		EdmEntityType edmEntityType = this.edmBindingTarget.getEntityType();
-		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-		OdataOfbizEntity entityCreated;
-		if (edmBindingTarget instanceof EdmEntitySet) {
-			entityCreated = OdataWriterHelper.createEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
-					csdlEntityType, keyMap, edmNavigationProperty.getName(), entityToWrite,
-					queryOptions, userLogin, locale);
-		} else {
-			entityCreated = OdataWriterHelper.createSingletonRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
-					csdlEntityType, edmBindingTarget.getName(), edmNavigationProperty.getName(), entityToWrite,
-					queryOptions, userLogin, locale);
-		}
-		// 2.1.) Apply binding links
-		applyBindingLinks(entityCreated, entityToWrite);
-
-		// 2.2.) Create nested entities
-		createNestedEntities(entityCreated, entityToWrite);
-
-		return entityCreated;
-	}
-
-	public OdataOfbizEntity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite)
-			throws OfbizODataException {
-		EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
-		if (this.edmTypeFilter != null) {
-			edmEntityType = edmTypeFilter;
-		}
-		OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-		OdataOfbizEntity updatedEntity = OdataWriterHelper.updateEntityData(delegator, dispatcher, httpServletRequest,
-				edmProvider, csdlEntityType, keyMap, entityToWrite, userLogin, locale);
-
-		// Apply binding links
-		updatedEntity = Util.mergeEntity(updatedEntity, entityToWrite);
-		this.applyBindingLinks(updatedEntity, entityToWrite);
-
-		// Create nested entities
-		createNestedEntities(updatedEntity, entityToWrite);
-		return updatedEntity;
-
 	}
 	
 	private Map<String, Object> addRequiredParms(ModelService modelService, GenericValue genericValue, Map<String, Object> fieldMap) {
@@ -480,6 +417,15 @@ public class OfbizOdataWriter extends OfbizOdataProcessor {
 		} else {
 			OdataWriterHelper.deleteSingletonRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
 					csdlEntityType, navigationPropertyName, edmBindingTarget.getName(), navKeyMap, userLogin, locale);
+		}
+	}
+
+	private OdataOfbizEntity resultToEntity(EdmEntityType edmEntityType, Map<String, Object> resultMap) throws OfbizODataException {
+		if (resultMap instanceof GenericValue) {
+			return OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
+		} else {
+			OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+			return (OdataOfbizEntity) Util.mapToEntity(csdlEntityType, resultMap);
 		}
 	}
 }

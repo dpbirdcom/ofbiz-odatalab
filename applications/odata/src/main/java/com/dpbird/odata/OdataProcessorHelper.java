@@ -942,7 +942,7 @@ public class OdataProcessorHelper {
 
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
                                                   EdmEntityType edmEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
-                                                  OfbizAppEdmProvider edmProvider, GenericValue userLogin, OData odata, ServiceMetadata serviceMetadata)
+                                                  OfbizAppEdmProvider edmProvider, GenericValue userLogin)
             throws OfbizODataException {
         GenericValue newGenericValue = null;
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
@@ -975,11 +975,6 @@ public class OdataProcessorHelper {
                     }
                 }
                 newGenericValue = createGenericValue(dispatcher, serviceName, csdlEntityType.getOfbizEntity(), fieldMap);
-
-                //去处理Entity Attribute
-                if (csdlEntityType.getAttrEntityName() != null || csdlEntityType.getAttrNumericEntityName() != null || csdlEntityType.getAttrDateEntityName() != null) {
-                    createAttrGenericValue(csdlEntityType, entityToCreate, userLogin, newGenericValue.getPrimaryKey(), dispatcher);
-                }
             } else {
                 newGenericValue = delegator.makeValue(entityName, fieldMap);
                 newGenericValue.create();
@@ -1004,8 +999,8 @@ public class OdataProcessorHelper {
      * @param pkMap          主对象的主键
      * @return serviceResult
      */
-    private static Map<String, Object> createAttrGenericValue(OfbizCsdlEntityType csdlEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
-                                                              GenericValue userLogin, Map<String, Object> pkMap, LocalDispatcher dispatcher) throws GenericServiceException, OfbizODataException {
+    public static Map<String, Object> createAttrGenericValue(OfbizCsdlEntityType csdlEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
+                                                             GenericValue userLogin, Map<String, Object> pkMap, LocalDispatcher dispatcher) throws OfbizODataException {
         //获取Attribute service
         String attributeServiceName = null;
         String attributeNumericServiceName = null;
@@ -1020,85 +1015,94 @@ public class OdataProcessorHelper {
             attributeDateServiceName = Util.getEntityActionService(csdlEntityType.getAttrDateEntityName(), "create", dispatcher.getDelegator());
         }
         Map<String, Object> resultMap = new HashMap<>();
-
-        //获取Entity定义中所有为Attribute的Property
-        List<String> csdlAttrPropertyNames = new ArrayList<>();
-        for (CsdlProperty csdlProperty : csdlEntityType.getProperties()) {
-            OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlProperty;
-            if (ofbizCsdlProperty.isAttribute() || ofbizCsdlProperty.isNumericAttribute() || ofbizCsdlProperty.isDateAttribute()) {
-                csdlAttrPropertyNames.add(ofbizCsdlProperty.getName());
-            }
-        }
-        //如果创建的Entity中有Attribute字段 就创建一条Attr记录
-        Map<String, Object> serviceMap = new HashMap<>(pkMap);
-        List<Property> createProperties = entityToCreate.getProperties();
-        for (Property createProperty : createProperties) {
-            if (csdlAttrPropertyNames.contains(createProperty.getName()) && createProperty.getValue() != null) {
-                OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(createProperty.getName());
-                String serviceName = ofbizCsdlProperty.isAttribute() ? attributeServiceName :
-                        ofbizCsdlProperty.isNumericAttribute() ? attributeNumericServiceName : attributeDateServiceName;
-                Object attrValue = createProperty.getValue();
-                if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
-                    if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {
-                        attrValue = Boolean.parseBoolean(attrValue.toString()) ? "Y" : "N";
-                    }
+        try {
+            //获取Entity定义中所有为Attribute的Property
+            List<String> csdlAttrPropertyNames = new ArrayList<>();
+            for (CsdlProperty csdlProperty : csdlEntityType.getProperties()) {
+                OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlProperty;
+                if (ofbizCsdlProperty.isAttribute() || ofbizCsdlProperty.isNumericAttribute() || ofbizCsdlProperty.isDateAttribute()) {
+                    csdlAttrPropertyNames.add(ofbizCsdlProperty.getName());
                 }
-                serviceMap.put("attrName", createProperty.getName());
-                serviceMap.put("attrValue", attrValue);
-                serviceMap.put("userLogin", userLogin);
-                resultMap = dispatcher.runSync(serviceName, serviceMap);
             }
+            //如果创建的Entity中有Attribute字段 就创建一条Attr记录
+            Map<String, Object> serviceMap = new HashMap<>(pkMap);
+            List<Property> createProperties = entityToCreate.getProperties();
+            for (Property createProperty : createProperties) {
+                if (csdlAttrPropertyNames.contains(createProperty.getName()) && createProperty.getValue() != null) {
+                    OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(createProperty.getName());
+                    String serviceName = ofbizCsdlProperty.isAttribute() ? attributeServiceName :
+                            ofbizCsdlProperty.isNumericAttribute() ? attributeNumericServiceName : attributeDateServiceName;
+                    Object attrValue = createProperty.getValue();
+                    if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
+                        if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {
+                            attrValue = Boolean.parseBoolean(attrValue.toString()) ? "Y" : "N";
+                        }
+                    }
+                    serviceMap.put("attrName", createProperty.getName());
+                    serviceMap.put("attrValue", attrValue);
+                    serviceMap.put("userLogin", userLogin);
+                    resultMap = dispatcher.runSync(serviceName, serviceMap);
+                }
+            }
+        } catch (GenericServiceException e) {
+            throw new OfbizODataException(e.getMessage());
         }
         return resultMap;
     }
 
     public static void updateAttrGenericValue(OfbizCsdlEntityType csdlEntityType, Map<String, Object> fieldMapToWrite,
-                                              GenericValue userLogin, Map<String, Object> pkMap, LocalDispatcher dispatcher, Delegator delegator) throws GenericServiceException, GenericEntityException, OfbizODataException {
+                                              GenericValue userLogin, Map<String, Object> pkMap, LocalDispatcher dispatcher, Delegator delegator) throws OfbizODataException {
         if (UtilValidate.isEmpty(fieldMapToWrite)) {
             return;
         }
-        //获取Entity定义中的AttributeProperty
-        List<String> csdlAttrPropertyNames = new ArrayList<>();
-        for (CsdlProperty csdlProperty : csdlEntityType.getProperties()) {
-            OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlProperty;
-            if (ofbizCsdlProperty.isAttribute() || ofbizCsdlProperty.isNumericAttribute() || ofbizCsdlProperty.isDateAttribute()) {
-                csdlAttrPropertyNames.add(csdlProperty.getName());
+        try {
+            //获取Entity定义中的AttributeProperty
+            List<String> csdlAttrPropertyNames = new ArrayList<>();
+            for (CsdlProperty csdlProperty : csdlEntityType.getProperties()) {
+                OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlProperty;
+                if (ofbizCsdlProperty.isAttribute() || ofbizCsdlProperty.isNumericAttribute() || ofbizCsdlProperty.isDateAttribute()) {
+                    csdlAttrPropertyNames.add(csdlProperty.getName());
+                }
             }
-        }
-        Set<Map.Entry<String, Object>> entrySet = fieldMapToWrite.entrySet();
-        for (Map.Entry<String, Object> entry : entrySet) {
-            //如果这个字段是Attribute
-            if (csdlAttrPropertyNames.contains(entry.getKey())) {
-                OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(entry.getKey());
-                String attrEntityName = ofbizCsdlProperty.isAttribute() ? csdlEntityType.getAttrEntityName() :
-                        ofbizCsdlProperty.isNumericAttribute() ? csdlEntityType.getAttrNumericEntityName() : csdlEntityType.getAttrDateEntityName();
-                Map<String, Object> attrPkMap = new HashMap<>(pkMap);
-                attrPkMap.put("attrName", entry.getKey());
-                GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, true);
-                Object attrValue = entry.getValue();
-                if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
-                    if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {
-                        attrValue = Boolean.parseBoolean(attrValue.toString()) ? "Y" : "N";
+            Set<Map.Entry<String, Object>> entrySet = fieldMapToWrite.entrySet();
+            for (Map.Entry<String, Object> entry : entrySet) {
+                //如果这个字段是Attribute
+                if (csdlAttrPropertyNames.contains(entry.getKey())) {
+                    OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(entry.getKey());
+                    String attrEntityName = ofbizCsdlProperty.isAttribute() ? csdlEntityType.getAttrEntityName() :
+                            ofbizCsdlProperty.isNumericAttribute() ? csdlEntityType.getAttrNumericEntityName() : csdlEntityType.getAttrDateEntityName();
+                    Map<String, Object> attrPkMap = new HashMap<>(pkMap);
+                    attrPkMap.put("attrName", entry.getKey());
+                    GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, true);
+                    Object attrValue = entry.getValue();
+                    if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
+                        if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {
+                            attrValue = Boolean.parseBoolean(attrValue.toString()) ? "Y" : "N";
+                        }
+                    }
+                    Map<String, Object> paramMap = new HashMap<>(attrPkMap);
+                    paramMap.put("attrValue", attrValue);
+                    paramMap.put("userLogin", userLogin);
+
+                    //这个Attribute不存在并且value有值, 创建
+                    if (UtilValidate.isEmpty(attributeEntity) && entry.getValue() != null) {
+                        String createService = Util.getEntityActionService(attrEntityName, "create", delegator);
+                        dispatcher.runSync(createService, paramMap);
+                    }
+                    //Attribute已经存在, 更新或删除
+                    if (UtilValidate.isNotEmpty(attributeEntity)) {
+                        String updateService = Util.getEntityActionService(attrEntityName, "update", delegator);
+                        String deleteService = Util.getEntityActionService(attrEntityName, "delete", delegator);
+                        String serviceName = entry.getValue() == null ? deleteService : updateService;
+                        dispatcher.runSync(serviceName, paramMap);
                     }
                 }
-                Map<String, Object> paramMap = new HashMap<>(attrPkMap);
-                paramMap.put("attrValue", attrValue);
-                paramMap.put("userLogin", userLogin);
-
-                //这个Attribute不存在并且value有值, 创建
-                if (UtilValidate.isEmpty(attributeEntity) && entry.getValue() != null) {
-                    String createService = Util.getEntityActionService(attrEntityName, "create", delegator);
-                    dispatcher.runSync(createService, paramMap);
-                }
-                //Attribute已经存在, 更新或删除
-                if (UtilValidate.isNotEmpty(attributeEntity)) {
-                    String updateService = Util.getEntityActionService(attrEntityName, "update", delegator);
-                    String deleteService = Util.getEntityActionService(attrEntityName, "delete", delegator);
-                    String serviceName = entry.getValue() == null ? deleteService : updateService;
-                    dispatcher.runSync(serviceName, paramMap);
-                }
             }
+        } catch (GenericEntityException | GenericServiceException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
+
     }
 
     public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator, String entityName,
@@ -1692,14 +1696,14 @@ public class OdataProcessorHelper {
     public static GenericValue createNestedGenericValue(Entity entityToWrite, OdataOfbizEntity mainEntity,
                                                         EntityTypeRelAlias relAlias,
                                                         LocalDispatcher dispatcher, Delegator delegator,
-                                                        GenericValue userLogin) throws GenericEntityException, GenericServiceException, OfbizODataException {
+                                                        GenericValue userLogin) throws OfbizODataException {
         return createRelatedGenericValue(entityToWrite, mainEntity, relAlias, dispatcher, delegator, userLogin);
     }
 
     public static GenericValue createRelatedGenericValue(Entity entityToWrite, OdataOfbizEntity mainEntity,
                                                          EntityTypeRelAlias relAlias,
                                                          LocalDispatcher dispatcher, Delegator delegator,
-                                                         GenericValue userLogin) throws GenericEntityException, GenericServiceException, OfbizODataException {
+                                                         GenericValue userLogin) throws OfbizODataException {
         GenericValue genericValue = mainEntity.getGenericValue();
         List<String> relations = relAlias.getRelations();
         int relationSize = relations.size();
@@ -1751,16 +1755,20 @@ public class OdataProcessorHelper {
             try {
                 createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
                 serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
-            } catch (OfbizODataException e) {
+            } catch (OfbizODataException | GenericServiceException e) {
                 //没有定义service的viewEntity，尝试view通用的service
                 if (delegator.getModelEntity(entityName) instanceof ModelViewEntity) {
                     createService = "dpbird.saveViewEntityData";
                     serviceParams = UtilMisc.toMap("viewEntityName", entityName, "fieldMap", createEntityMap, "userLogin", userLogin);
                 } else {
-                    throw e;
+                    throw new OfbizODataException(e.getMessage());
                 }
             }
-            createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+            try {
+                createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+            } catch (GenericServiceException | GenericEntityException e) {
+                throw new OfbizODataException(e.getMessage());
+            }
             if (destGenericValue == null) { // 第一个产生的createdGenericValue，就是目标GenericValue，要返回
                 destGenericValue = createdGenericValue;
             }
