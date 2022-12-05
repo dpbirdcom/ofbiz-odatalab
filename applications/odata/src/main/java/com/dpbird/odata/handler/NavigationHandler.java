@@ -1,12 +1,8 @@
 package com.dpbird.odata.handler;
 
+import com.dpbird.odata.OdataParts;
 import com.dpbird.odata.OfbizODataException;
-import com.dpbird.odata.UriResourceDataInfo;
 import com.dpbird.odata.edm.OdataOfbizEntity;
-import org.apache.ofbiz.entity.GenericValue;
-import org.apache.olingo.commons.api.data.Entity;
-import org.apache.olingo.commons.api.edm.Edm;
-import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
@@ -25,12 +21,12 @@ public interface NavigationHandler {
      * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
      * @param queryOptions          queryOptions
-     * @param uriResourceDataInfos  所有之前的UriResource数据
+     * @param odataParts  所有之前的UriResource数据
      * @return 关联实体数据
      */
     Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                            EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
-                                           List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+                                           List<OdataParts> odataParts) throws OfbizODataException;
 
     /**
      * 获取创建参数
@@ -38,11 +34,11 @@ public interface NavigationHandler {
      * @param entity                主实体
      * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
-     * @param uriResourceDataInfos  queryOptions
+     * @param odataParts  queryOptions
      * @return 创建参数
      */
     Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+                                       EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException;
 
 
     /**
@@ -51,11 +47,11 @@ public interface NavigationHandler {
      * @param entity                主实体
      * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
-     * @param uriResourceDataInfos  多段式参数
+     * @param odataParts  多段式参数
      * @return 更新参数
      */
     Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+                                       EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException;
 
     /**
      * 获取删除参数
@@ -63,11 +59,11 @@ public interface NavigationHandler {
      * @param entity                主实体
      * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
-     * @param uriResourceDataInfos  多段式参数
+     * @param odataParts  多段式参数
      * @return 更新参数
      */
     Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+                                       EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException;
 
 
     /**

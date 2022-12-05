@@ -7,7 +7,6 @@ import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
-import org.apache.ofbiz.entity.GenericModelException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityComparisonOperator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
@@ -16,7 +15,6 @@ import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelRelation;
-import org.apache.ofbiz.entity.util.EntityFindOptions;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -855,7 +853,7 @@ public class OfbizOdataProcessor {
         return e1;
     }
 
-    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType, List<UriResourceDataInfo> expandUriResourceInfo)
+    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType, List<OdataParts> expandUriResourceInfo)
             throws OfbizODataException {
         if (expandOption == null) {
             return;
@@ -882,7 +880,7 @@ public class OfbizOdataProcessor {
         Debug.logInfo("finished adding all expand items", module);
     }
 
-    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmEntityType edmEntityType, List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmEntityType edmEntityType, List<OdataParts> expandUriResourceInfo) throws OfbizODataException {
         EdmNavigationProperty edmNavigationProperty = null;
         LevelsExpandOption levelsExpandOption = expandItem.getLevelsOption();
         int expandLevel = 1;
@@ -922,7 +920,7 @@ public class OfbizOdataProcessor {
     // expand=*时会调用此方法
     private void addExpandNavigation(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty,
-                                     int expandLevel, List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+                                     int expandLevel, List<OdataParts> expandUriResourceInfo) throws OfbizODataException {
         ExpandOption nestedExpandOption = null;
         if (expandLevel > 1) {
             ExpandOptionImpl expandOptionImpl = new ExpandOptionImpl();
@@ -944,7 +942,7 @@ public class OfbizOdataProcessor {
 
     private EntityCollection getExpandData(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                            EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> embeddedQueryOptions,
-                                           List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+                                           List<OdataParts> expandUriResourceInfo) throws OfbizODataException {
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
         OdataReader reader = new OdataReader(getOdataContext(), embeddedQueryOptions, embeddedEdmParams);
         return reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null, expandUriResourceInfo);
@@ -952,7 +950,7 @@ public class OfbizOdataProcessor {
 
     private void expandNonCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
-                                     List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+                                     List<OdataParts> expandUriResourceInfo) throws OfbizODataException {
         EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions, expandUriResourceInfo);
         if (null != expandEntityCollection && UtilValidate.isNotEmpty(expandEntityCollection.getEntities())) {
             Entity expandEntity = expandEntityCollection.getEntities().get(0);
@@ -973,7 +971,7 @@ public class OfbizOdataProcessor {
 
     private void expandCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                   EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions,
-                                  List<UriResourceDataInfo> expandUriResourceInfo) throws OfbizODataException {
+                                  List<OdataParts> expandUriResourceInfo) throws OfbizODataException {
         EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions, expandUriResourceInfo);
         String navPropName = edmNavigationProperty.getName();
         Link link = new Link();

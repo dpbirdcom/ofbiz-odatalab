@@ -3,7 +3,6 @@ package com.dpbird.odata;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlFunction;
-import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.GenericValue;
@@ -28,7 +27,7 @@ public class FunctionProcessor extends OdataReader {
      * return Entity
      */
     public Entity processFunctionEntity(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap,
-                                        EdmBindingTarget edmBindingTarget, List<UriResourceDataInfo> resourceDataInfoList) throws OfbizODataException {
+                                        EdmBindingTarget edmBindingTarget, List<OdataParts> resourceDataInfoList) throws OfbizODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         EdmEntityType returnEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
@@ -41,8 +40,8 @@ public class FunctionProcessor extends OdataReader {
                     queryOptions, UtilMisc.toList(responseEntity), locale, userLogin);
         }
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-            List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
-            expandResourceDataInfo.add(new UriResourceDataInfo(null, returnEntityType, null, responseEntity));
+            List<OdataParts> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
+            expandResourceDataInfo.add(new OdataParts(null, returnEntityType, null, responseEntity));
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, returnEntityType, expandResourceDataInfo);
         }
         return responseEntity;
@@ -52,7 +51,7 @@ public class FunctionProcessor extends OdataReader {
      * return EntityCollection
      */
     public EntityCollection processFunctionEntityCollection(UriResourceFunction uriResourceFunction, Map<String, Object> paramMap,
-                                                            EdmBindingTarget edmBindingTarget, List<UriResourceDataInfo> resourceDataInfoList) throws OfbizODataException {
+                                                            EdmBindingTarget edmBindingTarget, List<OdataParts> resourceDataInfoList) throws OfbizODataException {
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         OfbizCsdlFunction csdlFunction = (OfbizCsdlFunction) this.edmProvider.getFunctions(edmFunction.getFullQualifiedName()).get(0);
         //Invoke method.
@@ -77,8 +76,8 @@ public class FunctionProcessor extends OdataReader {
         //expand
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
-                List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
-                expandResourceDataInfo.add(new UriResourceDataInfo(null, returnEdmEntityType, uriResourceFunction, entity));
+                List<OdataParts> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
+                expandResourceDataInfo.add(new OdataParts(null, returnEdmEntityType, uriResourceFunction, entity));
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, returnEdmEntityType, expandResourceDataInfo);
             }
         }

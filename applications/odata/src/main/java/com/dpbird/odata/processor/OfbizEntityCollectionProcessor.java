@@ -85,10 +85,10 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
             if (queryOptions.get("applyOption") == null) {
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions, sapContextId);
-                List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
-                UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
-                EntityCollection entityCollection = (EntityCollection) uriResourceDataInfo.getEntityData();
-                serializeEntityCollection(oDataRequest, oDataResponse, uriResourceDataInfo.getEdmEntityType(),
+                List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+                OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+                EntityCollection entityCollection = (EntityCollection) odataParts.getEntityData();
+                serializeEntityCollection(oDataRequest, oDataResponse, odataParts.getEdmEntityType(),
                         responseContentType, entityCollection, queryOptions);
             } else {
                 //apply
@@ -128,8 +128,8 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             } else {
                 //多段式查询
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), quernOptions, sapContextId);
-                List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, uriInfo.getAliases());
-                UriResourceDataInfo lastResourceData = ListUtil.getLast(resourceDataInfos);
+                List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, uriInfo.getAliases());
+                OdataParts lastResourceData = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) lastResourceData.getEntityData();
                 count = (long) entityCollection.getEntities().size();
             }

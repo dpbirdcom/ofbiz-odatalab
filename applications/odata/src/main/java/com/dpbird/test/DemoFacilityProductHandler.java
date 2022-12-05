@@ -1,9 +1,7 @@
 package com.dpbird.test;
 
-import com.dpbird.odata.OdataProcessorHelper;
-import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
-import com.dpbird.odata.UriResourceDataInfo;
+import com.dpbird.odata.OdataParts;
 import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.ofbiz.base.util.Debug;
@@ -12,18 +10,14 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityExpr;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
-import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -33,7 +27,7 @@ public class DemoFacilityProductHandler implements NavigationHandler {
 
     @Override
     public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
-                                                  Map<String, QueryOption> queryOptions, List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
+                                                  Map<String, QueryOption> queryOptions, List<OdataParts> resourceDataInfos) throws OfbizODataException {
         try {
             Debug.log(">>> resourceDataInfos: " + resourceDataInfos);
             Delegator delegator = (Delegator) odataContext.get("delegator");
@@ -48,17 +42,17 @@ public class DemoFacilityProductHandler implements NavigationHandler {
     }
 
     @Override
-    public Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+    public Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException {
         return null;
     }
 
     @Override
-    public Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+    public Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException {
         return null;
     }
 
     @Override
-    public Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+    public Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException {
         return null;
     }
 

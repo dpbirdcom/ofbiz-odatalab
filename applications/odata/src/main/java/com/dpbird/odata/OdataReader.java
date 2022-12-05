@@ -127,10 +127,10 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
-            List<UriResourceDataInfo> uriResourceDataInfos = new ArrayList<>();
-            UriResourceDataInfo uriResourceDataInfo = new UriResourceDataInfo(edmEntitySet, edmEntityType, null, entity);
-            uriResourceDataInfos.add(uriResourceDataInfo);
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, this.edmEntityType, uriResourceDataInfos);
+            List<OdataParts> odataPartsList = new ArrayList<>();
+            OdataParts odataParts = new OdataParts(edmEntitySet, edmEntityType, null, entity);
+            odataPartsList.add(odataParts);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, this.edmEntityType, odataPartsList);
         }
         entity.setKeyMap(keyMap);
         return entity;
@@ -166,10 +166,10 @@ public class OdataReader extends OfbizOdataProcessor {
                 queryOptions, entities, locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
-                List<UriResourceDataInfo> uriResourceDataInfos = new ArrayList<>();
-                UriResourceDataInfo uriResourceDataInfo = new UriResourceDataInfo(edmEntitySet, edmEntityType, null, entity);
-                uriResourceDataInfos.add(uriResourceDataInfo);
-                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, this.edmEntityType, uriResourceDataInfos);
+                List<OdataParts> odataPartsList = new ArrayList<>();
+                OdataParts odataParts = new OdataParts(edmEntitySet, edmEntityType, null, entity);
+                odataPartsList.add(odataParts);
+                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, this.edmEntityType, odataPartsList);
             }
         }
         return entityCollection;
@@ -282,10 +282,10 @@ public class OdataReader extends OfbizOdataProcessor {
      * @return 子对象数据集
      */
     public Entity findRelatedOne(Entity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty,
-                                 Map<String, QueryOption> queryOptionMap, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+                                 Map<String, QueryOption> queryOptionMap, List<OdataParts> odataParts) throws OfbizODataException {
         //从Navigation接口实例中获取查询参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
-        Map<String, Object> navigationParam = navigationHandler.getNavigationParam(odataContext, (OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, queryOptions, uriResourceDataInfos);
+        Map<String, Object> navigationParam = navigationHandler.getNavigationParam(odataContext, (OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, queryOptions, odataParts);
         //根据调用参数从Handler获取数据
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         HandlerResults handlerList = entityHandler.findList(odataContext, null, queryOptions, navigationParam);
@@ -297,8 +297,8 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptionMap.get("selectOption")), UtilMisc.toList(relEntity), locale, userLogin);
         if (UtilValidate.isNotEmpty(queryOptionMap) && queryOptionMap.get("expandOption") != null) {
-            List<UriResourceDataInfo> expandResourceDataInfo = new ArrayList<>(uriResourceDataInfos);
-            expandResourceDataInfo.add(new UriResourceDataInfo(null, edmNavigationProperty.getType(), null, relEntity));
+            List<OdataParts> expandResourceDataInfo = new ArrayList<>(odataParts);
+            expandResourceDataInfo.add(new OdataParts(null, edmNavigationProperty.getType(), null, relEntity));
             addExpandOption((ExpandOption) queryOptionMap.get("expandOption"), (OdataOfbizEntity) relEntity, edmNavigationProperty.getType(), expandResourceDataInfo);
         }
         return relEntity;
@@ -313,7 +313,7 @@ public class OdataReader extends OfbizOdataProcessor {
      */
     public EntityCollection findRelatedList(Entity entity, EdmNavigationProperty edmNavigationProperty,
                                             Map<String, QueryOption> queryOptions, Map<String, Object> navPrimaryKey,
-                                            List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
+                                            List<OdataParts> resourceDataInfos) throws OfbizODataException {
         EntityCollection entityCollection = new EntityCollection();
         //从Navigation获取调用参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
@@ -346,12 +346,12 @@ public class OdataReader extends OfbizOdataProcessor {
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entityIter : entityCollection.getEntities()) {
-                List<UriResourceDataInfo> expandResourceInfo = new ArrayList<>();
+                List<OdataParts> expandResourceInfo = new ArrayList<>();
                 if (resourceDataInfos != null) {
                     expandResourceInfo.addAll(resourceDataInfos);
                 }
-                UriResourceDataInfo uriResourceDataInfo = new UriResourceDataInfo(null, edmNavigationProperty.getType(), null, entityIter);
-                expandResourceInfo.add(uriResourceDataInfo);
+                OdataParts odataParts = new OdataParts(null, edmNavigationProperty.getType(), null, entityIter);
+                expandResourceInfo.add(odataParts);
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entityIter, edmNavigationProperty.getType(), expandResourceInfo);
             }
         }

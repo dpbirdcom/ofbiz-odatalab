@@ -104,8 +104,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 //多段式create
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
                 ArrayList<UriResource> uriResources = new ArrayList<>(resourceParts.subList(0, resourceParts.size() - 1));
-                List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(uriResources, null);
-                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                List<OdataParts> odataParts = uriResourceProcessor.readUriResource(uriResources, null);
+                OdataParts lastResourceData = ListUtil.getLast(odataParts);
                 Entity entity = (Entity) lastResourceData.getEntityData();
                 edmBindingTarget = lastResourceData.getEdmBindingTarget();
                 UriResourceNavigation resourceNavigation = (UriResourceNavigation) lastUriResource;
@@ -146,11 +146,11 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         }
         try {
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
-            List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, null);
+            List<OdataParts> odataParts = uriResourceProcessor.readUriResource(resourceParts, null);
             if (resourceParts.size() == 1 && resourceParts.get(0) instanceof UriResourceEntitySet) {
                 //delete
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
-                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                OdataParts lastResourceData = ListUtil.getLast(odataParts);
                 OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
                 //checkEtag
                 AnnotationCheck.checkIfMatch(edmProvider, oDataRequest, ofbizEntity, uriResourceEntitySet.getEntitySet());
@@ -159,8 +159,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 dispatcher.runSync("dpbird.deleteEntity", serviceParms);
             } else {
                 //多段式delete
-                UriResourceDataInfo previousResourceData = uriResourceDataInfos.get(uriResourceDataInfos.size() - 2);
-                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                OdataParts previousResourceData = odataParts.get(odataParts.size() - 2);
+                OdataParts lastResourceData = ListUtil.getLast(odataParts);
                 OdataOfbizEntity entity = (OdataOfbizEntity) previousResourceData.getEntityData();
                 OdataOfbizEntity toDeleteEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
                 UriResourceNavigation resourceNavigation = (UriResourceNavigation) ListUtil.getLast(resourceParts);
@@ -190,12 +190,12 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         }
         try {
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
-            List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
-            UriResourceDataInfo uriResourceDataInfo = resourceDataInfos.get(resourceDataInfos.size() - 1);
-            Entity responseEntity = (Entity) uriResourceDataInfo.getEntityData();
+            List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+            OdataParts odataParts = resourceDataInfos.get(resourceDataInfos.size() - 1);
+            Entity responseEntity = (Entity) odataParts.getEntityData();
             //response
             if (responseEntity != null) {
-                serializeEntity(oDataRequest, oDataResponse, uriResourceDataInfo.getEdmBindingTarget(), uriResourceDataInfo.getEdmEntityType(),
+                serializeEntity(oDataRequest, oDataResponse, odataParts.getEdmBindingTarget(), odataParts.getEdmEntityType(),
                         responseContentType, uriInfo.getExpandOption(), uriInfo.getSelectOption(), responseEntity);
             }
             oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
@@ -259,8 +259,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 }
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
                 ArrayList<UriResource> uriResources = new ArrayList<>(resourceParts.subList(0, resourceParts.size() - 1));
-                List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(uriResources, null);
-                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                List<OdataParts> odataParts = uriResourceProcessor.readUriResource(uriResources, null);
+                OdataParts lastResourceData = ListUtil.getLast(odataParts);
                 Entity entity = (Entity) lastResourceData.getEntityData();
                 edmBindingTarget = lastResourceData.getEdmBindingTarget();
                 DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmNavigationProperty.getType());
@@ -268,13 +268,13 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), UtilMisc.toMap("edmEntityType", edmBindingTarget.getEntityType()));
                 boolean isCreate = false;
                 if (primaryKey != null) {
-                    EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), primaryKey, uriResourceDataInfos);
+                    EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), primaryKey, odataParts);
                     if (UtilValidate.isEmpty(relatedList) || UtilValidate.isEmpty(relatedList.getEntities())) {
                         throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Entity not found.");
                     }
                 } else {
                     //NoCollection或许是创建
-                    OdataOfbizEntity relatedOne = (OdataOfbizEntity) reader.findRelatedOne(entity, edmBindingTarget.getEntityType(), edmNavigationProperty, new HashMap<>(), uriResourceDataInfos);
+                    OdataOfbizEntity relatedOne = (OdataOfbizEntity) reader.findRelatedOne(entity, edmBindingTarget.getEntityType(), edmNavigationProperty, new HashMap<>(), odataParts);
                     if (UtilValidate.isEmpty(relatedOne)) {
                         isCreate = true;
                     } else {
@@ -329,10 +329,10 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     public void readMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException {
         try {
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
-            UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
-            OdataOfbizEntity responseEntity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
-            EdmEntityType responseEdmEntityType = uriResourceDataInfo.getEdmEntityType();
+            List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+            OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+            OdataOfbizEntity responseEntity = (OdataOfbizEntity) odataParts.getEntityData();
+            EdmEntityType responseEdmEntityType = odataParts.getEdmEntityType();
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(responseEdmEntityType.getFullQualifiedName());
             CsdlProperty streamCsdlProperty = ofbizCsdlEntityType.getStreamProperty();
             if (streamCsdlProperty == null) {
@@ -443,8 +443,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         List<UriResource> resourceParts = uriInfo.getUriResourceParts();
         try {
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
-            List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, null);
-            UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+            List<OdataParts> odataParts = uriResourceProcessor.readUriResource(resourceParts, null);
+            OdataParts lastResourceData = ListUtil.getLast(odataParts);
             OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
             EdmEntitySet edmEntitySet = (EdmEntitySet) lastResourceData.getEdmBindingTarget();
             Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", edmEntitySet,

@@ -9,7 +9,6 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
@@ -41,8 +40,8 @@ public class UriResourceProcessor {
      *
      * @return 返回每一段的结果
      */
-    public List<UriResourceDataInfo> readUriResource(List<UriResource> uriResourcePartList, List<AliasQueryOption> aliases) throws OfbizODataException {
-        List<UriResourceDataInfo> resourceDataInfoList = new ArrayList<>();
+    public List<OdataParts> readUriResource(List<UriResource> uriResourcePartList, List<AliasQueryOption> aliases) throws OfbizODataException {
+        List<OdataParts> odataPartsList = new ArrayList<>();
         Map<String, QueryOption> queryOptions = new HashMap<>();
         List<UriResource> uriResourceParts = new ArrayList<>(uriResourcePartList);
         if (ListUtil.getLast(uriResourcePartList) instanceof UriResourceAction) {
@@ -59,34 +58,34 @@ public class UriResourceProcessor {
                 //如果不含主键 并且下一段是Function、Action时是空数据
                 if (UtilValidate.isEmpty(uriResourceEntitySet.getKeyPredicates())) {
                     if (uriResourceParts.size() > i + 1 && uriResourceParts.get(i + 1) instanceof UriResourceFunction) {
-                        resourceDataInfoList.add(new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
+                        odataPartsList.add(new OdataParts(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
                         continue;
                     }
                     if (i == uriResourceParts.size() - 1 && ListUtil.getLast(uriResourcePartList) instanceof UriResourceAction) {
-                        resourceDataInfoList.add(new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
+                        odataPartsList.add(new OdataParts(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), resourcePart, null));
                         continue;
                     }
                 }
-                UriResourceDataInfo uriResourceDataInfo = readUriResourceEntitySet(resourcePart, queryOptions);
-                resourceDataInfoList.add(uriResourceDataInfo);
+                OdataParts odataParts = readUriResourceEntitySet(resourcePart, queryOptions);
+                odataPartsList.add(odataParts);
             }
             if (resourcePart instanceof UriResourceSingleton) {
-                UriResourceDataInfo uriResourceDataInfo = readUriResourceSingleton(resourcePart, queryOptions);
-                resourceDataInfoList.add(uriResourceDataInfo);
+                OdataParts odataParts = readUriResourceSingleton(resourcePart, queryOptions);
+                odataPartsList.add(odataParts);
             }
             if (resourcePart instanceof UriResourceNavigation) {
-                UriResourceDataInfo uriResourceDataInfo = readUriResourceNavigation(resourcePart, queryOptions, resourceDataInfoList);
-                resourceDataInfoList.add(uriResourceDataInfo);
+                OdataParts odataParts = readUriResourceNavigation(resourcePart, queryOptions, odataPartsList);
+                odataPartsList.add(odataParts);
             }
             if (resourcePart instanceof UriResourceFunction) {
-                UriResourceDataInfo uriResourceDataInfo = readUriResourceFunction(resourcePart, resourceDataInfoList, aliases, queryOptions);
-                resourceDataInfoList.add(uriResourceDataInfo);
+                OdataParts odataParts = readUriResourceFunction(resourcePart, odataPartsList, aliases, queryOptions);
+                odataPartsList.add(odataParts);
             }
         }
-        return resourceDataInfoList;
+        return odataPartsList;
     }
 
-    private UriResourceDataInfo readUriResourceEntitySet(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    private OdataParts readUriResourceEntitySet(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResource;
         EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
         EdmEntityType edmEntityType = edmEntitySet.getEntityType();
@@ -99,18 +98,18 @@ public class UriResourceProcessor {
             OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
             entityData = UtilValidate.isEmpty(primaryKey) ? reader.findList() : reader.findOne(primaryKey, queryOptions);
         }
-        return new UriResourceDataInfo(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), uriResource, entityData);
+        return new OdataParts(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), uriResource, entityData);
     }
 
-    private UriResourceDataInfo readUriResourceSingleton(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    private OdataParts readUriResourceSingleton(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         UriResourceSingleton uriResourceEntitySet = (UriResourceSingleton) uriResource;
         EdmBindingTarget edmBindingTarget = uriResourceEntitySet.getSingleton();
         OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmSingleton", edmBindingTarget));
-        return new UriResourceDataInfo(edmBindingTarget, edmBindingTarget.getEntityType(), uriResource, reader.findSingleton(true));
+        return new OdataParts(edmBindingTarget, edmBindingTarget.getEntityType(), uriResource, reader.findSingleton(true));
     }
 
-    private UriResourceDataInfo readUriResourceNavigation(UriResource uriResource, Map<String, QueryOption> queryOptions,
-                                                          List<UriResourceDataInfo> resourceDataInfos) throws OfbizODataException {
+    private OdataParts readUriResourceNavigation(UriResource uriResource, Map<String, QueryOption> queryOptions,
+                                                 List<OdataParts> resourceDataInfos) throws OfbizODataException {
         //navigation
         UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResource;
         EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
@@ -120,16 +119,16 @@ public class UriResourceProcessor {
 
         Map<String, Object> navigationPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), navigationEntityType);
         //last uriResource
-        UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfos);
-        OdataOfbizEntity entity = (OdataOfbizEntity) uriResourceDataInfo.getEntityData();
-        EdmEntityType edmEntityType = uriResourceDataInfo.getEdmEntityType();
+        OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+        OdataOfbizEntity entity = (OdataOfbizEntity) odataParts.getEntityData();
+        EdmEntityType edmEntityType = odataParts.getEdmEntityType();
         OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         EdmEntitySet navigationTargetEntitySet = null;
-        if (uriResourceDataInfo.getEdmBindingTarget() != null) {
-            navigationTargetEntitySet = Util.getNavigationTargetEntitySet(uriResourceDataInfo.getEdmBindingTarget(), edmNavigationProperty);
+        if (odataParts.getEdmBindingTarget() != null) {
+            navigationTargetEntitySet = Util.getNavigationTargetEntitySet(odataParts.getEdmBindingTarget(), edmNavigationProperty);
         }
-        UriResourceDataInfo currentUriResourceData = new UriResourceDataInfo(navigationTargetEntitySet, navigationEntityType, uriResource, null);
-        boolean isCollection = resourceIsCollection(uriResourceDataInfo.getUriResource(), uriResource, edmProvider);
+        OdataParts currentUriResourceData = new OdataParts(navigationTargetEntitySet, navigationEntityType, uriResource, null);
+        boolean isCollection = resourceIsCollection(odataParts.getUriResource(), uriResource, edmProvider);
         if (sapContextId != null && UtilValidate.isNotEmpty(navCsdlEntityType.getDraftEntityName())) {
             //draft
             DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
@@ -156,8 +155,8 @@ public class UriResourceProcessor {
         return currentUriResourceData;
     }
 
-    private UriResourceDataInfo readUriResourceFunction(UriResource uriResource, List<UriResourceDataInfo> resourceDataInfoList,
-                                                        List<AliasQueryOption> aliasParam, Map<String, QueryOption> queryOption) throws OfbizODataException {
+    private OdataParts readUriResourceFunction(UriResource uriResource, List<OdataParts> resourceDataInfoList,
+                                               List<AliasQueryOption> aliasParam, Map<String, QueryOption> queryOption) throws OfbizODataException {
         UriResourceFunction uriResourceFunction = (UriResourceFunction) uriResource;
         EdmFunction edmFunction = uriResourceFunction.getFunction();
         EdmEntityType returnEdmEntityType = (EdmEntityType) edmFunction.getReturnType().getType();
@@ -165,9 +164,9 @@ public class UriResourceProcessor {
         EdmBindingTarget edmBindingTarget = null;
         if (edmFunction.isBound()) {
             //添加bound参数
-            UriResourceDataInfo uriResourceDataInfo = ListUtil.getLast(resourceDataInfoList);
-            edmBindingTarget = uriResourceDataInfo.getEdmBindingTarget();
-            Object entityData = uriResourceDataInfo.getEntityData();
+            OdataParts odataParts = ListUtil.getLast(resourceDataInfoList);
+            edmBindingTarget = odataParts.getEdmBindingTarget();
+            Object entityData = odataParts.getEntityData();
             String boundParamName = edmFunction.getParameterNames().get(0);
             Object boundParam = null;
             if (entityData != null) {
@@ -176,7 +175,7 @@ public class UriResourceProcessor {
             }
             parameters.put(boundParamName, boundParam);
         }
-        UriResourceDataInfo currentUriResourceData = new UriResourceDataInfo(edmBindingTarget, returnEdmEntityType, uriResource, null);
+        OdataParts currentUriResourceData = new OdataParts(edmBindingTarget, returnEdmEntityType, uriResource, null);
         FunctionProcessor functionProcessor = new FunctionProcessor(odataContext, queryOption, null);
         if (edmFunction.getReturnType().isCollection()) {
             EntityCollection entityCollection = functionProcessor.processFunctionEntityCollection(uriResourceFunction, parameters, edmBindingTarget, resourceDataInfoList);

@@ -8,14 +8,14 @@ import org.apache.olingo.server.api.uri.UriResource;
 /**
  * 用来存储UriResource每一段的数据
  */
-public class UriResourceDataInfo {
+public class OdataParts {
     private EdmBindingTarget edmBindingTarget;
     private EdmEntityType edmEntityType;
     private UriResource uriResource;
     private Object entityData;
 
-    public UriResourceDataInfo(EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
-                               UriResource uriResource, Object entityData) {
+    public OdataParts(EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
+                      UriResource uriResource, Object entityData) {
         this.edmBindingTarget = edmBindingTarget;
         this.edmEntityType = edmEntityType;
         this.uriResource = uriResource;
@@ -30,7 +30,7 @@ public class UriResourceDataInfo {
         this.edmBindingTarget = edmBindingTarget;
     }
 
-    public UriResourceDataInfo() {
+    public OdataParts() {
     }
 
     public EdmEntityType getEdmEntityType() {
@@ -59,7 +59,7 @@ public class UriResourceDataInfo {
 
     @Override
     public String toString() {
-        return "UriResourceDataInfo{" +
+        return "OdataParts{" +
                 "edmBindingTarget=" + edmBindingTarget +
                 ", edmEntityType=" + edmEntityType +
                 ", uriResource=" + uriResource +
