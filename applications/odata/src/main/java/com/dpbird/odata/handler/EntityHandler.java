@@ -51,6 +51,7 @@ public interface EntityHandler {
      *
      * @param entityToWrite 要更新的数据
      * @param odataContext  odataContext
+     * @param updateParam  更新参数
      * @return 返回已更新的数据
      */
     Map<String, Object> update(Map<String, Object> primaryKey, Entity entityToWrite, Map<String, Object> odataContext,
@@ -62,9 +63,10 @@ public interface EntityHandler {
      *
      * @param entityToDelete 要删除的数据
      * @param odataContext   odataContext
+     * @param deleteParam   删除参数
      */
-    void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget)
-            throws OfbizODataException;
+    void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
+                Map<String, Object> deleteParam) throws OfbizODataException;
 
 
 }

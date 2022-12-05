@@ -3,15 +3,12 @@ package com.dpbird.odata.processor;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
-import com.dpbird.odata.handler.HandlerFactory;
-import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.fop.util.ListUtil;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -147,65 +144,38 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
         if (UtilValidate.isNotEmpty(sapContextId)) {
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
-        // 1. Retrieve the entity set which belongs to the requested entity
-        int segmentCount = resourceParts.size();
-        UriResourcePartTyped uriResourcePartTyped = (UriResourcePartTyped) resourceParts.get(0);
-        EdmBindingTarget edmBindingTarget;
-        List<UriParameter> keyPredicates = null;
-        if (uriResourcePartTyped instanceof UriResourceEntitySet) {
-            UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) uriResourcePartTyped;
-            edmBindingTarget = resourceEntitySet.getEntitySet();
-            keyPredicates = resourceEntitySet.getKeyPredicates();
-            //check If-Match
-            AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, resourceEntitySet.getEntitySet(), keyPredicates);
-        } else {
-            edmBindingTarget = ((UriResourceSingleton) uriResourcePartTyped).getSingleton();
-        }
-        if (segmentCount == 1) { // no navigation
-            // 2. delete the data in backend
-            Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", edmBindingTarget,
-                    "keyParams", keyPredicates, "rawServiceUri", oDataRequest.getRawBaseUri(), "oData", odata,
-                    "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,
-                    "sapContextId", sapContextId, "userLogin", userLogin);
-            try {
-                dispatcher.runSync("dpbird.deleteEntityData", serviceParms);
-            } catch (GenericServiceException e) {
-                e.printStackTrace();
-                if (e.getCause() instanceof OfbizODataException) {
-                    OfbizODataException e1 = (OfbizODataException) e.getCause();
-                    throw new ODataApplicationException(e1.getMessage(), Integer.parseInt(e1.getODataErrorCode()), locale, e1.getODataErrorCode());
-                }
-                throw new ODataApplicationException(e.getMessage(),
-                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+        try {
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
+            List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, null);
+            if (resourceParts.size() == 1 && resourceParts.get(0) instanceof UriResourceEntitySet) {
+                //delete
+                UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
+                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
+                //checkEtag
+                AnnotationCheck.checkIfMatch(edmProvider, oDataRequest, ofbizEntity, uriResourceEntitySet.getEntitySet());
+                Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", uriResourceEntitySet.getEntitySet(),
+                        "odataContext", getOdataContext(), "entity", ofbizEntity, "sapContextId", sapContextId, "userLogin", userLogin);
+                dispatcher.runSync("dpbird.deleteEntity", serviceParms);
+            } else {
+                //多段式delete
+                UriResourceDataInfo previousResourceData = uriResourceDataInfos.get(uriResourceDataInfos.size() - 2);
+                UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+                OdataOfbizEntity entity = (OdataOfbizEntity) previousResourceData.getEntityData();
+                OdataOfbizEntity toDeleteEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
+                UriResourceNavigation resourceNavigation = (UriResourceNavigation) ListUtil.getLast(resourceParts);
+                Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", previousResourceData.getEdmBindingTarget(),
+                        "odataContext", getOdataContext(), "entity", entity, "entityToDelete", toDeleteEntity,
+                        "edmNavigationProperty", resourceNavigation.getProperty(), "userLogin", userLogin);
+                dispatcher.runSync("dpbird.deleteRelatedEntity", serviceParms);
             }
+        } catch (OfbizODataException e) {
+            e.printStackTrace();
+            throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
+        } catch (GenericServiceException e) {
+            e.printStackTrace();
+            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
         }
-        if (segmentCount == 2) { // 好像在FE的情形下，不会发生
-            Debug.logInfo("Entering Delete operation the second segment", module);
-            UriResource navSegment = resourceParts.get(1);
-            if (navSegment instanceof UriResourceNavigation) {
-                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) navSegment;
-                EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-                List<UriParameter> navKeyPredicates = uriResourceNavigation.getKeyPredicates();
-
-                Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", edmBindingTarget,
-                        "edmNavigationProperty", edmNavigationProperty, "keyParams", keyPredicates,
-                        "navKeyParams", navKeyPredicates, "rawServiceUri", oDataRequest.getRawBaseUri(),
-                        "oData", odata, "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,
-                        "sapContextId", sapContextId, "httpServletRequest", httpServletRequest, "userLogin", userLogin);
-                try {
-                    dispatcher.runSync("dpbird.deleteRelatedEntityData", serviceParms);
-                } catch (GenericServiceException e) {
-                    e.printStackTrace();
-                    if (e.getCause() instanceof OfbizODataException) {
-                        OfbizODataException e1 = (OfbizODataException) e.getCause();
-                        throw new ODataApplicationException(e1.getMessage(), Integer.parseInt(e1.getODataErrorCode()), locale, e1.getODataErrorCode());
-                    }
-                    throw new ODataApplicationException(e.getMessage(),
-                            HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
-                }
-            }
-        }
-
         // 3. configure the response object
         oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
     }
@@ -261,7 +231,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void updateEntity(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo, ContentType requestContentType,
                              ContentType responseContentType) throws ODataApplicationException, ODataLibraryException {
-        Entity requestEntity;
         OdataOfbizEntity updatedEntity;
         ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType);
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
@@ -306,8 +275,9 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 } else {
                     //NoCollection或许是创建
                     OdataOfbizEntity relatedOne = (OdataOfbizEntity) reader.findRelatedOne(entity, edmBindingTarget.getEntityType(), edmNavigationProperty, new HashMap<>(), uriResourceDataInfos);
-                    isCreate = UtilValidate.isEmpty(relatedOne);
-                    if (UtilValidate.isNotEmpty(relatedOne)) {
+                    if (UtilValidate.isEmpty(relatedOne)) {
+                        isCreate = true;
+                    } else {
                         primaryKey = relatedOne.getKeyMap();
                     }
                 }
@@ -342,99 +312,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 oDataResponse.setHeader("SAP-ContextId", sapContextId);
             }
         }
-
-
-//        try {
-//            Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
-//            Map<String, Object> serviceParms = UtilMisc.toMap("edmBindingTarget", edmEntitySet,
-//                    "rawServiceUri", oDataRequest.getRawBaseUri(), "keyMap", keyMap,
-//                    "oData", odata, "serviceMetadata", serviceMetadata, "edmProvider", edmProvider,
-//                    "sapContextId", sapContextId, "userLogin", userLogin, "request", httpServletRequest);
-//            if (resourcePaths.size() == 1) {
-//                requestEntity = deserializer.entity(oDataRequest.getBody(), edmEntityType).getEntity();
-//                serviceParms.put("entityToWrite", requestEntity);
-//                //check If-Match
-//                AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, edmEntitySet, uriResourceEntitySet.getKeyPredicates());
-//                Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntityData", serviceParms);
-//                updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
-//            } else if (resourcePaths.size() == 2) {
-//                //两段式更新
-//                UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
-//                EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-//                requestEntity = deserializer.entity(oDataRequest.getBody(), edmNavigationProperty.getType()).getEntity();
-//                //把response对象改为Navigation
-//                responseEdmEntityType = edmNavigationProperty.getType();
-//                responseEdmEntitySet = Util.getNavigationTargetEntitySet(edmEntitySet, edmNavigationProperty);
-//                List<UriParameter> keyPredicates = resourceNavigation.getKeyPredicates();
-//                Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-//                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
-//                Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet, "edmNavigationProperty", edmNavigationProperty);
-////                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, UtilMisc.toMap("keyMap", keyMap), edmParams);
-//                if (UtilValidate.isNotEmpty(keyPredicates)) {
-//                    //Collection  即使传递了子对象id，也要确认是否是当前主对象的关联数据
-//                    Map<String, Object> navigationKeyMap = Util.uriParametersToMap(keyPredicates, responseEdmEntityType);
-//                    OdataReader reader = new OdataReader(getOdataContext(), UtilMisc.toMap("keyMap", keyMap), edmParams);
-//                    Entity entity = reader.findOne(keyMap, null);
-//                    EntityCollection relEntity = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), navigationKeyMap, null);
-//                    if (relEntity == null || relEntity.getEntities().size() < 1) {
-//                        //不存在的子对象
-//                        throw new ODataApplicationException("Relation data not found: " + navigationKeyMap, HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
-//                    }
-//                    //check If-Match
-//                    AnnotationCheck.checkIfMatch(delegator, edmProvider, oDataRequest, responseEdmEntitySet, keyPredicates);
-//                    serviceParms.put("edmBindingTarget", responseEdmEntitySet);
-//                    serviceParms.put("keyMap", navigationKeyMap);
-//                    serviceParms.put("entityToWrite", requestEntity);
-//                    Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntityData", serviceParms);
-//                    updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
-//                } else {
-//                    //NoCollection 先查询，判断要创建还是更新
-////                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) ofbizOdataReader.getRelatedEntity(keyMap, edmNavigationProperty, null);
-//                    OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmBindingTarget", edmEntitySet));
-//                    OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, new HashMap<>());
-//                    OdataOfbizEntity relatedEntity = (OdataOfbizEntity) reader.findRelatedOne(entity, edmEntitySet.getEntityType(), edmNavigationProperty, null);
-//                    if (relatedEntity == null) {
-//                        //create
-//                        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-//                        updatedEntity = OdataWriterHelper.createEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
-//                                csdlEntityType, keyMap, edmNavigationProperty.getName(), requestEntity,
-//                                null, userLogin, locale);
-//                    } else {
-//                        //update
-//                        AnnotationCheck.checkIfMatch(edmProvider, oDataRequest, relatedEntity, responseEdmEntitySet);
-//                        serviceParms.put("edmBindingTarget", responseEdmEntitySet);
-//                        serviceParms.put("keyMap", relatedEntity.getKeyMap());
-//                        serviceParms.put("entityToWrite", requestEntity);
-//                        Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntityData", serviceParms);
-//                        updatedEntity = (OdataOfbizEntity) serviceResult.get("entity");
-//                    }
-//                }
-//            } else {
-//                throw new ODataApplicationException("Not supported",
-//                        HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
-//            }
-//        } catch (GenericServiceException | OfbizODataException e) {
-//            e.printStackTrace();
-//            if (e.getCause() instanceof OfbizODataException) {
-//                OfbizODataException e1 = (OfbizODataException) e.getCause();
-//                throw new ODataApplicationException(e1.getMessage(), Integer.parseInt(e1.getODataErrorCode()), locale, e1.getODataErrorCode());
-//            }
-//            throw new ODataApplicationException(e.getMessage(),
-//                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
-//        }
-//        if (updatedEntity == null) {
-//            throw new ODataApplicationException("The request resource is not found.",
-//                    HttpStatusCode.NOT_FOUND.getStatusCode(), locale);
-//        }
-//
-//        this.serializeEntity(oDataRequest, oDataResponse, responseEdmEntitySet, responseEdmEntityType, responseContentType,
-//                null, null, updatedEntity);
-//        // 3. configure the response object
-//        if (UtilValidate.isNotEmpty(sapContextId)) {
-//            oDataResponse.setHeader("SAP-ContextId", sapContextId);
-//        }
-//        oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
-//        oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
     }
 
     private List<UriParameter> getUriParameters(List<UriResource> resourceParts) {
@@ -544,10 +421,9 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             Entity entityToWrite = Util.mapToEntity(ofbizCsdlEntityType, uploadFromData);
 
             //update
-            Map<String, Object> serviceParams = UtilMisc.toMap("keyMap", keyMap, "edmEntitySet", edmEntitySet,
-                    "entityToWrite", entityToWrite, "edmProvider", edmProvider, "httpServletRequest", httpServletRequest,
-                    "userLogin", userLogin);
-            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateMediaEntityData", serviceParams);
+            Map<String, Object> serviceParams = UtilMisc.toMap("primaryKey", keyMap, "edmBindingTarget", edmEntitySet,
+                    "entityToWrite", entityToWrite, "odataContext", getOdataContext(), "userLogin", userLogin);
+            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntity", serviceParams);
             OdataOfbizEntity entity = (OdataOfbizEntity) serviceResult.get("entity");
 
             //return
@@ -565,16 +441,19 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     @Override
     public void deleteMediaEntity(ODataRequest request, ODataResponse response, UriInfo uriInfo) throws ODataApplicationException, ODataLibraryException {
         List<UriResource> resourceParts = uriInfo.getUriResourceParts();
-        UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) resourceParts.get(0);
-        Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", resourceEntitySet.getEntitySet(),
-                "keyParams", resourceEntitySet.getKeyPredicates(), "rawServiceUri", request.getRawBaseUri(), "oData", odata,
-                "serviceMetadata", serviceMetadata, "edmProvider", edmProvider, "userLogin", userLogin);
         try {
-            dispatcher.runSync("dpbird.deleteEntityData", serviceParms);
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
+            List<UriResourceDataInfo> uriResourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, null);
+            UriResourceDataInfo lastResourceData = ListUtil.getLast(uriResourceDataInfos);
+            OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) lastResourceData.getEntityData();
+            EdmEntitySet edmEntitySet = (EdmEntitySet) lastResourceData.getEdmBindingTarget();
+            Map<String, Object> serviceParms = UtilMisc.toMap("edmEntitySet", edmEntitySet,
+                    "odataContext", getOdataContext(), "entity", ofbizEntity,  "userLogin", userLogin);
+            dispatcher.runSync("dpbird.deleteEntity", serviceParms);
             response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
-        } catch (GenericServiceException e) {
+        } catch (GenericServiceException | OfbizODataException e) {
             e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
         }
 
     }

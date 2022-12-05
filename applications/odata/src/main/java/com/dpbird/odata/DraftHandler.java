@@ -12,7 +12,6 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityFieldMap;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
@@ -24,7 +23,6 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.*;
@@ -485,9 +483,6 @@ public class DraftHandler {
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", null, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
-//                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
-//                OdataOfbizEntity ofbizEntity = ofbizOdataReader.makeEntityFromGv(mainGenericValue);
-//                return ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, queryOptions);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
                 return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null, null);

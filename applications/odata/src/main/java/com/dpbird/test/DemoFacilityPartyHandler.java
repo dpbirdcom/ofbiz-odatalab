@@ -52,13 +52,15 @@ public class DemoFacilityPartyHandler implements NavigationHandler {
     }
 
     @Override
-    public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
-
+    public Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException {
+        return null;
     }
 
     @Override
-    public void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity) {
+    public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                   EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) {
 
     }
+
 
 }

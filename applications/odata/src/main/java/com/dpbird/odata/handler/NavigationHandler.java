@@ -21,11 +21,11 @@ public interface NavigationHandler {
     /**
      * 读取关联实体的数据
      *
-     * @param entity 主实体
-     * @param edmEntityType  主实体EdmEntityType
-     * @param edmNavigationProperty  EdmNavigationProperty
-     * @param queryOptions  queryOptions
-     * @param uriResourceDataInfos 所有之前的UriResource数据
+     * @param entity                主实体
+     * @param edmEntityType         主实体EdmEntityType
+     * @param edmNavigationProperty EdmNavigationProperty
+     * @param queryOptions          queryOptions
+     * @param uriResourceDataInfos  所有之前的UriResource数据
      * @return 关联实体数据
      */
     Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
@@ -35,10 +35,10 @@ public interface NavigationHandler {
     /**
      * 获取创建参数
      *
-     * @param entity 主实体
-     * @param edmEntityType 主实体EdmEntityType
+     * @param entity                主实体
+     * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
-     * @param uriResourceDataInfos queryOptions
+     * @param uriResourceDataInfos  queryOptions
      * @return 创建参数
      */
     Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
@@ -48,31 +48,36 @@ public interface NavigationHandler {
     /**
      * 获取更新参数
      *
-     * @param entity 主实体
-     * @param edmEntityType 主实体EdmEntityType
+     * @param entity                主实体
+     * @param edmEntityType         主实体EdmEntityType
      * @param edmNavigationProperty EdmNavigationProperty
-     * @param uriResourceDataInfos queryOptions
+     * @param uriResourceDataInfos  多段式参数
      * @return 更新参数
      */
     Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                                       EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
+
+    /**
+     * 获取删除参数
+     *
+     * @param entity                主实体
+     * @param edmEntityType         主实体EdmEntityType
+     * @param edmNavigationProperty EdmNavigationProperty
+     * @param uriResourceDataInfos  多段式参数
+     * @return 更新参数
+     */
+    Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                        EdmNavigationProperty edmNavigationProperty, List<UriResourceDataInfo> uriResourceDataInfos) throws OfbizODataException;
 
 
     /**
      * 关联实体数据
      *
-     * @param entity       主实体
-     * @param nestedEntity 要关联的实体
+     * @param entity                主实体
+     * @param bindPrimaryKey        要关联的实体主键
+     * @param edmNavigationProperty edmNavigationProperty
      */
-    void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity);
-
-    /**
-     * 解除关联实体数据
-     *
-     * @param entity       主实体
-     * @param nestedEntity 要关联的实体
-     */
-    void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, OdataOfbizEntity nestedEntity);
-
+    void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                            EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException;
 
 }

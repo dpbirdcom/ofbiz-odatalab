@@ -5,7 +5,7 @@ import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.HandlerResults;
 import com.dpbird.odata.handler.NavigationHandler;
-import org.apache.fop.util.ListUtil;
+import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.GenericEntityException;
@@ -21,9 +21,12 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
-import org.apache.olingo.server.api.uri.*;
-import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
+import org.apache.olingo.server.api.uri.queryoption.FilterOption;
+import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
+import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.*;
 
@@ -118,6 +121,9 @@ public class OdataReader extends OfbizOdataProcessor {
         EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
         Map<String, Object> resultMap = entityHandler.findOne(odataContext, edmEntitySet, keyMap);
+        if (UtilValidate.isEmpty(resultMap)) {
+            throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Not found.");
+        }
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {

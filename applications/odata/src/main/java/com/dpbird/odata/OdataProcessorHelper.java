@@ -1105,6 +1105,16 @@ public class OdataProcessorHelper {
 
     }
 
+    public static void removeGenericValueFK(LocalDispatcher dispatcher, Delegator delegator, String entityName,
+                                       Map<String, Object> keyMap, ModelRelation modelRelation,
+                                       GenericValue userLogin) throws OfbizODataException {
+        Map<String, Object> serviceMap = new HashMap<>();
+        for (ModelKeyMap relationKeyMap : modelRelation.getKeyMaps()) {
+            serviceMap.put(relationKeyMap.getFieldName(), null);
+        }
+        OdataProcessorHelper.updateGenericValue(dispatcher, delegator, entityName, keyMap, serviceMap, userLogin);
+    }
+
     public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator, String entityName,
                                                   Map<String, Object> keyMap, Map<String, Object> fieldMap,
                                                   GenericValue userLogin) throws OfbizODataException {

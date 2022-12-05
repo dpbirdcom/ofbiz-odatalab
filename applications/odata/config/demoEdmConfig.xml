@@ -419,7 +419,9 @@
 		<NavigationProperty Name="AudioDataResource" />
 		<NavigationProperty Name="OtherDataResource" />
 		<NavigationProperty Name="OtherDataResource" />
+		<NavigationProperty Name="DataResourceAttribute" />
     </EntityType>
+	<EntityType Name="DataResourceAttribute" AutoProperties="true"/>
 	<EntityType Name="ElectronicText" BaseType="DataResource" AutoProperties="true"/>
     <EntityType Name="ContentAttribute" AutoProperties="true"/>
 	<EntityType Name="ContentAssoc" AutoProperties="true"/>

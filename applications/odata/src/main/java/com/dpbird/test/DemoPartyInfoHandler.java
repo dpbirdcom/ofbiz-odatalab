@@ -60,8 +60,9 @@ public class DemoPartyInfoHandler implements EntityHandler {
     }
 
     @Override
-    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget) {
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> deleteParam) throws OfbizODataException {
 
     }
+
 
 }

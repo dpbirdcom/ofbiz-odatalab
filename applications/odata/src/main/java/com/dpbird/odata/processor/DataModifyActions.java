@@ -287,18 +287,6 @@ public class DataModifyActions {
 
     }
 
-    private static GenericValue updateEntityWithHandler(LocalDispatcher dispatcher, Delegator delegator,
-                                                        OfbizAppEdmProvider edmProvider,
-                                                        OfbizCsdlEntityType csdlEntityType,
-                                                        GenericValue draftGenericValue,
-                                                        GenericValue userLogin,
-                                                        Locale locale, String componentPath) throws ODataException {
-        // TODO: genericValueToEntity，是用于将真正的GenericValue变成目标Entity，而下面代码是将draftGenericValue变成Entity，不知道有没有问题，需要确认
-        Entity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, draftGenericValue, locale);
-        GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, null);
-        return groovyHelper.updateGenericValue(csdlEntityType.getHandlerClass(), entity);
-    }
-
     private static boolean draftHasSamePk(GenericValue draftGenericValue, Map<String, Object> keyMap) {
         Set<Map.Entry<String, Object>> entrySet = keyMap.entrySet();
         Iterator it = entrySet.iterator();
@@ -435,8 +423,6 @@ public class DataModifyActions {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
             Map<String, Object> readerContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                     "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale);
-//            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
-//            OdataOfbizEntity entity = ofbizOdataReader.readEntityData(keyMap, null);
             OdataReader reader = new OdataReader(readerContext, null, edmParams);
             OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
             Map<String, Object> svcResult = dispatcher.runSync("dpbird.copyEntityToDraft",
@@ -475,8 +461,6 @@ public class DataModifyActions {
             EdmNavigationProperty edmNavigationProperty = edmEntityType.getNavigationProperty(csdlNavigationProperty.getName());
             EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget);
-//            OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(readerContext, null, edmParams);
-//            EntityCollection entities = ofbizOdataReader.findRelatedEntityCollection(keyMap, edmNavigationProperty, null, null);
             OdataReader reader = new OdataReader(readerContext, new HashMap<>(), edmParams);
             Entity mainEntity = reader.findOne(keyMap, null);
             EntityCollection entities = reader.findRelatedList(mainEntity, edmNavigationProperty, new HashMap<>(), null, null);

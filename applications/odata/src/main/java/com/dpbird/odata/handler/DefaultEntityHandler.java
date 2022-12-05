@@ -4,33 +4,30 @@ import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
-import com.dpbird.odata.handler.EntityHandler;
-import com.dpbird.odata.handler.HandlerResults;
-import groovy.lang.Delegate;
 import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.util.EntityUtil;
+import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelRelation;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
-import org.apache.olingo.commons.api.data.Property;
-import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
-import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
-import org.apache.tomcat.jni.Local;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
- * 如果Entity没有声明自定义的Handler, 会使用这个缺省的ofbiz查询
+ * EntityHandler的缺省实现
  *
  * @date 2022/11/14
  */
@@ -149,7 +146,47 @@ public class DefaultEntityHandler implements EntityHandler {
     }
 
     @Override
-    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget) {
-
+    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
+                       Map<String, Object> deleteParam) throws OfbizODataException {
+        Delegator delegator = (Delegator) odataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        if (UtilValidate.isEmpty(deleteParam)) {
+            //delete
+            String entityName = edmBindingTarget.getEntityType().getName();
+            String serviceName = Util.getEntityActionService(entityName, "delete", delegator);
+            OdataOfbizEntity toDelEntity = (OdataOfbizEntity) entityToDelete;
+            GenericValue entityGenericValue = toDelEntity.getGenericValue();
+            Map<String, Object> serviceParam = new HashMap<>(entityGenericValue.getPrimaryKey());
+            serviceParam.put("userLogin", userLogin);
+            try {
+                //调用service执行删除操作
+                dispatcher.runSync(serviceName, serviceParam);
+            } catch (GenericServiceException e) {
+                e.printStackTrace();
+                throw new OfbizODataException(e.getMessage());
+            }
+        } else {
+            //多段式delete
+            OdataOfbizEntity entity = (OdataOfbizEntity) deleteParam.get("entity");
+            EdmEntityType edmEntityType = (EdmEntityType) deleteParam.get("edmEntityType");
+            EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) deleteParam.get("edmNavigationProperty");
+            OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty) entityType.getNavigationProperty(edmNavigationProperty.getName());
+            if (navigationProperty.isCollection()) {
+                OdataOfbizEntity delEntity = (OdataOfbizEntity) entityToDelete;
+                OdataProcessorHelper.unbindNavigationLink(entity.getGenericValue(), delEntity.getGenericValue(), navigationProperty, dispatcher, userLogin);
+            } else {
+                //noCollection 如果主对象中存在外键 要先删除主对象的外键
+                ModelEntity modelEntity = delegator.getModelEntity(entityType.getOfbizEntity());
+                List<String> relations = navigationProperty.getRelAlias().getRelations();
+                if (relations.size() == 1) {
+                    ModelRelation modelRelation = modelEntity.getRelation(relations.get(0));
+                    OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, entityType.getOfbizEntity(), entity.getKeyMap(), modelRelation, userLogin);
+                }
+                OdataProcessorHelper.clearNavigationLink(entity.getGenericValue(), navigationProperty.getRelAlias(), dispatcher, userLogin);
+            }
+        }
     }
 }
