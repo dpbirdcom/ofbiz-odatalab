@@ -130,7 +130,7 @@ public class OdataWriter extends OfbizOdataProcessor {
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> deleteParam = navigationHandler.getDeleteParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
                 edmNavigationProperty, null);
-        //创建
+        //删除
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         entityHandler.delete(entityToDelete, odataContext, edmBindingTarget, deleteParam);
     }
@@ -297,13 +297,9 @@ public class OdataWriter extends OfbizOdataProcessor {
             EdmEntitySet navigationEntitySet = (EdmEntitySet) edmBindingTarget.getRelatedBindingTarget(link.getTitle());
             //通过Handler实例处理BindingLink
             NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
-            if (edmNavigationProperty.isCollection()) {
-                for (final String bindingLink : link.getBindingLinks()) {
-                    Map<String, Object> bindingLinkPrimaryKey = getBindingLinkPrimaryKey(bindingLink, navigationEntitySet, rawServiceUri);
-                    navigationHandler.bindNavigationLink(odataContext, entityCreated, edmEntityType, edmNavigationProperty, bindingLinkPrimaryKey);
-                }
-            } else {
-                Map<String, Object> bindingLinkPrimaryKey = getBindingLinkPrimaryKey(link.getBindingLink(), navigationEntitySet, rawServiceUri);
+            List<String> bindLinks = edmNavigationProperty.isCollection() ? link.getBindingLinks() : UtilMisc.toList(link.getBindingLink());
+            for (String bindLink : bindLinks) {
+                Map<String, Object> bindingLinkPrimaryKey = getBindingLinkPrimaryKey(bindLink, navigationEntitySet, rawServiceUri);
                 navigationHandler.bindNavigationLink(odataContext, entityCreated, edmEntityType, edmNavigationProperty, bindingLinkPrimaryKey);
             }
         }
@@ -323,7 +319,6 @@ public class OdataWriter extends OfbizOdataProcessor {
 //					final OdataOfbizEntity nestedEntity = readEntityByBindingLink(bindingLink, nestedEntitySet, rawServiceUri);
 //					sequenceNum = sequenceNum + 10L;
 //					if (UtilValidate.isNotEmpty(handler)) {
-//						//TODO: Handler Impl
 //						GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
 //						groovyHelper.bindNavigationLink(handler, entityCreated, nestedEntity);
 //
@@ -336,7 +331,6 @@ public class OdataWriter extends OfbizOdataProcessor {
 //			} else if (!edmNavigationProperty.isCollection() && link.getBindingLink() != null) {
 //				final OdataOfbizEntity nestedEntity = readEntityByBindingLink(link.getBindingLink(), nestedEntitySet, rawServiceUri);
 //				if (UtilValidate.isNotEmpty(handler)) {
-//					//TODO: Handler impl
 //					GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
 //					groovyHelper.bindNavigationLink(handler, entityCreated, nestedEntity);
 //

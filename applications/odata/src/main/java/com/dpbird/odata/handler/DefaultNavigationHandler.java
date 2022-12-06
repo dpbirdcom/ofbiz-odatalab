@@ -82,13 +82,13 @@ public class DefaultNavigationHandler implements NavigationHandler {
         if(relAlias.getRelations().size() == 1) {
             ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
             ModelRelation modelRelation = modelEntity.getRelation(relAlias.getRelations().get(0));
-            Map<String, Object> serviceMap = new HashMap<>();
+            Map<String, Object> fkFieldMap = new HashMap<>();
             for (ModelKeyMap relationKeyMap : modelRelation.getKeyMaps()) {
                 String fieldName = relationKeyMap.getFieldName();
                 String relFieldName = relationKeyMap.getRelFieldName();
-                serviceMap.put(fieldName, bindPrimaryKey.get(relFieldName));
+                fkFieldMap.put(fieldName, bindPrimaryKey.get(relFieldName));
             }
-            OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(), serviceMap, userLogin);
+            OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(), fkFieldMap, userLogin);
         }
     }
 
