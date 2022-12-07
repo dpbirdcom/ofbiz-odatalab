@@ -82,7 +82,7 @@ public class OdataWriterHelper {
                                                                        Map<String, QueryOption> queryOptions,
                                                                        GenericValue userLogin,
                                                                        Locale locale) throws OfbizODataException {
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
         try {
@@ -104,7 +104,7 @@ public class OdataWriterHelper {
                 }
             }
             OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
 
             // 创建语义话字段对应的数据库表的字段
             OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider,
@@ -177,7 +177,7 @@ public class OdataWriterHelper {
             }
             genericValue = updatedGenericValue;
         }
-        updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         List<Entity> updatedEntities = OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher,
                 edmProvider, null, UtilMisc.toList(updatedEntity), locale, userLogin);
         updatedEntity = (OdataOfbizEntity) updatedEntities.get(0);

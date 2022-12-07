@@ -240,12 +240,12 @@ public class OdataReader extends OfbizOdataProcessor {
 
     public OdataOfbizEntity makeEntityFromGv(GenericValue genericValue) throws OfbizODataException {
         if (edmParams.get("edmBindingTarget") != null) {
-            return OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
+            return OdataProcessorHelper.genericValueToEntity(dispatcher, this.edmProvider,
                     (EdmBindingTarget) edmParams.get("edmBindingTarget"),
                     (EdmEntityType) edmParams.get("edmTypeFilter"), genericValue, locale);
         } else {
             return OdataProcessorHelper
-                    .genericValueToEntity(delegator, this.edmProvider, this.edmEntityType, genericValue, locale);
+                    .genericValueToEntity(dispatcher, this.edmProvider, this.edmEntityType, genericValue, locale);
         }
     }
 
@@ -434,7 +434,7 @@ public class OdataReader extends OfbizOdataProcessor {
      */
     private Entity findResultToEntity(EdmEntityType edmEntityType, Map<String, Object> resultMap) throws OfbizODataException {
         if (resultMap instanceof GenericValue) {
-            return OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
+            return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
         } else {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             return Util.mapToEntity(csdlEntityType, resultMap);

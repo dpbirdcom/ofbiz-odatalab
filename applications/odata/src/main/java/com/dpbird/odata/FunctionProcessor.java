@@ -126,7 +126,7 @@ public class FunctionProcessor extends OdataReader {
      */
     private Entity resultToEntity(EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider, Object result) throws OfbizODataException {
         if (result instanceof GenericValue) {
-            return OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider, edmEntityType, (GenericValue) result, locale);
+            return OdataProcessorHelper.genericValueToEntity(dispatcher, this.edmProvider, edmEntityType, (GenericValue) result, locale);
         } else if (result instanceof Map) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             return Util.mapToEntity(csdlEntityType, (Map<String, Object>) result);

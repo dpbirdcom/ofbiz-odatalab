@@ -93,7 +93,7 @@ public class DraftHandler {
             }
             draftGenericValue = (GenericValue) result.get("draftGenericValue");
         }
-        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,
+        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider,
                 csdlEntityType, draftGenericValue, locale);
         return updatedEntity;
     }
@@ -116,7 +116,7 @@ public class DraftHandler {
             throw new OfbizODataException(e.getMessage());
         }
         GenericValue draftGenericValue = (GenericValue) result.get("draftGenericValue");
-        OdataOfbizEntity createdEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,
+        OdataOfbizEntity createdEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider,
                 csdlEntityType, draftGenericValue, locale);
         return createdEntity;
     }
@@ -169,7 +169,7 @@ public class DraftHandler {
             throw new OfbizODataException(e.getMessage());
         }
         GenericValue nestedGenericValue = (GenericValue) result.get("draftGenericValue");
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
         if (nestedCsdlEntityType.isAutoId()) {
             try {
                 entity = (OdataOfbizEntity) OdataProcessorHelper.procEntityWithAutoId(true, delegator, nestedCsdlEntityType, entity);
@@ -267,7 +267,7 @@ public class DraftHandler {
         List<Entity> entityList = entityCollection.getEntities();
         if (navDraftGenericValues != null) {
             for (GenericValue elementGV : navDraftGenericValues) {
-                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, elementGV, locale);
+                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, elementGV, locale);
                 if (navCsdlEntityType.isAutoId()) {
                     rowEntity = procEntityWithAutoId(elementGV, rowEntity);
                 }
@@ -348,7 +348,7 @@ public class DraftHandler {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, draftGenericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, draftGenericValue, locale);
         if (navCsdlEntityType.isAutoId()) {
             entity = procEntityWithAutoId(draftGenericValue, entity);
         }
@@ -631,7 +631,7 @@ public class DraftHandler {
         if (genericValue == null) {
             throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + draftEntityName);
         }
-        entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         if (csdlEntityType.isAutoId()) {
             entity = procEntityWithAutoId(genericValue, entity);
         }

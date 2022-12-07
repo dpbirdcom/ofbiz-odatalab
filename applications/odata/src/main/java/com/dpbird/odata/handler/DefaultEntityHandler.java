@@ -88,7 +88,7 @@ public class DefaultEntityHandler implements EntityHandler {
             //创建
             genericValue = OdataProcessorHelper.createGenericValue(dispatcher, delegator, edmBindingTarget.getEntityType(),
                     entityToWrite, edmProvider, userLogin);
-            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmBindingTarget, edmBindingTarget.getEntityType(), genericValue, locale);
+            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, edmBindingTarget.getEntityType(), genericValue, locale);
             //创建Attribute
             if (csdlEntityType.getAttrEntityName() != null || csdlEntityType.getAttrNumericEntityName() != null || csdlEntityType.getAttrDateEntityName() != null) {
                 OdataProcessorHelper.createAttrGenericValue(csdlEntityType, entityToWrite, userLogin, genericValue.getPrimaryKey(), dispatcher);
@@ -130,7 +130,7 @@ public class DefaultEntityHandler implements EntityHandler {
         }
         //更新实体
         GenericValue genericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), primaryKey, fieldMapToWrite, userLogin);
-        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         //更新Attribute
         if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
                 UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||

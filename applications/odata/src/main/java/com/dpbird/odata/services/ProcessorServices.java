@@ -409,7 +409,7 @@ public class ProcessorServices {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityType));
             GenericValue originGenericValue = (GenericValue) context.get("originGenericValue");
             OdataOfbizEntity odataOfbizEntity =
-                    OdataProcessorHelper.genericValueToEntity(delegator,
+                    OdataProcessorHelper.genericValueToEntity(dispatcher,
                             edmProvider, csdlEntityType, originGenericValue, locale);
             List<Entity> entityList = OdataProcessorHelper.appendSemanticFields(httpServletRequest, delegator, dispatcher,
                     edmProvider, null, UtilMisc.toList(odataOfbizEntity), locale, userLogin);
@@ -570,13 +570,14 @@ public class ProcessorServices {
                 "fieldMap", fieldMap, "sapContextId", sapContextId, "userLogin", userLogin);
         Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createEntityToDraft", serviceParams);
         GenericValue draftGenericValue = (GenericValue) serviceResult.get("draftGenericValue");
-        return OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmBindingTarget, null,
+        return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, null,
                 draftGenericValue, (Locale) oDataContext.get("locale"));
     }
 
     public static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         //bound entity
@@ -626,7 +627,7 @@ public class ProcessorServices {
             } else { // 否则就从draft表里找出这条draft数据返回
                 draftGenericValue = delegator.findOne(draftEntityName,
                         UtilMisc.toMap("draftUUID", draftAdminData.get("draftUUID")), false);
-                draftEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmEntitySet, null,
+                draftEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntitySet, null,
                         draftGenericValue, (Locale) oDataContext.get("locale"));
             }
         } catch (GenericEntityException e) {
@@ -659,7 +660,7 @@ public class ProcessorServices {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmBindingTarget, null,
+        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, null,
                 mainGenericValue, (Locale) oDataContext.get("locale"));
         OdataProcessorHelper.appendNonEntityFields(null, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(updatedEntity), locale, userLogin);

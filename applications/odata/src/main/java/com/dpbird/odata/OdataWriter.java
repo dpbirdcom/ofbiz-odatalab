@@ -232,7 +232,7 @@ public class OdataWriter extends OfbizOdataProcessor {
 //						if (nestedGenericValue == null){
 //							nestedGenericValue = OdataProcessorHelper.createNestedGenericValue(nestedEntityToCreate, entityCreated, relAlias, dispatcher, delegator, userLogin);
 //						}
-//						OdataOfbizEntity nestedEntityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+//						OdataOfbizEntity nestedEntityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
 //
 //						setLink(entityCreated, edmNavigationProperty.getName(), nestedEntityCreated);
 //						nestedEntitiesCreated.add(nestedEntityCreated);
@@ -256,7 +256,7 @@ public class OdataWriter extends OfbizOdataProcessor {
 //					if (nestedGenericValue == null){
 //						nestedGenericValue = OdataProcessorHelper.createNestedGenericValue(nestedEntityToCreate, entityCreated, relAlias, dispatcher, delegator, userLogin);
 //					}
-//					nestedEntityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+//					nestedEntityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
 //
 //					setLink(entityCreated, edmNavigationProperty.getName(), nestedEntityCreated);
 //					nestedEntitiesCreated.add(nestedEntityCreated);
@@ -396,7 +396,7 @@ public class OdataWriter extends OfbizOdataProcessor {
             e.printStackTrace();
             throw new OfbizODataException(entityId + " is not a valid entity-Id");
         }
-        return OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
+        return OdataProcessorHelper.genericValueToEntity(dispatcher, this.edmProvider,
                 entitySetResource.getEntitySet(), null, genericValue, locale);
     }
 
@@ -426,7 +426,7 @@ public class OdataWriter extends OfbizOdataProcessor {
 
     private OdataOfbizEntity resultToEntity(EdmEntityType edmEntityType, Map<String, Object> resultMap) throws OfbizODataException {
         if (resultMap instanceof GenericValue) {
-            return OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
+            return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
         } else {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             return (OdataOfbizEntity) Util.mapToEntity(csdlEntityType, resultMap);

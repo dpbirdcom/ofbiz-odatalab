@@ -2225,7 +2225,7 @@ public class Util {
             //添加新查询的数据
             entityCollection.getEntities().clear();
             for (GenericValue dataItem : queryResult) {
-                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, dataItem, locale);
+                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, dataItem, locale);
                 entityCollection.getEntities().add(rowEntity);
             }
         } catch (ODataException | GenericEntityException e) {
@@ -2288,6 +2288,21 @@ public class Util {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 字符串下划线转大驼峰
+     * "PARTY_GROUP" => "PartyGroup"
+     */
+    public static String underlineToUpperHump(String test) {
+        String[] split = test.split("_");
+        StringBuilder res = new StringBuilder();
+        for (int i = 0; i < split.length; i++) {
+            String current = split[i].toLowerCase();
+            current = current.substring(0, 1).toUpperCase() + current.substring(1);
+            res.append(current);
+        }
+        return res.toString();
     }
 
 }

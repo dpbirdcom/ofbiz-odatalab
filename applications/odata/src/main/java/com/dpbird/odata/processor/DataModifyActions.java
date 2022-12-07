@@ -124,7 +124,7 @@ public class DataModifyActions {
                         noPkFieldMap.put(noPkFieldName, null);
                     }
                 }
-                Entity draftEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, draftGenericValue, locale);
+                Entity draftEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, draftGenericValue, locale);
                 if (genericValue == null) {
                     keyMap = createMainEntityFromDraft(dispatcher, delegator, csdlEntityType, draftGenericValue, userLogin, locale, draftEntity);
 //                    keyMap = createEntityWithService(dispatcher, delegator, entityName, draftGenericValue, userLogin);
@@ -206,7 +206,7 @@ public class DataModifyActions {
                         noPkFieldMap.put(noPkFieldName, null);
                     }
                 }
-                Entity draftEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, draftGenericValue, locale);
+                Entity draftEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, draftGenericValue, locale);
                 OdataOfbizEntity entityCreated = null;
                 if (genericValue == null) {
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
@@ -281,7 +281,7 @@ public class DataModifyActions {
                                               Map<String, Object> keyMap,
                                               GenericValue draftGenericValue,
                                               GenericValue userLogin, Locale locale) throws ODataException {
-        OdataOfbizEntity entityToWrite = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, draftGenericValue, locale);
+        OdataOfbizEntity entityToWrite = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, draftGenericValue, locale);
         OdataWriterHelper.updateEntityData(delegator, dispatcher, null, edmProvider,
                 csdlEntityType, keyMap, entityToWrite, userLogin, locale);
 
@@ -437,7 +437,7 @@ public class DataModifyActions {
         if (UtilValidate.isEmpty(draftGenericValue)) {
             throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found");
         }
-        return OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmEntitySet, null,
+        return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntitySet, null,
                 draftGenericValue, locale);
     }
 

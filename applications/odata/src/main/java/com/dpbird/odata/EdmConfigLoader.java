@@ -2045,6 +2045,11 @@ public class EdmConfigLoader {
                 false, autoId, filterByDate, draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName,
                 hadDerivedEntity, entityCondition, labelPrefix, searchOption, groupBy, hasStream);
         if (UtilValidate.isNotEmpty(baseType)) {
+            //有BaseType, Property里就不应该再有pk
+            if (modelEntity != null) {
+                List<String> pkFieldNames = modelEntity.getPkFieldNames();
+                csdlProperties.removeIf(cdp -> pkFieldNames.contains(cdp.getName()));
+            }
             if (baseType.indexOf('.') == -1) {
                 entityType.setBaseType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, baseType));
             } else {

@@ -101,7 +101,7 @@ public class ActionProcessor extends OdataWriter {
         Entity entity;
         boolean needSemanticFields = true;
         if (result instanceof GenericValue) {
-            entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, edmReturnType, (GenericValue) result, locale);
+            entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmReturnType, (GenericValue) result, locale);
         } else if (result instanceof Entity) {
             entity = (Entity) result;
             needSemanticFields = false;
