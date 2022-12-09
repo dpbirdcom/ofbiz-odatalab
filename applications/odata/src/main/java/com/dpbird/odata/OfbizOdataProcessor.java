@@ -532,6 +532,12 @@ public class OfbizOdataProcessor {
                 EdmNavigationProperty navigationProperty = (EdmNavigationProperty) edmParams.get("edmNavigationProperty");
                 csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getType().getFullQualifiedName());
             }
+            //有BaseType的实体 需要使用dynamicView
+            if (UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
+                if (dynamicViewHolder == null) {
+                    dynamicViewHolder = new DynamicViewHolder(csdlEntityType, edmProvider, delegator, dispatcher, userLogin);
+                }
+            }
             List<OrderByItem> orderItemList = ((OrderByOption) queryOptions.get("orderByOption")).getOrders();
             for (OrderByItem orderByItem : orderItemList) {
                 Expression expression = orderByItem.getExpression();
@@ -548,6 +554,10 @@ public class OfbizOdataProcessor {
                     final String sortPropertyName = edmProperty.getName();
                     OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(sortPropertyName);
                     String propertyAlias = sortPropertyName;
+                    if(UtilValidate.isEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
+                        //或许是BaseType字段
+                        csdlProperty = csdlEntityType.getBaseTypeProperty(sortPropertyName, edmProvider);
+                    }
                     if (csdlProperty.getRelAlias() != null || csdlProperty.isAttribute() || csdlProperty.isNumericAttribute() || csdlProperty.isDateAttribute()) {
                         //RelAlias或者Attribute字段，需要用DynamicView
                         if (dynamicViewHolder == null) {

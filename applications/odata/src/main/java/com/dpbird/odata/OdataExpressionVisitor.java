@@ -74,6 +74,10 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
         this.userLogin = userLogin;
         this.edmProvider = edmProvider;
         this.csdlEntityType = csdlEntityType;
+        if (csdlEntityType.getBaseType() != null) {
+            //如果实体有BaseType 查询时需要使用DynamicView
+            dynamicViewHolder = new DynamicViewHolder(csdlEntityType, edmProvider, delegator, dispatcher, userLogin);
+        }
     }
 
     /**
@@ -105,7 +109,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
         //目前针对前端传来的string类型的时间进行格式化处理，其他则不处理
         if (left instanceof EntityCondition) {
             EntityJoinOperator joinOperator = JOINOPERATORMAP.get(operator);
-            List<EntityCondition> exprs = new ArrayList<EntityCondition>();
+            List<EntityCondition> exprs = new ArrayList<>();
 
             exprs.add((EntityCondition) left);
             if (right instanceof EntityCondition) {

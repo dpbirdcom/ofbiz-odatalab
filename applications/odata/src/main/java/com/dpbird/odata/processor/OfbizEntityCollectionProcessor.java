@@ -6,10 +6,12 @@ import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntitySet;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.format.ContentType;
@@ -22,6 +24,7 @@ import org.apache.olingo.server.api.serializer.*;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceEntitySet;
+import org.apache.olingo.server.api.uri.UriResourceSingleton;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
@@ -32,10 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor, CountEntityCollectionProcessor {
     public static final String MODULE = OfbizEntityCollectionProcessor.class.getName();
@@ -83,20 +83,37 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
         }
         try {
             Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
+            List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
             if (queryOptions.get("applyOption") == null) {
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions, sapContextId);
-                List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+                List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceParts, uriInfo.getAliases());
                 OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) odataParts.getEntityData();
                 serializeEntityCollection(oDataRequest, oDataResponse, odataParts.getEdmEntityType(),
                         responseContentType, entityCollection, queryOptions);
             } else {
                 //apply
-                UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriInfo.getUriResourceParts().get(0);
-                Map<String, Object> edmParam = UtilMisc.toMap("edmBindingTarget", uriResourceEntitySet.getEntitySet());
-                OdataReader reader = new OdataReader(getOdataContext(), queryOptions, edmParam);
-                EntityCollection entityCollection = reader.findApply(uriInfo);
-                serializeApplyEntityCollection(oDataResponse, uriResourceEntitySet.getEntitySet(), entityCollection, responseContentType);
+                EdmEntitySet edmEntitySet;
+                EntityCondition applyCondition = null;
+                if (uriResourceParts.size() > 1) {
+                    //多段式apply 先查询出最终的数据范围 再查询apply
+                    UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
+                    List<OdataParts> odataPartsList = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), null);
+                    OdataParts lastParts = ListUtil.getLast(odataPartsList);
+                    edmEntitySet = (EdmEntitySet) lastParts.getEdmBindingTarget();
+                    EntityCollection applyEntities = (EntityCollection) lastParts.getEntityData();
+                    if (UtilValidate.isEmpty(applyEntities) || UtilValidate.isEmpty(applyEntities.getEntities())) {
+                        //没有数据
+                        oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
+                        return;
+                    }
+                    applyCondition = Util.getEntityCollectionQueryCond(applyEntities);
+                } else {
+                    edmEntitySet = ((UriResourceEntitySet) uriResourceParts.get(0)).getEntitySet();
+                }
+                OdataReader reader = new OdataReader(getOdataContext(), queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+                EntityCollection resultEntityCollection = reader.findApply(applyCondition);
+                serializeApplyEntityCollection(oDataResponse, edmEntitySet, resultEntityCollection, responseContentType);
             }
         } catch (OfbizODataException e) {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);

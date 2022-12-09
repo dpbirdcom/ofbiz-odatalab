@@ -64,24 +64,17 @@ public class OdataReader extends OfbizOdataProcessor {
     }
 
     /**
-     * odata_apply数据查询
-     * 使用dynamicView的自带的function属性实现
+     * apply查询，使用dynamicView的自带的function属性实现
      *
+     * @param applyCondition 多段式查询时的范围
      * @return 返回Apply数据组装的Entity
      */
-    public EntityCollection findApply(UriInfo uriInfo) throws OfbizODataException {
-        List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
+    public EntityCollection findApply(EntityCondition applyCondition) throws OfbizODataException {
         DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
         EntityCollection entityCollection = new EntityCollection();
-        List<Entity> entities = entityCollection.getEntities();
         //print
         Util.printDynamicView(dynamicViewEntity, entityCondition, module);
-        //多段式的apply 添加关联外键的查询条件 TODO: 需要支持无限段的apply查询
-        if (uriResourceParts.size() > 1) {
-            EntityCondition applyCondition = Util.procApplyCondition(uriResourceParts, delegator, edmProvider, modelEntity);
-            if (applyCondition == null) {
-                return new EntityCollection();
-            }
+        if (applyCondition != null) {
             entityCondition = Util.appendCondition(entityCondition, applyCondition);
         }
         //apply select
@@ -101,6 +94,7 @@ public class OdataReader extends OfbizOdataProcessor {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
+        List<Entity> entities = entityCollection.getEntities();
         for (GenericValue genericValue : partialList) {
             OdataOfbizEntity ofbizEntity = new OdataOfbizEntity();
             genericValue.forEach(ofbizEntity::addProperty);

@@ -513,9 +513,8 @@ public class OdataProcessorHelper {
         }
     }
 
-    private static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator
-            delegator, OdataOfbizEntity ofbizEntity,
-                                                      OfbizCsdlEntityType csdlEntityType) throws GenericEntityException {
+    private static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator delegator,
+                                                      OdataOfbizEntity ofbizEntity,OfbizCsdlEntityType csdlEntityType) throws GenericEntityException {
         GenericValue genericValue = ofbizEntity.getGenericValue();
         ModelEntity typeModelEntity = delegator.getModelEntity(genericValue.getModelEntity().getEntityName() + "Type");
         String typeIdName = typeModelEntity.getOnlyPk().getName();
