@@ -64,38 +64,16 @@ public class OdataReader extends OfbizOdataProcessor {
     }
 
     /**
-     * apply查询，使用dynamicView的自带的function属性实现
-     *
-     * @param applyCondition 多段式查询时的范围
-     * @return 返回Apply数据组装的Entity
+     * odata-Apply查询
      */
-    public EntityCollection findApply(EntityCondition applyCondition) throws OfbizODataException {
-        DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
+    public EntityCollection findApply(EntityCondition applyCondition, Map<String, QueryOption> queryOptionMap) throws OfbizODataException {
+        //从接口实例中读取数据
         EntityCollection entityCollection = new EntityCollection();
-        //print
-        Util.printDynamicView(dynamicViewEntity, entityCondition, module);
-        if (applyCondition != null) {
-            entityCondition = Util.appendCondition(entityCondition, applyCondition);
-        }
-        //apply select
-        Set<String> selectSet = new HashSet<>();
-        if (groupBySet != null) {
-            selectSet.addAll(groupBySet);
-        }
-        if (aggregateSet != null) {
-            selectSet.addAll(aggregateSet);
-        }
-        EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity)
-                .select(selectSet).maxRows(MAX_ROWS).cursorScrollInsensitive();
-        List<GenericValue> partialList;
-        try (EntityListIterator iterator = entityQuery.queryIterator()) {
-            partialList = iterator.getPartialList(skipValue + 1, topValue);
-            entityCollection.setCount(iterator.getResultsSizeAfterPartialList());
-        } catch (GenericEntityException e) {
-            throw new OfbizODataException(e.getMessage());
-        }
         List<Entity> entities = entityCollection.getEntities();
-        for (GenericValue genericValue : partialList) {
+        EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
+        EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
+        HandlerResults handlerResults = entityHandler.findApply(odataContext, edmEntitySet, queryOptionMap, applyCondition);
+        for (Map<String, Object> genericValue : handlerResults.getResultData()) {
             OdataOfbizEntity ofbizEntity = new OdataOfbizEntity();
             genericValue.forEach(ofbizEntity::addProperty);
             entities.add(ofbizEntity);
@@ -189,6 +167,30 @@ public class OdataReader extends OfbizOdataProcessor {
             } else {
                 return findListWithDynamicView();
             }
+        } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    /**
+     * 使用dynamicView的自带的function进行apply查询
+     *
+     * @param applyCondition 多段式查询时的范围
+     * @return 返回Apply数据组装的Entity
+     */
+    public HandlerResults ofbizFindApply(EntityCondition applyCondition) throws OfbizODataException {
+        DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
+        //print
+        Util.printDynamicView(dynamicViewEntity, entityCondition, module);
+        if (applyCondition != null) {
+            entityCondition = Util.appendCondition(entityCondition, applyCondition);
+        }
+        EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity)
+                .select(applySelect).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();
+        try (EntityListIterator iterator = entityQuery.queryIterator()) {
+            List<GenericValue> partialList = iterator.getPartialList(skipValue + 1, topValue);
+            int resultSize = iterator.getResultsSizeAfterPartialList();
+            return new HandlerResults(resultSize, partialList);
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }

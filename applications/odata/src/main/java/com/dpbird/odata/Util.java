@@ -1182,7 +1182,7 @@ public class Util {
         return paramMap;
     }
 
-    public static List<String> retrieveSimpleOrderByOption(OrderByOption orderByOption) throws ODataException {
+    public static List<String> retrieveSimpleOrderByOption(OrderByOption orderByOption) throws OfbizODataException {
         List<String> orderBy = new ArrayList<String>();
         if (orderByOption != null) {
             List<OrderByItem> orderItemList = orderByOption.getOrders();
@@ -1203,7 +1203,7 @@ public class Util {
                         }
                     } else { // 暂时不支持三级navigation的orderby
                         Debug.logInfo("orderByOption has more than 2 segments, will be ignored!", module);
-                        throw new ODataException("Only support one segment order by");
+                        throw new OfbizODataException("Only support one segment order by");
                     }
                 }
             }

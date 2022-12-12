@@ -1194,13 +1194,12 @@ public class EdmConfigLoader {
         String isCollection = propertyElement.getAttribute("IsCollection");
         String maxLength = propertyElement.getAttribute("MaxLength");
         // attribute for annotation
-        // TODO: load label from i18
-        String labelAttr = propertyElement.getAttribute("Label");
-        String label;
-        if (UtilValidate.isEmpty(labelAttr) && modelEntity != null) {
-            labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(name) + "}";
-        }
-        label = parseValue(labelAttr, locale);
+//        String labelAttr = propertyElement.getAttribute("Label");
+        String label = propertyElement.getAttribute("Label");
+//        if (UtilValidate.isEmpty(labelAttr) && modelEntity != null) {
+//            labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(name) + "}";
+//        }
+//        label = parseValue(labelAttr, locale);
         String semanticObjectAttr = propertyElement.getAttribute("SemanticObject");
         String semanticObject;
         semanticObject = parseValue(semanticObjectAttr, locale);
@@ -2019,12 +2018,15 @@ public class EdmConfigLoader {
                  }
                  **************************************************/
                 OfbizCsdlProperty csdlProperty = generatePropertyFromField(delegator, dispatcher, field, false);
-                if (csdlProperties != null && csdlProperties.contains(csdlProperty)) { // 已经xml定义了，就不要自动生成了
-                    continue;
+                if (csdlProperties != null) {
+                    if (csdlProperties.contains(csdlProperty)) {
+                        //已经xml定义了，就不要自动生成了
+                        continue;
+                    }
+//                    String label = (String) Util.getUiLabelMap(locale).get(entityName + Util.firstUpperCase(csdlProperty.getName()));
+//                    csdlProperty.setLabel(label);
+                    csdlProperties.add(csdlProperty);
                 }
-                String label = (String) Util.getUiLabelMap(locale).get(entityName + Util.firstUpperCase(csdlProperty.getName()));
-                csdlProperty.setLabel(label);
-                csdlProperties.add(csdlProperty);
             }
         }
         if (UtilValidate.isEmpty(propertyRefs) && UtilValidate.isNotEmpty(modelEntity)) { // EntityType的Key还没有定义
@@ -2269,7 +2271,7 @@ public class EdmConfigLoader {
                     continue;
                 }
                 //relAlias为空
-                if(UtilValidate.isEmpty(relAlias)) {
+                if (UtilValidate.isEmpty(relAlias)) {
                     Debug.logWarning("NavigationProperty (" + navigationProperty.getName() + ") relAlias is empty.", module);
                     continue;
                 }

@@ -1,9 +1,11 @@
 package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.server.api.uri.queryoption.ApplyOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.Map;
@@ -35,6 +37,18 @@ public interface EntityHandler {
      */
     HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
                             Map<String, QueryOption> queryOptions, Map<String, Object> navigationParam) throws OfbizODataException;
+
+
+    /**
+     *
+     * @param odataContext odataContext
+     * @param edmBindingTarget EdmBindingTarget
+     * @param queryOptions queryOptions
+     * @param applyCondition 查询范围
+     * @return 返回apply数据
+     */
+    HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
+                             Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException;
 
     /**
      * 创建实体数据

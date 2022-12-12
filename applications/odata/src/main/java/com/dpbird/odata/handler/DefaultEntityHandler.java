@@ -18,6 +18,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.server.api.uri.queryoption.ApplyOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -73,6 +74,13 @@ public class DefaultEntityHandler implements EntityHandler {
         }
         return handlerResults;
     }
+
+    @Override
+    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException {
+        OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmBindingTarget));
+        return reader.ofbizFindApply(applyCondition);
+    }
+
 
     @Override
     public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) throws OfbizODataException {

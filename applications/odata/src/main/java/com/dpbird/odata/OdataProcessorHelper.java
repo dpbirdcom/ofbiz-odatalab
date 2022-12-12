@@ -449,7 +449,7 @@ public class OdataProcessorHelper {
     }
 
     private static Property getPropertyFromEnumField(Delegator delegator, OfbizAppEdmProvider edmProvider, FullQualifiedName fieldFqn, String fieldName, String enumId)
-            throws GenericEntityException, ODataException {
+            throws GenericEntityException, OfbizODataException {
         OfbizCsdlEnumType ofbizCsdlEnumType = (OfbizCsdlEnumType) edmProvider.getEnumType(fieldFqn);
         String enumOfbizEntity = ofbizCsdlEnumType.getOfbizEntity();
         if (enumOfbizEntity != null) {
@@ -499,16 +499,24 @@ public class OdataProcessorHelper {
             //获取BaseEntityType
             mergeCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(csdlEntityType.getBaseType()));
         }
-
+        if (mergeCsdlEntityType == null) {
+            return;
+        }
         //合并所有的字段
-        if (mergeCsdlEntityType != null) {
-            GenericValue genericValue = ofbizEntity.getGenericValue();
-            GenericValue mergeGenericValue = genericValue.getRelatedOne(mergeCsdlEntityType.getOfbizEntity(), true);
-            if (UtilValidate.isNotEmpty(mergeGenericValue)) {
-                OdataOfbizEntity mergeEntity = (OdataOfbizEntity) Util.mapToEntity(mergeCsdlEntityType, mergeGenericValue);
-                appendNonEntityFields(null, delegator, dispatcher, edmProvider,
-                        null, UtilMisc.toList(mergeEntity), locale, Util.getSystemUser(delegator));
-                ofbizEntity.getProperties().addAll(mergeEntity.getProperties());
+        GenericValue genericValue = ofbizEntity.getGenericValue();
+        GenericValue mergeGenericValue = genericValue.getRelatedOne(mergeCsdlEntityType.getOfbizEntity(), true);
+        if (UtilValidate.isNotEmpty(mergeGenericValue)) {
+            OdataOfbizEntity mergeEntity = (OdataOfbizEntity) Util.mapToEntity(mergeCsdlEntityType, mergeGenericValue);
+            appendNonEntityFields(null, delegator, dispatcher, edmProvider,
+                    null, UtilMisc.toList(mergeEntity), locale, Util.getSystemUser(delegator));
+            for (Property property : mergeEntity.getProperties()) {
+                CsdlProperty csdlProperty = mergeCsdlEntityType.getProperty(property.getName());
+                FullQualifiedName propertyFqn = csdlProperty.getTypeAsFQNObject();
+                CsdlEnumType csdlEnumType = edmProvider.getEnumType(propertyFqn);
+                if (csdlEnumType != null) {
+                    property = getPropertyFromEnumField(delegator, edmProvider, propertyFqn, property.getName(), (String) property.getValue());
+                }
+                ofbizEntity.addProperty(property);
             }
         }
     }

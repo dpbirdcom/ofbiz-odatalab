@@ -299,7 +299,7 @@
 	<EntityType Name="FacilityLocation" AutoProperties="true"/>
 
 	<!-- <EntityType Name="ProductType"/> -->
-	<EntityType Name="Party" OfbizEntity="Party" AutoProperties="true"
+	<EntityType Name="Party" OfbizEntity="Party" hasDerivedEntity="true" AutoProperties="true"
 				AttrNumericEntityName="PartyAttributeNumeric" AttrEntityName="PartyAttribute" SearchOption="bustLine">
 		<Property Name="statusId" Type="PartyStatus"/>
 		<Property Name="bustLine" IsAttribute="true" Type="String"/>
@@ -314,7 +314,7 @@
 		<NavigationProperty Name="PartyRoleType" Type="RoleType" IsCollection="true" FilterByDate="false" Relations="PartyRole/RoleType"/>
 		<NavigationProperty Name="ContactMechParty" Type="ContactMech" IsCollection="true" Relations="PartyContactMech/ContactMech" ContainsTarget="true"/>
 	</EntityType>
-	<EntityType Name="Person" SearchOption="firstName,lastName">
+	<EntityType Name="Person" BaseType="Party" SearchOption="firstName,lastName">
 		<Property Name="partyId"/>
 		<Property Name="firstName"/>
 		<Property Name="lastName"/>

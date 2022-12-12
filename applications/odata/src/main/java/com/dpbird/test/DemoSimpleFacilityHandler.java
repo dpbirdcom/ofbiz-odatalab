@@ -6,6 +6,7 @@ import com.dpbird.odata.handler.HandlerResults;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
@@ -41,6 +42,11 @@ public class DemoSimpleFacilityHandler implements EntityHandler {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+    @Override
+    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException {
+        return null;
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerResults;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
@@ -46,6 +47,11 @@ public class DemoPartyInfoHandler implements EntityHandler {
             }
             return new HandlerResults(infoNames.size(), resultList);
         }
+    }
+
+    @Override
+    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException {
+        return null;
     }
 
     @Override

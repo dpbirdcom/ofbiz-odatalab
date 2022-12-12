@@ -111,8 +111,8 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 } else {
                     edmEntitySet = ((UriResourceEntitySet) uriResourceParts.get(0)).getEntitySet();
                 }
-                OdataReader reader = new OdataReader(getOdataContext(), queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
-                EntityCollection resultEntityCollection = reader.findApply(applyCondition);
+                OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+                EntityCollection resultEntityCollection = reader.findApply(applyCondition, queryOptions);
                 serializeApplyEntityCollection(oDataResponse, edmEntitySet, resultEntityCollection, responseContentType);
             }
         } catch (OfbizODataException e) {
