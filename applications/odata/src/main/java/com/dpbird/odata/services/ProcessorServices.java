@@ -281,15 +281,16 @@ public class ProcessorServices {
         Delegator delegator = dispatcher.getDelegator();
         Locale locale = (Locale) context.get("locale");
         GenericValue userLogin = (GenericValue) context.get("userLogin");
-        String entityName = (String) context.get("originEntityName");
-        ModelEntity modelEntity = delegator.getModelEntity(entityName);
-        String draftEntityName = (String) context.get("draftEntityName");
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) context.get("csdlEntityType");
+        ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+        String draftEntityName = csdlEntityType.getDraftEntityName();
+        List<String> keyPropertyNames = csdlEntityType.getKeyPropertyNames();
         String sapContextId = (String) context.get("sapContextId");
         GenericValue draftGenericValue = null;
         Map<String, Object> fieldMap = (Map<String, Object>) context.get("fieldMap");
         for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
-            //空字符串转换成null
-            if ("".equals(entry.getValue())) {
+            //如果不是主键 空字符串转换成null
+            if ("".equals(entry.getValue()) && !keyPropertyNames.contains(entry.getKey())) {
                 entry.setValue(null);
             }
             //如果传递过来的时间格式不对,根据字段类型转换格式

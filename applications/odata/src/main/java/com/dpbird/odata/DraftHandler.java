@@ -73,8 +73,7 @@ public class DraftHandler {
 
         String entityName = csdlEntityType.getOfbizEntity();
         if (csdlEntityType.getDraftEntityName() != null) {
-            Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
-                    "draftEntityName", csdlEntityType.getDraftEntityName(),
+            Map<String, Object> serviceParams = UtilMisc.toMap("csdlEntityType", csdlEntityType,
                     "sapContextId", this.sapContextId, "fieldMap", fieldMap, "userLogin", userLogin);
             Map<String, Object> result = null;
             try {
