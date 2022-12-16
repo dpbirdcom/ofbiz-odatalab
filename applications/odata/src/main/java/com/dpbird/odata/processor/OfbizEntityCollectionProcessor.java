@@ -389,6 +389,9 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 Map<String, Object> keyMap = (Map<String, Object>) resourceMap.get("keyMap");
                 OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
                 GenericValue genericValue = delegator.findOne(ofbizCsdlEntityType.getOfbizEntity(), keyMap, true);
+                if (UtilValidate.isEmpty(genericValue)) {
+                    return;
+                }
                 //Navigation
                 EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) resourceMap.get("edmNavigation");
                 OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
