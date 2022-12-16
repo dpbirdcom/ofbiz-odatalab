@@ -47,4 +47,9 @@ public class DemoFacilityPartyInfoHandler implements NavigationHandler {
 
     }
 
+    @Override
+    public void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException {
+
+    }
+
 }

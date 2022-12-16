@@ -182,7 +182,7 @@ public class AppOdataServlet extends HttpServlet {
 		handler.register(new OfbizPrimitiveProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
 		handler.register(new OfbizPrimitiveCollectionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
 		handler.register(new OfbizComplexProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
-
+		handler.register(new OfbizReferenceProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
 		// let the handler do the work
 		handler.process(req, resp);
 		// workaraound if we are in the root webapp

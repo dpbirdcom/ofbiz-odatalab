@@ -76,4 +76,14 @@ public interface NavigationHandler {
     void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
                             EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException;
 
+    /**
+     * 解除关联实体数据
+     *
+     * @param entity                主实体
+     * @param bindPrimaryKey        要解除的实体主键
+     * @param edmNavigationProperty edmNavigationProperty
+     */
+    void unbindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
+                            EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException;
+
 }

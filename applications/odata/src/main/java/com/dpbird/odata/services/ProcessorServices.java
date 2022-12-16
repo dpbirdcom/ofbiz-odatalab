@@ -5,6 +5,8 @@ import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntitySet;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
+import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.processor.DataModifyActions;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.UtilDateTime;
@@ -935,6 +937,36 @@ public class ProcessorServices {
             }
             return fieldKepMap;
         }
+    }
+
+    public static Map<String, Object> createReference(DispatchContext dctx, Map<String, Object> context)
+            throws OfbizODataException, ODataApplicationException {
+        Map<String, Object> odataContext = UtilGenerics.checkMap(context.get("odataContext"));
+        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) context.get("entity");
+        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) context.get("edmBindingTarget");
+        EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) context.get("edmNavigationProperty");
+        Map<String, Object> bindPrimaryKey = UtilGenerics.checkMap(context.get("bindPrimaryKey"));
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+        //通过Handler实例处理Reference
+        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, dctx.getDelegator());
+        navigationHandler.bindNavigationLink(odataContext, ofbizEntity, edmEntityType, edmNavigationProperty, bindPrimaryKey);
+        return ServiceUtil.returnSuccess();
+    }
+
+    public static Map<String, Object> deleteReference(DispatchContext dctx, Map<String, Object> context)
+            throws OfbizODataException, ODataApplicationException {
+        Map<String, Object> odataContext = UtilGenerics.checkMap(context.get("odataContext"));
+        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) context.get("entity");
+        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) context.get("edmBindingTarget");
+        EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) context.get("edmNavigationProperty");
+        Map<String, Object> bindPrimaryKey = UtilGenerics.checkMap(context.get("bindPrimaryKey"));
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+        //通过Handler实例处理Reference
+        NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, dctx.getDelegator());
+        navigationHandler.unbindNavigationLink(odataContext, ofbizEntity, edmEntityType, edmNavigationProperty, bindPrimaryKey);
+        return ServiceUtil.returnSuccess();
     }
 
 }

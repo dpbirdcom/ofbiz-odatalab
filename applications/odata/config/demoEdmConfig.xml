@@ -390,6 +390,7 @@
 		<NavigationProperty Name="GoodIdentification"/>
 		<NavigationProperty Name="ProductFeatureAppl"/>
 		<NavigationProperty Name="ProductCategoryMember"/>
+		<NavigationProperty Name="ProductCategory" Type="ProductCategory" Relations="ProductCategoryMember/ProductCategory" IsCollection="true"/>
 		<NavigationProperty Name="MainProductAssoc"/>
 		<NavigationProperty Name="SupplierProduct"/>
 		<NavigationProperty Name="ProductType"/>

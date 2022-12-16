@@ -190,6 +190,26 @@ under the License.
         <attribute name="pkMap" type="Map" mode="OUT" optional="false"/>
     </service>
 
+    <service name="dpbird.createReference" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="createReference" auth="true">
+        <description>create Reference</description>
+        <attribute name="odataContext" type="Map" mode="IN"/>
+        <attribute name="edmBindingTarget" type="org.apache.olingo.commons.api.edm.EdmBindingTarget" mode="IN"/>
+        <attribute name="entity" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN"/>
+        <attribute name="bindPrimaryKey" type="Map" mode="IN"/>
+    </service>
+
+    <service name="dpbird.deleteReference" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="deleteReference" auth="true">
+        <description>delete Reference</description>
+        <attribute name="odataContext" type="Map" mode="IN"/>
+        <attribute name="edmBindingTarget" type="org.apache.olingo.commons.api.edm.EdmBindingTarget" mode="IN"/>
+        <attribute name="entity" type="org.apache.olingo.commons.api.data.Entity" mode="IN"/>
+        <attribute name="edmNavigationProperty" type="org.apache.olingo.commons.api.edm.EdmNavigationProperty" mode="IN"/>
+        <attribute name="bindPrimaryKey" type="Map" mode="IN"/>
+    </service>
+
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->
