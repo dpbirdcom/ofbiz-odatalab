@@ -4,6 +4,7 @@ package com.dpbird.odata;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntitySet;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
@@ -89,6 +90,9 @@ public class AnnotationCheck {
     private static void matchEtag(GenericValue genericValue, ODataRequest request) throws ODataApplicationException {
         boolean checkResult;
         String currEtag = Util.getGenericValueETag(genericValue);
+        if (UtilValidate.isEmpty(currEtag)) {
+            return;
+        }
         if (request.getHeader("If-Match") != null) {
             //无差异为正确匹配
             String ifMatch = request.getHeader("If-Match");

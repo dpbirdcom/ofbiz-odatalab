@@ -185,9 +185,6 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             throws ODataApplicationException, ODataLibraryException {
         //Check SAP-ContextId
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
-        if (UtilValidate.isNotEmpty(sapContextId)) {
-            oDataResponse.setHeader("SAP-ContextId", sapContextId);
-        }
         try {
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
             List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
@@ -202,6 +199,10 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (OfbizODataException e) {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
+        } finally {
+            if (UtilValidate.isNotEmpty(sapContextId)) {
+                DataModifyActions.setResponseSessionContext(oDataResponse, sapContextId);
+            }
         }
     }
 
