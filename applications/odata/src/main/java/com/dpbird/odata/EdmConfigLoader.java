@@ -1307,7 +1307,7 @@ public class EdmConfigLoader {
             } else if (propertyChildTag.equals("Text")) {
                 terms.add(loadTextFromElement(propertyChild));
             } else if (propertyChildTag.equals("ValueList")) {
-                terms.add(loadValueListFromElement(property, propertyChild, locale));
+                terms.add(loadValueListFromElement(property, modelEntity, propertyChild, locale));
             }
         }
         if (UtilValidate.isNotEmpty(annotations)) {
@@ -1335,11 +1335,16 @@ public class EdmConfigLoader {
         return keyPropertyRefs;
     }
 
-    private static Term loadValueListFromElement(OfbizCsdlProperty property, Element valueListElement, Locale locale) {
+    private static Term loadValueListFromElement(OfbizCsdlProperty property, ModelEntity modelEntity, Element valueListElement, Locale locale) {
         String collectionPath = valueListElement.getAttribute("CollectionPath");
         String label = loadAttributeValue(valueListElement, "Label", locale);
         if (UtilValidate.isEmpty(label)) {
-            label = property.getLabel();
+            if (UtilValidate.isNotEmpty(property.getLabel())) {
+                label = property.getLabel();
+            } else if (modelEntity != null) {
+                String labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(property.getName()) + "}";
+                label = parseValue(labelAttr, locale);
+            }
         }
         String qualifier = valueListElement.getAttribute("Qualifier");
         if (UtilValidate.isEmpty(qualifier)) {
