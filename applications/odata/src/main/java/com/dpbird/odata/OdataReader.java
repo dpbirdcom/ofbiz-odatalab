@@ -21,6 +21,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
@@ -136,6 +137,11 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 queryOptions, entities, locale, userLogin);
+        OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        if (orderByOption != null && Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+            Util.orderbyEntityCollection(entityCollection, (OrderByOption) queryOptions.get("orderByOption"), edmEntityType, edmProvider);
+        }
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
                 List<OdataParts> odataPartsList = new ArrayList<>();
@@ -332,7 +338,7 @@ public class OdataReader extends OfbizOdataProcessor {
         //filter、orderby、page
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
-        if (filterOption != null || orderbyOption != null) {
+        if (filterOption != null) {
             Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, navCsdlEntityType,
                     edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
@@ -340,6 +346,9 @@ public class OdataReader extends OfbizOdataProcessor {
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
+        if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
+            Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
+        }
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entityIter : entityCollection.getEntities()) {
                 List<OdataParts> expandResourceInfo = new ArrayList<>();

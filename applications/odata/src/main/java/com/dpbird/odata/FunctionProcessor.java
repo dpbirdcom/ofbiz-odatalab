@@ -66,9 +66,12 @@ public class FunctionProcessor extends OdataReader {
         //filter,orderBy,page
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
-        if (filterOption != null || orderByOption != null) {
-            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(returnEdmEntityType.getFullQualifiedName());
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(returnEdmEntityType.getFullQualifiedName());
+        if (filterOption != null) {
             Util.filterEntityCollection(entityCollection, filterOption, orderByOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale, false);
+        }
+        if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+            Util.orderbyEntityCollection(entityCollection, orderByOption, edmEntityType, edmProvider);
         }
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,

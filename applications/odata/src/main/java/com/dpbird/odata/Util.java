@@ -2208,8 +2208,11 @@ public class Util {
             }
             //使用主键范围的条件和filter的条件进行查询
             entityCondition = appendCondition(primaryKeyCond, entityCondition);
-            List<String> orderby = retrieveSimpleOrderByOption(orderByOption);
-            EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).orderBy(orderby);
+            EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition);
+            //如果是数据库支持的排序 直接查询时处理
+            if (!isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+                entityQuery = entityQuery.orderBy(retrieveSimpleOrderByOption(orderByOption));
+            }
             if (filterByDate) {
                 entityQuery = entityQuery.filterByDate();
             }
@@ -2231,6 +2234,52 @@ public class Util {
         } catch (ODataException | GenericEntityException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 对entityCollection排序处理，支持String、DateTime、Decimal
+     */
+    public static void orderbyEntityCollection(EntityCollection entityCollection, OrderByOption orderByOption,
+                                               EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider) throws OfbizODataException {
+        if (UtilValidate.isEmpty(entityCollection) || entityCollection.getEntities().size() == 0) {
+            return;
+        }
+        CsdlEntityType csdlEntityType = edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        List<String> orderby = retrieveSimpleOrderByOption(orderByOption);
+        List<Entity> entities = entityCollection.getEntities();
+        entities.sort((e1, e2) -> {
+            for (String ob : orderby) {
+                boolean desc = ob.startsWith("-");
+                ob = ob.replace(" NULLS LAST", "").replace("-", "");
+                //空值永远放最后
+                boolean e1Null = e1.getProperty(ob) == null || e1.getProperty(ob).getValue() == null;
+                boolean e2Null = e2.getProperty(ob) == null || e2.getProperty(ob).getValue() == null;
+                if (e1Null && e2Null) continue;
+                if (e1Null) return 1;
+                if (e2Null) return -1;
+                int compare;
+                String type = csdlEntityType.getProperty(ob).getType();
+                if (type.contains("Decimal")) {
+                    BigDecimal v1 = (BigDecimal) e1.getProperty(ob).getValue();
+                    BigDecimal v2 = (BigDecimal) e2.getProperty(ob).getValue();
+                    compare = desc ? v2.compareTo(v1) : v1.compareTo(v2);
+                } else if (type.contains("Date")) {
+                    Timestamp v1 = (Timestamp) e1.getProperty(ob).getValue();
+                    Timestamp v2 = (Timestamp) e2.getProperty(ob).getValue();
+                    compare = desc ? v2.compareTo(v1) : v1.compareTo(v2);
+                } else {
+                    String v1 = (String) e1.getProperty(ob).getValue();
+                    String v2 = (String) e2.getProperty(ob).getValue();
+                    compare = desc ? v2.compareTo(v1) : v1.compareTo(v2);
+                }
+                //如果等于0就是相等 有多重排序时继续比较
+                if (compare == 0) {
+                    continue;
+                }
+                return compare;
+            }
+            return 0;
+        });
     }
 
     public static Entity getEntityCollectionOne(List<Entity> entityList, Map<String, Object> primaryKey) {
@@ -2303,6 +2352,42 @@ public class Util {
             res.append(current);
         }
         return res.toString();
+    }
+
+    /**
+     * 判断是否是数据库不支持的orderby 比如语义化字段
+     * @param orderByOption
+     * @param csdlEntityType
+     * @return
+     */
+    public static boolean isExtraOrderby(OrderByOption orderByOption, OfbizCsdlEntityType csdlEntityType, Delegator delegator) {
+        if (UtilValidate.isEmpty(orderByOption)) {
+            return false;
+        }
+        List<OrderByItem> orderItemList = orderByOption.getOrders();
+        for (OrderByItem orderByItem : orderItemList) {
+            Expression expression = orderByItem.getExpression();
+            if (expression.toString().contains("$count")) {
+                return true;
+            }
+            UriInfoResource resourcePath = ((Member) expression).getResourcePath();
+            List<UriResource> uriResourceParts = resourcePath.getUriResourceParts();
+            if (uriResourceParts.size() > 1) continue;
+            String segmentValue = uriResourceParts.get(0).getSegmentValue();
+            OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(segmentValue);
+            //如果这个字段是语义化字段 需要自定义处理
+            ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+            if (modelEntity != null) {
+                if (!modelEntity.isField(segmentValue) &&
+                        !csdlProperty.isAttribute() &&
+                        !csdlProperty.isNumericAttribute() &&
+                        !csdlProperty.isDateAttribute() &&
+                        UtilValidate.isEmpty(csdlProperty.getRelAlias())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }

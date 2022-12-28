@@ -331,7 +331,6 @@ public class OfbizOdataProcessor {
                     }
                 } else {
                     //普通字段search
-                    //暂不支持语义化的字段, 如果指定了也跳过, 或者抛异常？
                     ModelEntity currModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
                     if (!currModelEntity.areFields(UtilMisc.toList(option))) continue;
                     searchProperties.add(option);
@@ -537,6 +536,10 @@ public class OfbizOdataProcessor {
                 EdmNavigationProperty navigationProperty = (EdmNavigationProperty) edmParams.get("edmNavigationProperty");
                 csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getType().getFullQualifiedName());
             }
+            if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+                //ofbiz不支持的orderby 在查询出结果后自定义处理
+                return;
+            }
             //有BaseType的实体 需要使用dynamicView
             if (UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
                 if (dynamicViewHolder == null) {
@@ -546,10 +549,6 @@ public class OfbizOdataProcessor {
             List<OrderByItem> orderItemList = ((OrderByOption) queryOptions.get("orderByOption")).getOrders();
             for (OrderByItem orderByItem : orderItemList) {
                 Expression expression = orderByItem.getExpression();
-                if (expression.toString().contains("$count")) {
-                    //这里不支持根据子对象数量排序 会在查询结果后处理
-                    continue;
-                }
                 UriInfoResource resourcePath = ((Member) expression).getResourcePath();
                 List<UriResource> uriResourceParts = resourcePath.getUriResourceParts();
                 //单个字段
