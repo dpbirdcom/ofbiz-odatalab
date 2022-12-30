@@ -89,7 +89,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceParts, uriInfo.getAliases());
                 OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) odataParts.getEntityData();
-                serializeEntityCollection(oDataRequest, oDataResponse, odataParts.getEdmEntityType(),
+                serializeEntityCollection(oDataRequest, oDataResponse, odataParts.getEdmBindingTarget(), odataParts.getEdmEntityType(),
                         responseContentType, entityCollection, queryOptions);
             } else {
                 //apply
@@ -161,7 +161,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
     /**
      * Serialize data
      */
-    private void serializeEntityCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, EdmEntityType edmEntityType,
+    private void serializeEntityCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                            ContentType contentType, EntityCollection entityCollection, Map<String, QueryOption> queryOptions)
             throws ODataApplicationException {
         try {
@@ -172,9 +172,10 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             ExpandOption expandOption = (ExpandOption) queryOptions.get("expandOption");
             SelectOption selectOption = (SelectOption) queryOptions.get("selectOption");
             CountOption countOption = (CountOption) queryOptions.get("countOption");
+            String uriSetName = edmBindingTarget != null ? edmBindingTarget.getName() : edmEntityType.getName();
             String selectList = odata.createUriHelper().buildContextURLSelectList(edmEntityType, expandOption, selectOption);
             ContextURL contextUrl = ContextURL.with().serviceRoot(new URI(oDataRequest.getRawBaseUri() + "/"))
-                    .entitySetOrSingletonOrType(edmEntityType.getName()).selectList(selectList).build();
+                    .entitySetOrSingletonOrType(uriSetName).selectList(selectList).build();
             String id = oDataRequest.getRawBaseUri() + "/" + edmEntityType.getName();
             EntityCollectionSerializerOptions opts = EntityCollectionSerializerOptions.with().id(id).count(countOption)
                     .contextURL(contextUrl).expand(expandOption).select(selectOption).build();

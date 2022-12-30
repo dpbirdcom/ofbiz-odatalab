@@ -252,7 +252,8 @@
 	<EnumType Name="ProductFeatureApplTypeEnum" OfbizEntity="ProductFeatureApplType" />
 	<EnumType Name="KeywordStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=KEYWORD_STATUS" />
 	<EnumType Name="PartyStatus" OfbizEntity="StatusItem" EntityCondition="statusTypeId=PARTY_STATUS" />
-	
+
+	<!-- 一个虚拟的实体 -->
 	<EntityType Name="PartyInfo">
 		<Key>
 			<PropertyRef Name="partyId"/>
@@ -474,12 +475,19 @@
 							Handler="component://odata/groovyScripts/demo/Facility/PartyInfo.groovy"/>
 	</EntityType>
 	<EntityType Name="TaxAuthority" AutoProperties="true"/>
-	<EntityType Name="SimpleProduct" OfbizEntity="Product" SearchOption="internalName,brandName,productName">
+	<EntityType Name="SimpleProduct" OfbizEntity="Product" SearchOption="internalName,brandName,productName"
+				Handler="component://odata/groovyScripts/demo/SimpleProduct/generateEntityListFields.groovy">
 		<Property Name="productId"/>
 		<Property Name="productTypeId"/>
 		<Property Name="internalName"/>
 		<Property Name="brandName"/>
 		<Property Name="productName"/>
+		<Property Name="semanticDecimal1" Type="BigDecimal" Scale="3"/>
+		<Property Name="semanticDecimal2" Type="BigDecimal" Scale="3"/>
+		<Property Name="semanticString1" Type="String"/>
+		<Property Name="semanticString2" Type="String"/>
+		<Property Name="semanticDateTime1" Type="Edm.DateTimeOffset"/>
+		<Property Name="semanticDateTime2" Type="Edm.DateTimeOffset"/>
 	</EntityType>
 	<EntityType Name="SimpleFacility" OfbizEntity="Facility">
 		<Property Name="facilityId"/>
@@ -1058,70 +1066,6 @@
 		<ReturnType Type="Party"/>
 	</Function>
 
-
-	<Action Name="testEntityTypeInput">
-		<ReturnType Type="Edm.String"/>
-	</Action>
-	<Action Name="testActionReturn">
-		<ReturnType Name="stringTwo" Type="Edm.String"/>
-	</Action>
-	<Action Name="testActionPrimitive">
-		<ReturnType Type="Edm.String"/>
-	</Action>
-	<Action Name="testBoundActionWithCollection" IsBound="true">
-		<Parameter Name="parties" Type="Party" Nullable="false" IsCollection="true"/>
-		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
-		<ReturnType Type="Edm.String"/>
-	</Action>
-	<Action Name="testActionPrimitiveCollection">
-		<ReturnType Type="Edm.String" IsCollection="true"/>
-	</Action>
-	<Action Name="testActionComplexType">
-		<Parameter Name="parentComplexType" Type="TestParentComplexType" Nullable="false"/>
-		<ReturnType Type="TestComplexType"/>
-	</Action>
-	<!-- <Function Name="calcProductPrice"></Function> -->
-	<Function Name="testBoundFunctionPrimitive" IsBound="true">
-		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
-		<ReturnType Type="Edm.Double"/>
-	</Function>
-
-	<Function Name="testBoundFunctionSuccess" IsBound="true">
-		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
-		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
-		<Parameter Name="otherParmMust" Type="Edm.String" Nullable="false" IsCollection="false"/>
-		<ReturnType Type="Edm.String"/>
-	</Function>
-
-	<Function Name="testBoundFunctionError" IsBound="true">
-		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
-		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
-		<Parameter Name="otherParmMust" Type="Edm.String" Nullable="false" IsCollection="false"/>
-		<ReturnType Type="Edm.String"/>
-	</Function>
-
-	<Action Name="testBoundActionSuccess" IsBound="true">
-		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
-		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
-		<Parameter Name="otherParmMust" Type="Edm.String" Nullable="false" IsCollection="false"/>
-		<ReturnType Type="Edm.String"/>
-	</Action>
-
-	<Action Name="testBoundActionError" IsBound="true">
-		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
-		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
-		<Parameter Name="otherParmMust" Type="Edm.String" Nullable="false" IsCollection="false"/>
-		<ReturnType Type="Edm.String"/>
-	</Action>
-
-	<Action Name="testBoundActionForParty" IsBound="true">
-		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
-		<Parameter Name="otherParm" Type="Edm.DateTimeOffset" Precision="3" Nullable="true" IsCollection="false"/>
-		<Parameter Name="otherParmMust" Type="Edm.DateTimeOffset" Precision="3" Nullable="true" IsCollection="false"/>
-		<ReturnType Type="Edm.DateTimeOffset"/>
-	</Action>
-	<!-- 测试,后期需要删除掉 -->
-
 	<ComplexType Name="MimeType" OfbizClass="com.dpbird.odata.complexType.upload.MimeType">
 		<Property Name="title" Type="String" Nullable="true"/>
 		<Property Name="extensions" Type="String" Nullable="true"/>
@@ -1432,15 +1376,6 @@
 		<FunctionImport Name="testImportFunctionEntityCollectionFilter" Function="testImportFunctionEntityCollectionFilter"/>
 		<FunctionImport Name="testImportFunctionEntityCollectionFilterManyKey" Function="testImportFunctionEntityCollectionFilterManyKey"/>
 
-
-		<ActionImport Name="testEntityTypeInput" Action="testEntityTypeInput"/>
-		<ActionImport Name="testActionReturn" Action="testActionReturn"/>
-		<ActionImport Name="testActionPrimitive" Action="testActionPrimitive"/>
-		<ActionImport Name="testActionPrimitiveCollection" Action="testActionPrimitiveCollection"/>
-		<ActionImport Name="testActionComplexType" Action="testActionComplexType"/>
-
-<!--		<FunctionImport Name="testCalcProductPrice" Function="testCalcProductPrice"></FunctionImport>-->
-		<!-- <FunctionImport Name="calcProductPrice" Function="calcProductPrice"></FunctionImport> -->
 		<Singleton Name="Me" Type="UserLogin" Handler="com.dpbird.odata.SingletonHandler.getMe">
 			<NavigationPropertyBinding Path="Party" Target="Parties"/>
 			<NavigationPropertyBinding Path="UserPreference" Target="UserPreferences"/>

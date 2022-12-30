@@ -1749,15 +1749,8 @@ public class Util {
         return dataItems;
     }
 
-    public static List<Entity> mapToEntity(OfbizCsdlEntityType csdlEntityType, List<Map<String, Object>> fieldMap) {
-        List<Entity> entityList = new ArrayList<>();
-        for (Map<String, Object> objectMap : fieldMap) {
-            entityList.add(mapToEntity(csdlEntityType, new HashMap<>(objectMap)));
-        }
-        return entityList;
-    }
 
-    public static Entity mapToEntity(OfbizCsdlEntityType csdlEntityType, Map<String, Object> fieldMap) {
+    public static Entity mapToEntity(OfbizCsdlEntityType csdlEntityType, Map<String, Object> fieldMap) throws OfbizODataException {
         OdataOfbizEntity entity = new OdataOfbizEntity();
         entity.setType(csdlEntityType.getFullQualifiedNameString());
         List<CsdlProperty> csdlProperties = csdlEntityType.getProperties();
@@ -1767,6 +1760,9 @@ public class Util {
                 continue;
             }
             Object propertyValue = fieldMap.get(propertyName);
+            if (csdlProperty.getType().contains("Boolean")) {
+                propertyValue = strToBoolean(propertyValue.toString());
+            }
             FullQualifiedName propertyFqn = csdlProperty.getTypeAsFQNObject();
             Property property = new Property(propertyFqn.getFullQualifiedNameAsString(), propertyName, ValueType.PRIMITIVE, propertyValue);
             entity.addProperty(property);
@@ -2388,6 +2384,16 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static boolean strToBoolean(String value) throws OfbizODataException {
+        if ("Y".equalsIgnoreCase(value) || "T".equalsIgnoreCase(value)) {
+            return Boolean.TRUE;
+        } else if ("N".equalsIgnoreCase(value) || "F".equalsIgnoreCase(value)) {
+            return Boolean.FALSE;
+        } else {
+            throw new OfbizODataException("getBoolean could not map the String '" + value + "' to Boolean type");
+        }
     }
 
 }

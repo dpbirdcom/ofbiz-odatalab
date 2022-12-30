@@ -506,7 +506,7 @@ public class OdataProcessorHelper {
         GenericValue genericValue = ofbizEntity.getGenericValue();
         GenericValue mergeGenericValue = genericValue.getRelatedOne(mergeCsdlEntityType.getOfbizEntity(), true);
         if (UtilValidate.isNotEmpty(mergeGenericValue)) {
-            OdataOfbizEntity mergeEntity = (OdataOfbizEntity) Util.mapToEntity(mergeCsdlEntityType, mergeGenericValue);
+            OdataOfbizEntity mergeEntity = (OdataOfbizEntity) Util.mapToEntity(mergeCsdlEntityType, new HashMap<>(mergeGenericValue));
             appendNonEntityFields(null, delegator, dispatcher, edmProvider,
                     null, UtilMisc.toList(mergeEntity), locale, Util.getSystemUser(delegator));
             for (Property property : mergeEntity.getProperties()) {
@@ -529,6 +529,10 @@ public class OdataProcessorHelper {
         String typeIdValue = genericValue.getString(typeIdName);
         Map<String, Object> typePrimaryKey = UtilMisc.toMap(typeModelEntity.getOnlyPk().getName(), typeIdValue);
         GenericValue typeGenericValue = delegator.findOne(typeModelEntity.getEntityName(), typePrimaryKey, true);
+        if (UtilValidate.isEmpty(typeGenericValue)) {
+            //没有衍生类型 保持原始类型
+            return null;
+        }
         String derivedEntityName = null;
         if (typeGenericValue.getBoolean("hasTable")) {
             derivedEntityName = Util.underlineToUpperHump(typeIdValue);
