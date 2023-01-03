@@ -848,10 +848,8 @@ public class OdataProcessorHelper {
         return entityList;
     }
 
-    public static GenericValue createGenericValue(LocalDispatcher dispatcher, String serviceName, String
-            entityName,
-                                                  Map<String, Object> fieldMap) throws
-            GenericServiceException, GenericEntityException, OfbizODataException {
+    public static GenericValue createGenericValue(LocalDispatcher dispatcher, String serviceName, String entityName, Map<String, Object> fieldMap)
+            throws GenericServiceException, GenericEntityException, OfbizODataException {
         Map<String, Object> result = dispatcher.runSync(serviceName, fieldMap);
         // 光运行了创建entity的service，我们都还不知道是哪个具体的数据被创建了，所以需要获取新创建的entity的pk，然后从数据库获取这个新创建的GenericValue
         Map<String, Object> pkMap;

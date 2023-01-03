@@ -2250,9 +2250,15 @@ public class Util {
                 //空值永远放最后
                 boolean e1Null = e1.getProperty(ob) == null || e1.getProperty(ob).getValue() == null;
                 boolean e2Null = e2.getProperty(ob) == null || e2.getProperty(ob).getValue() == null;
-                if (e1Null && e2Null) continue;
-                if (e1Null) return 1;
-                if (e2Null) return -1;
+                if (e1Null && e2Null) {
+                    continue;
+                }
+                if (e1Null) {
+                    return 1;
+                }
+                if (e2Null) {
+                    return -1;
+                }
                 int compare;
                 String type = csdlEntityType.getProperty(ob).getType();
                 if (type.contains("Decimal")) {
@@ -2363,9 +2369,6 @@ public class Util {
         List<OrderByItem> orderItemList = orderByOption.getOrders();
         for (OrderByItem orderByItem : orderItemList) {
             Expression expression = orderByItem.getExpression();
-            if (expression.toString().contains("$count")) {
-                return true;
-            }
             UriInfoResource resourcePath = ((Member) expression).getResourcePath();
             List<UriResource> uriResourceParts = resourcePath.getUriResourceParts();
             if (uriResourceParts.size() > 1) continue;

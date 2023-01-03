@@ -1,19 +1,20 @@
 package com.dpbird.odata.handler;
 
-import com.dpbird.odata.OdataParts;
-import com.dpbird.odata.OdataProcessorHelper;
-import com.dpbird.odata.OfbizAppEdmProvider;
-import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.*;
 import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
+import org.apache.ofbiz.base.util.UtilDateTime;
+import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelRelation;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 如果Navigation没有声明自定义的Handler, 会使用这个缺省的ofbiz查询
+ * 如果Navigation没有声明自定义的Handler, 会使用这个缺省的Handler
  *
  * @date 2022/11/14
  */
@@ -74,24 +75,50 @@ public class DefaultNavigationHandler implements NavigationHandler {
     @Override
     public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                    EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException {
-        //DefaultHandler只能处理非Collection并且通过外键直接关联的bindLink
         Delegator delegator = (Delegator) odataContext.get("delegator");
         GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
         LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
+        ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-        if (relAlias.getRelations().size() == 1) {
-            ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-            ModelRelation modelRelation = modelEntity.getRelation(relAlias.getRelations().get(0));
-            Map<String, Object> fkFieldMap = new HashMap<>();
-            for (ModelKeyMap relationKeyMap : modelRelation.getKeyMaps()) {
-                String fieldName = relationKeyMap.getFieldName();
-                String relFieldName = relationKeyMap.getRelFieldName();
-                fkFieldMap.put(fieldName, bindPrimaryKey.get(relFieldName));
+        List<String> relations = relAlias.getRelations();
+        if (csdlNavigationProperty.isCollection()) {
+            //collection仅支持含有简单中间表的关联 如果中间表主键收集不完整将会报错
+            if (relations.size() == 2) {
+                ModelRelation relation = modelEntity.getRelation(relations.get(0));
+                ModelEntity relModelEntity = delegator.getModelEntity(relation.getRelEntityName());
+                Map<String, Object> midFields = new HashMap<>();
+                midFields.putAll(bindPrimaryKey);
+                midFields.putAll(entity.getKeyMap());
+                Map<String, Object> conditionField = relAlias.getRelationsFieldMap().get(relations.get(0));
+                if (UtilValidate.isNotEmpty(conditionField)) {
+                    midFields.putAll(conditionField);
+                }
+                if (relModelEntity.getPkFieldNames().contains("fromDate")) {
+                    midFields.put("fromDate", UtilDateTime.nowTimestamp());
+                }
+                midFields.put("userLogin", userLogin);
+                String serviceName = Util.getEntityActionService(relModelEntity.getEntityName(), "create", delegator);
+                try {
+                    dispatcher.runSync(serviceName, midFields);
+                } catch (GenericServiceException e) {
+                    throw new OfbizODataException(e.getMessage());
+                }
             }
-            OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(), fkFieldMap, userLogin);
+        } else {
+            //非Collection仅支持通过外键直接关联的bindLink
+            if (relations.size() == 1) {
+                ModelRelation modelRelation = modelEntity.getRelation(relations.get(0));
+                Map<String, Object> fkFieldMap = new HashMap<>();
+                for (ModelKeyMap relationKeyMap : modelRelation.getKeyMaps()) {
+                    String fieldName = relationKeyMap.getFieldName();
+                    String relFieldName = relationKeyMap.getRelFieldName();
+                    fkFieldMap.put(fieldName, bindPrimaryKey.get(relFieldName));
+                }
+                OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(), fkFieldMap, userLogin);
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dpbird.odata;
 
+import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -10,6 +11,7 @@ import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfoResource;
@@ -36,10 +38,10 @@ public class ExtraOdataReader extends OdataReader {
     @Override
     public EntityCollection findList() throws OfbizODataException {
         //如果父类支持就直接处理
-        if (useOfbizReader(queryOptions)) {
+        if (useOdataReader(queryOptions)) {
             return super.findList();
         }
-        //ofbizReader不能处理就用java实现，不支持太大的数据量
+        //OdataReader不能处理的QueryOption就用java实现，不支持太大的数据量
         initPageValue();
         EntityCollection entityCollection = super.findList();
         if (entityCollection.getEntities().size() > EXTRA_QUERY_MAX_RAW) {
@@ -60,6 +62,7 @@ public class ExtraOdataReader extends OdataReader {
         if (orderByOption == null) {
             return;
         }
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OrderByItem orderByItem = orderByOption.getOrders().stream()
                 .filter(item -> item.getExpression().toString().contains("$count")).findFirst().orElse(null);
         if (orderByItem != null) {
@@ -77,6 +80,8 @@ public class ExtraOdataReader extends OdataReader {
                 relationCountMap.entrySet().stream().sorted(Map.Entry.comparingByValue())
                         .forEachOrdered(entry -> entityCollection.getEntities().add(entry.getKey()));
             }
+        } else if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)){
+            Util.orderbyEntityCollection(entityCollection, orderByOption, edmEntityType, edmProvider);
         }
     }
 
@@ -170,7 +175,7 @@ public class ExtraOdataReader extends OdataReader {
     /**
      * 判断父类是否可以支持这些OdataOptions
      */
-    private boolean useOfbizReader(Map<String, QueryOption> queryOptions) {
+    private boolean useOdataReader(Map<String, QueryOption> queryOptions) throws OfbizODataException {
         OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
 
@@ -180,6 +185,10 @@ public class ExtraOdataReader extends OdataReader {
         }
         // http://.../Products?$filter=Navigation/$count eq 100
         if (filterOption != null && filterOption.getExpression().toString().contains("$count")) {
+            return false;
+        }
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
             return false;
         }
         return true;

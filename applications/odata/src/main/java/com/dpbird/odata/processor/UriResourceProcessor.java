@@ -95,7 +95,7 @@ public class UriResourceProcessor {
             DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
             entityData = draftHandler.readEntityData(edmEntityType, primaryKey, queryOptions);
         } else {
-            OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
+            ExtraOdataReader reader = new ExtraOdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
             entityData = UtilValidate.isEmpty(primaryKey) ? reader.findList() : reader.findOne(primaryKey, queryOptions);
         }
         return new OdataParts(uriResourceEntitySet.getEntitySet(), uriResourceEntitySet.getEntityType(), uriResource, entityData);
@@ -144,9 +144,11 @@ public class UriResourceProcessor {
             OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
             if (isCollection) {
                 EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey, resourceDataInfos);
-                Object entityData = UtilValidate.isEmpty(navigationPrimaryKey) ?
-                        relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
-                currentUriResourceData.setEntityData(entityData);
+                if (UtilValidate.isNotEmpty(relatedEntityCollection) && UtilValidate.isNotEmpty(relatedEntityCollection.getEntities())) {
+                    Object entityData = UtilValidate.isEmpty(navigationPrimaryKey) ?
+                            relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
+                    currentUriResourceData.setEntityData(entityData);
+                }
             } else {
                 Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, queryOptions, resourceDataInfos);
                 currentUriResourceData.setEntityData(entityData);

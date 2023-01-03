@@ -85,10 +85,13 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             Map<String, QueryOption> queryOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
             List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
             if (queryOptions.get("applyOption") == null) {
+                EntityCollection entityCollection = new EntityCollection();
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), queryOptions, sapContextId);
                 List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceParts, uriInfo.getAliases());
                 OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
-                EntityCollection entityCollection = (EntityCollection) odataParts.getEntityData();
+                if (odataParts.getEntityData() != null) {
+                    entityCollection = (EntityCollection) odataParts.getEntityData();
+                }
                 serializeEntityCollection(oDataRequest, oDataResponse, odataParts.getEdmBindingTarget(), odataParts.getEdmEntityType(),
                         responseContentType, entityCollection, queryOptions);
             } else {

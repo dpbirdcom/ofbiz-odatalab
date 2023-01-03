@@ -190,11 +190,12 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             OdataParts odataParts = resourceDataInfos.get(resourceDataInfos.size() - 1);
             Entity responseEntity = (Entity) odataParts.getEntityData();
-            //response
-            if (responseEntity != null) {
-                serializeEntity(oDataRequest, oDataResponse, odataParts.getEdmBindingTarget(), odataParts.getEdmEntityType(),
-                        responseContentType, uriInfo.getExpandOption(), uriInfo.getSelectOption(), responseEntity);
+            if (UtilValidate.isEmpty(responseEntity)) {
+                throw new ODataApplicationException("Not found.", HttpStatus.SC_NOT_FOUND, locale);
             }
+            //response
+            serializeEntity(oDataRequest, oDataResponse, odataParts.getEdmBindingTarget(), odataParts.getEdmEntityType(),
+                    responseContentType, uriInfo.getExpandOption(), uriInfo.getSelectOption(), responseEntity);
             oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (OfbizODataException e) {

@@ -514,9 +514,6 @@ public class OfbizOdataProcessor {
         }
     }
 
-    /**
-     * TODO: derby数据库使用groupBy+orderBy有些问题, 比如使用多段式的orderBy
-     */
     protected void retrieveOrderBy() throws OfbizODataException {
         if (entityName == null) return;
         OfbizCsdlEntityType csdlEntityType = null;
@@ -536,7 +533,7 @@ public class OfbizOdataProcessor {
                 EdmNavigationProperty navigationProperty = (EdmNavigationProperty) edmParams.get("edmNavigationProperty");
                 csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getType().getFullQualifiedName());
             }
-            if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+            if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator) || orderByOption.getText().contains("/$count")) {
                 //ofbiz不支持的orderby 在查询出结果后自定义处理
                 return;
             }

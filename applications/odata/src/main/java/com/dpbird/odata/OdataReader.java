@@ -137,11 +137,6 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 queryOptions, entities, locale, userLogin);
-        OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-        if (orderByOption != null && Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
-            Util.orderbyEntityCollection(entityCollection, (OrderByOption) queryOptions.get("orderByOption"), edmEntityType, edmProvider);
-        }
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
                 List<OdataParts> odataPartsList = new ArrayList<>();
@@ -343,12 +338,12 @@ public class OdataReader extends OfbizOdataProcessor {
                     edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
         entityCollection.setCount(entityCollection.getEntities().size());
-        Util.pageEntityCollection(entityCollection, skipValue, topValue);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
         if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
             Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
         }
+        Util.pageEntityCollection(entityCollection, skipValue, topValue);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entityIter : entityCollection.getEntities()) {
                 List<OdataParts> expandResourceInfo = new ArrayList<>();

@@ -77,10 +77,13 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
     public void readReferenceCollection(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType contentType)
             throws ODataApplicationException, ODataLibraryException {
         try {
+            EntityCollection entityCollection = new EntityCollection();
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), null);
             List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriInfo.getUriResourceParts(), uriInfo.getAliases());
             OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
-            EntityCollection entityCollection = (EntityCollection) odataParts.getEntityData();
+            if (odataParts.getEntityData() != null) {
+                entityCollection = (EntityCollection) odataParts.getEntityData();
+            }
             EdmBindingTarget edmBindingTarget = odataParts.getEdmBindingTarget();
             serializerReferenceCollection(contentType, edmBindingTarget, request, response, entityCollection);
             response.setStatusCode(HttpStatusCode.OK.getStatusCode());
