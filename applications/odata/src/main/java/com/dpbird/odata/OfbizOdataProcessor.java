@@ -587,6 +587,12 @@ public class OfbizOdataProcessor {
             if (orderBy == null) {
                 orderBy = new ArrayList<>();
             }
+            //apply的Orderby不需要处理 直接使用
+            if (queryOptions.get("applyOption") != null) {
+                OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
+                orderBy = Util.retrieveSimpleOrderByOption(orderByOption);
+                return;
+            }
             csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             //是个多级的查询
             if (edmParams.get("edmNavigationProperty") != null) {
