@@ -533,7 +533,8 @@ public class OfbizOdataProcessor {
                 EdmNavigationProperty navigationProperty = (EdmNavigationProperty) edmParams.get("edmNavigationProperty");
                 csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getType().getFullQualifiedName());
             }
-            if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator) || orderByOption.getText().contains("/$count")) {
+            boolean isCount = orderByOption.getText() != null && orderByOption.getText().contains("/$count");
+            if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator) || isCount) {
                 //ofbiz不支持的orderby 在查询出结果后自定义处理
                 return;
             }

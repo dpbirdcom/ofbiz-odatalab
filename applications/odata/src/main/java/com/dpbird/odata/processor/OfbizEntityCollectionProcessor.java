@@ -135,7 +135,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             oDataResponse.setHeader("SAP-ContextId", sapContextId);
         }
         try {
-            Long count;
+            Long count = 0L;
             Map<String, QueryOption> quernOptions = OdataProcessorHelper.getQuernOptions(uriInfo);
             List<UriResource> resourceParts = new ArrayList<>(uriInfo.getUriResourceParts());
             resourceParts = resourceParts.subList(0, resourceParts.size() - 1);
@@ -151,7 +151,9 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                 List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(resourceParts, uriInfo.getAliases());
                 OdataParts lastResourceData = ListUtil.getLast(resourceDataInfos);
                 EntityCollection entityCollection = (EntityCollection) lastResourceData.getEntityData();
-                count = (long) entityCollection.getEntities().size();
+                if (UtilValidate.isNotEmpty(entityCollection)) {
+                    count = (long) entityCollection.getEntities().size();
+                }
             }
             oDataResponse.setContent(new ByteArrayInputStream(count.toString().getBytes()));
             oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
