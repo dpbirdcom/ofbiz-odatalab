@@ -143,14 +143,14 @@ public class UriResourceProcessor {
             //real
             OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
             if (isCollection) {
-                EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey, resourceDataInfos);
+                EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey);
                 if (UtilValidate.isNotEmpty(relatedEntityCollection) && UtilValidate.isNotEmpty(relatedEntityCollection.getEntities())) {
                     Object entityData = UtilValidate.isEmpty(navigationPrimaryKey) ?
                             relatedEntityCollection : relatedEntityCollection.getEntities().get(0);
                     currentUriResourceData.setEntityData(entityData);
                 }
             } else {
-                Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, queryOptions, resourceDataInfos);
+                Entity entityData = reader.findRelatedOne(entity, edmEntityType, edmNavigationProperty, queryOptions);
                 currentUriResourceData.setEntityData(entityData);
             }
         }

@@ -149,7 +149,7 @@ public class ExtraOdataReader extends OdataReader {
                         "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
                 Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
                 OdataReader reader = new OdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
-                EntityCollection relEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), null, null);
+                EntityCollection relEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), null);
                 relCount = relEntityCollection.getEntities().size();
             }
             relationCountMap.put(entity, relCount);

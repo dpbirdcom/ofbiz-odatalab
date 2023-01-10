@@ -35,7 +35,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
 
     @Override
     public Map<String, Object> getNavigationParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions, List<OdataParts> resourceDataInfos) throws OfbizODataException {
+                                                  EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
         navigationParam.put("edmEntityType", edmEntityType);
@@ -45,7 +45,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
 
     @Override
     public Map<String, Object> getInsertParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
-                                              EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts)
+                                              EdmNavigationProperty edmNavigationProperty)
             throws OfbizODataException {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
@@ -55,7 +55,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
     }
 
     @Override
-    public Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException {
+    public Map<String, Object> getUpdateParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
         navigationParam.put("edmEntityType", edmEntityType);
@@ -64,7 +64,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
     }
 
     @Override
-    public Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, List<OdataParts> odataParts) throws OfbizODataException {
+    public Map<String, Object> getDeleteParam(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", entity);
         navigationParam.put("edmEntityType", edmEntityType);

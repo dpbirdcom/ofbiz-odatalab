@@ -152,20 +152,36 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
             OdataParts odataParts = ListUtil.getLast(odataPartsList);
             UriResourceNavigation resourceNavigation = (UriResourceNavigation) ListUtil.getLast(uriResourceParts);
             EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
+            //获取要bind的primaryKey
+            List<UriParameter> keyPredicates = getReference(request, contentType).getKeyPredicates();
+            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(keyPredicates, edmNavigationProperty.getType());
+
             Map<String, Object> serviceMap = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", odataParts.getEdmBindingTarget(),
                     "entity", odataParts.getEntityData(), "edmNavigationProperty", resourceNavigation.getProperty(), "userLogin", userLogin);
             if (edmNavigationProperty.isCollection()) {
-                //如果是Collection, 先执行unbind
-                Map<String, Object> existPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
-                serviceMap.put("bindPrimaryKey", existPrimaryKey);
-                dispatcher.runSync("dpbird.deleteReference", serviceMap);
+                //如果是Collection, 先执行unbind, 每一条对应的数据都要做处理
+                Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", odataParts.getEdmEntityType(), "edmNavigationProperty", edmNavigationProperty);
+                OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), embeddedEdmParams);
+                EntityCollection relatedList = reader.findRelatedList((Entity) odataParts.getEntityData(), edmNavigationProperty, new HashMap<>(), null);
+                //这个是要删除的key，每条跟这个key匹配的都要删除并新建一条新的数据
+                Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+                for (Entity entity : relatedList) {
+                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+                    Map<String, Object> existPrimaryKey = ofbizEntity.getKeyMap();
+                    if (unBindPrimaryKey.equals(existPrimaryKey)) {
+                        //delete
+                        serviceMap.put("bindPrimaryKey", existPrimaryKey);
+                        dispatcher.runSync("dpbird.deleteReference", serviceMap);
+                        serviceMap.put("bindPrimaryKey", bindPrimaryKey);
+                        //create
+                        dispatcher.runSync("dpbird.createReference", serviceMap);
+                    }
+                }
+            } else {
+                //create
+                serviceMap.put("bindPrimaryKey", bindPrimaryKey);
+                dispatcher.runSync("dpbird.createReference", serviceMap);
             }
-            // bind
-            UriResourceEntitySet uriResourceEntitySet = getReference(request, contentType);
-            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmNavigationProperty.getType());
-            serviceMap.put("bindPrimaryKey", bindPrimaryKey);
-            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createReference", serviceMap);
-            Debug.logInfo("Update reference result: " + serviceResult, module);
         } catch (OfbizODataException | GenericServiceException e) {
             e.printStackTrace();
             throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
@@ -174,6 +190,7 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
         response.setHeader(HttpHeader.CONTENT_TYPE, contentType.toContentTypeString());
     }
 
+
     @Override
     public void deleteReference(ODataRequest request, ODataResponse response, UriInfo uriInfo)
             throws ODataApplicationException, ODataLibraryException {
@@ -181,16 +198,30 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
             // 获取主实体和要解除绑定的实体
             List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
-            List<OdataParts> odataPartsList = uriResourceProcessor.readUriResource(uriResourceParts.subList(0, uriResourceParts.size() - 1), null);
-            OdataParts mainParts = odataPartsList.get(odataPartsList.size() - 2);
-            OdataParts toUnbindParts = odataPartsList.get(odataPartsList.size() - 1);
-            UriResourceNavigation resourceNavigation = (UriResourceNavigation) toUnbindParts.getUriResource();
-            OdataOfbizEntity toUnbindEntity = (OdataOfbizEntity) toUnbindParts.getEntityData();
-            //执行Service解除绑定
-            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.deleteReference", UtilMisc.toMap("odataContext", getOdataContext(),
-                    "edmBindingTarget", mainParts.getEdmBindingTarget(), "entity", mainParts.getEntityData(),
-                    "edmNavigationProperty", resourceNavigation.getProperty(), "bindPrimaryKey", toUnbindEntity.getKeyMap(), "userLogin", userLogin));
-            Debug.logInfo("Remove reference result: " + serviceResult, module);
+            List<OdataParts> odataPartsList = uriResourceProcessor.readUriResource(uriResourceParts.subList(0, uriResourceParts.size() - 2), null);
+            OdataParts mainParts = ListUtil.getLast(odataPartsList);
+            UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) uriResourceParts.get(uriResourceParts.size() - 2);
+            EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
+            //要删除的key
+            Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+            Map<String, Object> serviceMap = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", mainParts.getEdmBindingTarget(), "entity", mainParts.getEntityData(),
+                    "edmNavigationProperty", uriResourceNavigation.getProperty(), "bindPrimaryKey", unBindPrimaryKey, "userLogin", userLogin);
+            if (edmNavigationProperty.isCollection()) {
+                //Collection 删除所有匹配的数据
+                Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", mainParts.getEdmEntityType(), "edmNavigationProperty", edmNavigationProperty);
+                OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), embeddedEdmParams);
+                EntityCollection relatedList = reader.findRelatedList((Entity) mainParts.getEntityData(), edmNavigationProperty, new HashMap<>(), null);
+                 for (Entity entity : relatedList) {
+                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+                    //delete
+                    if (unBindPrimaryKey.equals(ofbizEntity.getKeyMap())) {
+                        dispatcher.runSync("dpbird.deleteReference", serviceMap);
+                    }
+                }
+            } else {
+                //delete
+                dispatcher.runSync("dpbird.deleteReference", serviceMap);
+            }
             response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
         } catch (OfbizODataException | GenericServiceException e) {
             e.printStackTrace();

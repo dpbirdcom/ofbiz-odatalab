@@ -270,13 +270,13 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), UtilMisc.toMap("edmEntityType", edmBindingTarget.getEntityType()));
                 boolean isCreate = false;
                 if (primaryKey != null) {
-                    EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), primaryKey, odataParts);
+                    EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), primaryKey);
                     if (UtilValidate.isEmpty(relatedList) || UtilValidate.isEmpty(relatedList.getEntities())) {
                         throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Entity not found.");
                     }
                 } else {
                     //NoCollection或许是创建
-                    OdataOfbizEntity relatedOne = (OdataOfbizEntity) reader.findRelatedOne(entity, edmBindingTarget.getEntityType(), edmNavigationProperty, new HashMap<>(), odataParts);
+                    OdataOfbizEntity relatedOne = (OdataOfbizEntity) reader.findRelatedOne(entity, edmBindingTarget.getEntityType(), edmNavigationProperty, new HashMap<>());
                     if (UtilValidate.isEmpty(relatedOne)) {
                         isCreate = true;
                     } else {

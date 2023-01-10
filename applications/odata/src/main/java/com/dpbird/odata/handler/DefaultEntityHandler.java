@@ -47,7 +47,6 @@ public class DefaultEntityHandler implements EntityHandler {
             OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmBindingTarget));
             return reader.ofbizFindList(null);
         }
-
         //Navigation查询 根据参数去做查询
         EntityCondition primaryKeyCond = null;
         if (navigationParam.get("primaryKey") != null) {

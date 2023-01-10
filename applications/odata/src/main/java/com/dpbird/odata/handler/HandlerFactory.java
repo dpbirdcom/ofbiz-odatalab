@@ -66,7 +66,7 @@ public class HandlerFactory {
         }
     }
 
-    private static String getHandlerImpl(OfbizAppEdmProvider edmProvider, List<String> values, Delegator delegator) {
+    public static String getHandlerImpl(OfbizAppEdmProvider edmProvider, List<String> values, Delegator delegator) {
         StringBuilder configKey = new StringBuilder(edmProvider.getWebapp());
         for (String value : values) {
             configKey.append(".").append(value);

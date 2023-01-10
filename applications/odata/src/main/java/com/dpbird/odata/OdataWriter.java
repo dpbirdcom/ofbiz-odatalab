@@ -77,7 +77,7 @@ public class OdataWriter extends OfbizOdataProcessor {
         //获取创建参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> insertParam = navigationHandler.getInsertParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
-                edmNavigationProperty, null);
+                edmNavigationProperty);
         //创建
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         Map<String, Object> created = entityHandler.create(entityToWrite, odataContext, edmBindingTarget, insertParam);
@@ -111,7 +111,7 @@ public class OdataWriter extends OfbizOdataProcessor {
         //获取更新参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> updateParam = navigationHandler.getUpdateParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
-                edmNavigationProperty, null);
+                edmNavigationProperty);
         //更新
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         Map<String, Object> updateResult = entityHandler.update(primaryKey, entityToWrite, odataContext, edmBindingTarget, updateParam);
@@ -129,7 +129,7 @@ public class OdataWriter extends OfbizOdataProcessor {
         //获取删除参数
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> deleteParam = navigationHandler.getDeleteParam(odataContext, (OdataOfbizEntity) entity, edmEntityType,
-                edmNavigationProperty, null);
+                edmNavigationProperty);
         //删除
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         entityHandler.delete(entityToDelete, odataContext, edmBindingTarget, deleteParam);

@@ -1,10 +1,13 @@
 package com.dpbird.odata.edm;
 
+import com.dpbird.odata.OdataParts;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class OdataOfbizEntity extends Entity {
@@ -15,6 +18,7 @@ public class OdataOfbizEntity extends Entity {
 	// TODO: 如何处理呢？
 	private Map<String, Object> keyMap = null;
 	private boolean isDraft = false;
+	private List<OdataParts> odataParts = new ArrayList<>();
 
 	public Map<String, Object> getKeyMap() {
 		return keyMap;
@@ -53,4 +57,20 @@ public class OdataOfbizEntity extends Entity {
 	public Object getPropertyValue(String propertyName) {
 		return getProperty(propertyName).getValue();
 	}
+
+	public List<OdataParts> getOdataParts() {
+		return odataParts;
+	}
+
+	public void setOdataParts(List<OdataParts> odataParts) {
+		this.odataParts = odataParts;
+	}
+
+	public void addOdataParts(OdataParts odataParts) {
+		if (this.odataParts == null) {
+			this.odataParts = new ArrayList<>();
+		}
+		this.odataParts.add(odataParts);
+	}
+
 }

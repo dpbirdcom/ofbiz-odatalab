@@ -463,7 +463,7 @@ public class DataModifyActions {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget);
             OdataReader reader = new OdataReader(readerContext, new HashMap<>(), edmParams);
             Entity mainEntity = reader.findOne(keyMap, null);
-            EntityCollection entities = reader.findRelatedList(mainEntity, edmNavigationProperty, new HashMap<>(), null, null);
+            EntityCollection entities = reader.findRelatedList(mainEntity, edmNavigationProperty, new HashMap<>(), null);
             for (Entity entity : entities.getEntities()) {
                 String navDraftUUID = Util.generateDraftUUID();
                 OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;

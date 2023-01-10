@@ -13,6 +13,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
+import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.data.Property;
@@ -524,6 +525,9 @@ public class OdataProcessorHelper {
     private static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator delegator,
                                                       OdataOfbizEntity ofbizEntity,OfbizCsdlEntityType csdlEntityType) throws GenericEntityException {
         GenericValue genericValue = ofbizEntity.getGenericValue();
+        if ("DynamicViewEntity".equals(genericValue.getEntityName())) {
+            return null;
+        }
         ModelEntity typeModelEntity = delegator.getModelEntity(genericValue.getModelEntity().getEntityName() + "Type");
         String typeIdName = typeModelEntity.getOnlyPk().getName();
         String typeIdValue = genericValue.getString(typeIdName);
@@ -1041,8 +1045,7 @@ public class OdataProcessorHelper {
     }
 
     public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator, String
-            entityName,
-                                                  Map<String, Object> keyMap, Map<String, Object> fieldMap,
+            entityName, Map<String, Object> keyMap, Map<String, Object> fieldMap,
                                                   GenericValue userLogin) throws OfbizODataException {
         try {
             GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
@@ -1066,7 +1069,10 @@ public class OdataProcessorHelper {
             if (genericValue != null) {
                 serviceInMap = addRequiredParams(modelService, genericValue, serviceInMap);
             }
-            Map<String, Object> result = dispatcher.runSync(serviceName, serviceInMap);
+            Map<String, Object> updateResult = dispatcher.runSync(serviceName, serviceInMap);
+            if (ServiceUtil.isError(updateResult)) {
+                throw new OfbizODataException(ServiceUtil.getErrorMessage(updateResult));
+            }
             // 刷新genericValue
             genericValue = delegator.findOne(entityName, keyMap, true);
             return genericValue;

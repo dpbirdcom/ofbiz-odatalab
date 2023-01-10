@@ -485,7 +485,7 @@ public class DraftHandler {
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
-                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null, null);
+                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
             } catch (GenericEntityException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR), e.getMessage());
             }
