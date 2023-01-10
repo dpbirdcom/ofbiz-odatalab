@@ -16,6 +16,7 @@ import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
+import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
@@ -102,7 +103,10 @@ public class DefaultNavigationHandler implements NavigationHandler {
                 midFields.put("userLogin", userLogin);
                 String serviceName = Util.getEntityActionService(relModelEntity.getEntityName(), "create", delegator);
                 try {
-                    dispatcher.runSync(serviceName, midFields);
+                    Map<String, Object> createResult = dispatcher.runSync(serviceName, midFields);
+                    if (ServiceUtil.isError(createResult)) {
+                        throw new OfbizODataException(ServiceUtil.getErrorMessage(createResult));
+                    }
                 } catch (GenericServiceException e) {
                     throw new OfbizODataException(e.getMessage());
                 }

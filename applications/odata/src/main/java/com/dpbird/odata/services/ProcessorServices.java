@@ -175,7 +175,7 @@ public class ProcessorServices {
             DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, edmEntitySet.getEntityType());
             draftHandler.deleteEntityData(ofbizEntity.getKeyMap());
         } else {
-            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet,"entityToWrite", ofbizEntity);
+            Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet, "entityToWrite", ofbizEntity);
             OdataWriter writer = new OdataWriter(odataContext, null, edmParams);
             writer.deleteEntity(ofbizEntity);
         }
@@ -939,8 +939,7 @@ public class ProcessorServices {
         }
     }
 
-    public static Map<String, Object> createReference(DispatchContext dctx, Map<String, Object> context)
-            throws OfbizODataException, ODataApplicationException {
+    public static Map<String, Object> createReference(DispatchContext dctx, Map<String, Object> context) throws OfbizODataException {
         Map<String, Object> odataContext = UtilGenerics.checkMap(context.get("odataContext"));
         OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) context.get("entity");
         EdmBindingTarget edmBindingTarget = (EdmBindingTarget) context.get("edmBindingTarget");

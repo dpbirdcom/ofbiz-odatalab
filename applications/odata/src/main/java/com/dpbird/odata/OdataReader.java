@@ -587,17 +587,17 @@ public class OdataReader extends OfbizOdataProcessor {
                 for (int i = 1; i < relations.size(); i++) {
                     String currRel = relations.get(i);
                     String lastRel = relations.get(i - 1);
-                    ModelRelation lastRelation = relationsEntity.get(lastRel);
-                    dynamicViewEntity.addMemberEntity(currRel, lastRelation.getRelEntityName());
+                    ModelRelation currRelation = relationsEntity.get(currRel);
+                    dynamicViewEntity.addMemberEntity(currRel, currRelation.getRelEntityName());
                     dynamicViewEntity.addAliasAll(currRel, null, null);
                     //add Link
                     ModelViewEntity modelViewEntity = dynamicViewEntity.makeModelViewEntity(delegator);
                     ModelViewEntity.ViewEntityCondition viewEntityCondition = null;
-                    EntityCondition relCondition = relationsCondition.get(relations.get(i));
+                    EntityCondition relCondition = relationsCondition.get(currRel);
                     if (relCondition != null) {
                         viewEntityCondition = new ModelViewEntity.ViewEntityCondition(modelViewEntity, null, false, false, null, currRel, null, relCondition);
                     }
-                    ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(lastRel, currRel, true, viewEntityCondition, modelRelation.getKeyMaps());
+                    ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(lastRel, currRel, true, viewEntityCondition, currRelation.getKeyMaps());
                     dynamicViewEntity.addViewLink(modelViewLink);
                 }
                 Util.printDynamicView(dynamicViewEntity, null, module);
