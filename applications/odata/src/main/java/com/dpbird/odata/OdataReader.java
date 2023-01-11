@@ -18,6 +18,7 @@ import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
+import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.ODataApplicationException;
@@ -392,9 +393,13 @@ public class OdataReader extends OfbizOdataProcessor {
         List<String> orderbyList = Util.retrieveSimpleOrderByOption(orderbyOption);
         List<GenericValue> genericValueList = entityList.stream().map(e -> ((OdataOfbizEntity) e).getGenericValue()).collect(Collectors.toList());
         //find
-        List<GenericValue> relatedList = getAllDataFromRelations(genericValueList, csdlNavigationProperty, condition, orderbyList);
-        if (relatedList == null) {
+        List<GenericValue> relatedGenericList = getAllDataFromRelations(genericValueList, csdlNavigationProperty, condition, orderbyList);
+        if (UtilValidate.isEmpty(relatedGenericList)) {
             return;
+        }
+        List<Entity> relatedEntityList = new ArrayList<>();
+        for (GenericValue genericValue : relatedGenericList) {
+            relatedEntityList.add(findResultToEntity(edmNavigationPropertyType, genericValue));
         }
         //获取relation关联字段
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
@@ -405,10 +410,11 @@ public class OdataReader extends OfbizOdataProcessor {
             fieldNames.add(relKeyMap.getFieldName());
             relFieldNames.add(relKeyMap.getRelFieldName());
         }
+        //添加语义化字段
+        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, relatedEntityList, locale, userLogin);
         Map<GenericValue, Entity> expandDataMap = new LinkedHashMap<>();
-        for (GenericValue genericValue : relatedList) {
-            OdataOfbizEntity expandEntity = (OdataOfbizEntity) findResultToEntity(edmNavigationPropertyType, genericValue);
-            expandDataMap.put(genericValue, expandEntity);
+        for (int i = 0; i < relatedEntityList.size(); i++) {
+            expandDataMap.put(relatedGenericList.get(i), relatedEntityList.get(i));
         }
         //处理下一层expand
         recursionExpand(entityList, expandDataMap, edmNavigationProperty, fieldNames, relFieldNames);
@@ -422,8 +428,15 @@ public class OdataReader extends OfbizOdataProcessor {
             }
             for (Map.Entry<GenericValue, Entity> entry : expandDataMap.entrySet()) {
                 String fkString = getFieldShortValue(relFieldNames, entry.getKey());
-                //TODO: expand collection要实现分页
                 addEntityToLink(mainEntityMap.get(fkString), edmNavigationProperty, entry.getValue());
+            }
+            //分页InlineEntitySet
+            if (queryOptions.get("skipOption") != null || queryOptions.get("topOption") != null) {
+                for (Entity entity : entityList) {
+                    Link navigationLink = entity.getNavigationLink(edmNavigationProperty.getName());
+                    EntityCollection entityCollection = navigationLink.getInlineEntitySet();
+                    Util.pageEntityCollection(entityCollection, skipValue, topValue);
+                }
             }
         } else {
             Map<String, Entity> subEntityMap = new HashMap<>();
@@ -597,7 +610,7 @@ public class OdataReader extends OfbizOdataProcessor {
                     if (relCondition != null) {
                         viewEntityCondition = new ModelViewEntity.ViewEntityCondition(modelViewEntity, null, false, false, null, currRel, null, relCondition);
                     }
-                    ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(lastRel, currRel, true, viewEntityCondition, currRelation.getKeyMaps());
+                    ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(lastRel, currRel, false, viewEntityCondition, currRelation.getKeyMaps());
                     dynamicViewEntity.addViewLink(modelViewLink);
                 }
                 Util.printDynamicView(dynamicViewEntity, null, module);

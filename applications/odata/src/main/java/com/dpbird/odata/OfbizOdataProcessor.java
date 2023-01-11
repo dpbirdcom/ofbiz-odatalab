@@ -1065,7 +1065,8 @@ public class OfbizOdataProcessor {
         if (isDefaultQuery(edmEntityType, edmNavigationProperty, edmProvider)) {
             Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
             Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", expandItem.getExpandOption(),
-                    "orderByOption", expandItem.getOrderByOption(), "selectOption", expandItem.getSelectOption(), "filterOption", expandItem.getFilterOption());
+                    "orderByOption", expandItem.getOrderByOption(), "selectOption", expandItem.getSelectOption(), "filterOption", expandItem.getFilterOption(),
+                    "skipOption", expandItem.getSkipOption(), "topOption", expandItem.getTopOption());
             if (edmNavigationProperty.isCollection()) {
                 ExpandOption nestedExpandOption = expandItem.getExpandOption();
                 if (nestedExpandOption == null && expandLevel > 1) {

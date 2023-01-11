@@ -1,7 +1,12 @@
 package com.dpbird.odata.edm;
 
 import com.dpbird.odata.OdataParts;
+import com.dpbird.odata.Util;
+import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelViewEntity;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
@@ -34,6 +39,12 @@ public class OdataOfbizEntity extends Entity {
 
 	public OdataOfbizEntity(OfbizCsdlEntityType csdlEntityType, GenericValue genericValue) {
 		super();
+		//在查询expand时查询出来的结果可能是view
+		if (UtilValidate.isNotEmpty(genericValue) && genericValue.getModelEntity() instanceof ModelViewEntity) {
+			Delegator delegator = genericValue.getDelegator();
+			ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+			genericValue = Util.convertToTargetGenericValue(genericValue.getDelegator(), genericValue, modelEntity);
+		}
 		this.genericValue = genericValue;
 		keyMap = genericValue.getPrimaryKey();
 		String draftEntityName = csdlEntityType.getDraftEntityName();
