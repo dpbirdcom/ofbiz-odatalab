@@ -405,7 +405,7 @@ public class OdataReader extends OfbizOdataProcessor {
             fieldNames.add(relKeyMap.getFieldName());
             relFieldNames.add(relKeyMap.getRelFieldName());
         }
-        Map<GenericValue, Entity> expandDataMap = new HashMap<>();
+        Map<GenericValue, Entity> expandDataMap = new LinkedHashMap<>();
         for (GenericValue genericValue : relatedList) {
             OdataOfbizEntity expandEntity = (OdataOfbizEntity) findResultToEntity(edmNavigationPropertyType, genericValue);
             expandDataMap.put(genericValue, expandEntity);
