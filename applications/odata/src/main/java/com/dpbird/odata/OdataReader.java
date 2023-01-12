@@ -1,16 +1,16 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
-import com.dpbird.odata.handler.*;
+import com.dpbird.odata.handler.EntityHandler;
+import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.handler.HandlerResults;
+import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityConditionList;
-import org.apache.ofbiz.entity.condition.EntityFieldMap;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
@@ -20,10 +20,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.ODataApplicationException;
-import org.apache.olingo.server.api.uri.UriInfo;
-import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
@@ -141,12 +138,6 @@ public class OdataReader extends OfbizOdataProcessor {
                 queryOptions, entities, locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), entities, this.edmEntityType);
-//            for (Entity entity : entities) {
-//                List<OdataParts> odataPartsList = new ArrayList<>();
-//                OdataParts odataParts = new OdataParts(edmEntitySet, edmEntityType, null, entity);
-//                odataPartsList.add(odataParts);
-//                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, this.edmEntityType, odataPartsList);
-//            }
         }
         return entityCollection;
     }

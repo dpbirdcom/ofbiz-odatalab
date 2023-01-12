@@ -40,9 +40,7 @@ public class FunctionProcessor extends OdataReader {
                     queryOptions, UtilMisc.toList(responseEntity), locale, userLogin);
         }
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-            List<OdataParts> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
-            expandResourceDataInfo.add(new OdataParts(null, returnEntityType, null, responseEntity));
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, returnEntityType, expandResourceDataInfo);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, returnEntityType);
         }
         return responseEntity;
     }
@@ -79,9 +77,7 @@ public class FunctionProcessor extends OdataReader {
         //expand
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
-                List<OdataParts> expandResourceDataInfo = new ArrayList<>(resourceDataInfoList);
-                expandResourceDataInfo.add(new OdataParts(null, returnEdmEntityType, uriResourceFunction, entity));
-                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, returnEdmEntityType, expandResourceDataInfo);
+                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, returnEdmEntityType);
             }
         }
         return entityCollection;

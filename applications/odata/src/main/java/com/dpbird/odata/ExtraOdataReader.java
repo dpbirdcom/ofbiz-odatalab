@@ -4,6 +4,7 @@ import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.condition.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
@@ -42,7 +43,10 @@ public class ExtraOdataReader extends OdataReader {
             return super.findList();
         }
         //OdataReader不能处理的QueryOption就用java实现，不支持太大的数据量
-        initPageValue();
+        int top = getTopOption(queryOptions);
+        int skip = getSkipOption(queryOptions);
+        queryOptions.remove("topOption");
+        queryOptions.remove("skipOption");
         EntityCollection entityCollection = super.findList();
         if (entityCollection.getEntities().size() > EXTRA_QUERY_MAX_RAW) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_IMPLEMENTED), "Current ODATA statements do not support querying entities with large amounts of data.");
@@ -50,7 +54,7 @@ public class ExtraOdataReader extends OdataReader {
         extraOdataFilter(entityCollection);
         extraOdataOrderBy(entityCollection);
         entityCollectionCount(entityCollection);
-        entityCollectionPage(entityCollection);
+        entityCollectionPage(entityCollection, top, skip);
         return entityCollection;
     }
 
@@ -161,15 +165,16 @@ public class ExtraOdataReader extends OdataReader {
      * count
      */
     private void entityCollectionCount(EntityCollection entityCollection) {
-        entityCollection.setCount(entityCollection.getEntities().size());
+        if (UtilValidate.isEmpty(entityCollection.getCount())) {
+            entityCollection.setCount(entityCollection.getEntities().size());
+        }
     }
 
     /**
      * 分页
      */
-    private void entityCollectionPage(EntityCollection entityCollection) {
-        retrieveFindOption();
-        Util.pageEntityCollection(entityCollection, skipValue, topValue);
+    private void entityCollectionPage(EntityCollection entityCollection, int top, int skip) {
+        Util.pageEntityCollection(entityCollection, skip, top);
     }
 
     /**
@@ -193,11 +198,6 @@ public class ExtraOdataReader extends OdataReader {
         }
         return true;
 
-    }
-
-    private void initPageValue() {
-        skipValue = 0;
-        topValue = MAX_ROWS;
     }
 
     @SuppressWarnings("unchecked")

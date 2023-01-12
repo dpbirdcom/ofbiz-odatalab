@@ -1,7 +1,7 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
-import com.dpbird.odata.handler.*;
+import com.dpbird.odata.handler.HandlerFactory;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -15,9 +15,7 @@ import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelRelation;
-import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -25,14 +23,15 @@ import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
-import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ServiceMetadata;
-import org.apache.olingo.server.api.uri.*;
+import org.apache.olingo.server.api.uri.UriInfoResource;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.UriResourceNavigation;
+import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
 import org.apache.olingo.server.api.uri.queryoption.*;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
@@ -51,7 +50,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 
@@ -338,7 +336,9 @@ public class OfbizOdataProcessor {
                 } else {
                     //普通字段search
                     ModelEntity currModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                    if (!currModelEntity.areFields(UtilMisc.toList(option))) continue;
+                    if (!currModelEntity.areFields(UtilMisc.toList(option))) {
+                        continue;
+                    }
                     searchProperties.add(option);
                 }
             }
@@ -367,7 +367,9 @@ public class OfbizOdataProcessor {
                 int arr = searchExpr.indexOf("]") + 1;
                 String arrStr = searchExpr.substring(0, arr);
                 subList.add(arrStr);
-                if (arrStr.equals(searchExpr)) break;
+                if (arrStr.equals(searchExpr)) {
+                    break;
+                }
                 searchExpr = searchExpr.substring(arr + 1);
             } else {
                 subList.add(substring);
@@ -521,7 +523,9 @@ public class OfbizOdataProcessor {
     }
 
     protected void retrieveOrderBy() throws OfbizODataException {
-        if (entityName == null) return;
+        if (entityName == null) {
+            return;
+        }
         OfbizCsdlEntityType csdlEntityType = null;
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("orderByOption") != null) {
             OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
@@ -850,7 +854,9 @@ public class OfbizOdataProcessor {
     }
 
     protected OdataOfbizEntity objectToEntity(FullQualifiedName fqn, Object object) throws OfbizODataException {
-        if (object == null) return null;
+        if (object == null) {
+            return null;
+        }
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(fqn);
         OdataOfbizEntity e1 = new OdataOfbizEntity();
         e1.setType(fqn.getFullQualifiedNameAsString());
@@ -872,7 +878,7 @@ public class OfbizOdataProcessor {
     }
 
 
-    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType, List<OdataParts> expandUriResourceInfo)
+    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType)
             throws OfbizODataException {
         if (expandOption == null) {
             return;
