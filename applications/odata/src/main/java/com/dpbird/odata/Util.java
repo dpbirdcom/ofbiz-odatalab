@@ -2269,6 +2269,10 @@ public class Util {
                     Timestamp v1 = (Timestamp) e1.getProperty(ob).getValue();
                     Timestamp v2 = (Timestamp) e2.getProperty(ob).getValue();
                     compare = desc ? v2.compareTo(v1) : v1.compareTo(v2);
+                } else if (type.contains("Int")) {
+                    Integer v1 = (Integer) e1.getProperty(ob).getValue();
+                    Integer v2 = (Integer) e2.getProperty(ob).getValue();
+                    compare = desc ? v2.compareTo(v1) : v1.compareTo(v2);
                 } else {
                     String v1 = (String) e1.getProperty(ob).getValue();
                     String v2 = (String) e2.getProperty(ob).getValue();
