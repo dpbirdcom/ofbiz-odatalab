@@ -323,6 +323,7 @@
 		<Property Name="height"/>
 		<Property Name="salutation"/>
 		<Property Name="maritalStatus"/>
+		<Property Name="birthDate"/>
 		<Property Name="gender" Type="Gender"/>
 		<Property Name="existingCustomer" Type="Boolean"/>
 		<NavigationProperty Name="Party" Type="Party" IsCollection="false" FilterByDate="false" Relations="Party"/>
@@ -343,9 +344,22 @@
 	<EntityType Name="PartyType" AutoProperties="true">
 		<NavigationProperty Name="Party" AutoBinding="true" FilterByDate="false"/>
 	</EntityType>
-	<EntityType Name="ContactMech" hasDerivedEntity="true" AutoProperties="true"/>
+	<EntityType Name="ContactMech" hasDerivedEntity="true" AutoProperties="true">
+		<NavigationProperty Name="PostalAddress"/>
+		<NavigationProperty Name="TelecomNumber"/>
+	</EntityType>
 	<EntityType Name="PostalAddress" BaseType="ContactMech" AutoProperties="true"/>
 	<EntityType Name="TelecomNumber" BaseType="ContactMech" AutoProperties="true"/>
+
+	<!-- 测试BaseType start-->
+	<EntityType Name="BaseContactMech" OfbizEntity="ContactMech" hasDerivedEntity="true" AutoProperties="true">
+		<NavigationProperty Name="DerivedPostalAddress" Type="DerivedPostalAddress" Relations="PostalAddress"/>
+		<NavigationProperty Name="DerivedTelecomNumber" Type="DerivedTelecomNumber" Relations="TelecomNumber"/>
+	</EntityType>
+	<EntityType Name="DerivedPostalAddress" OfbizEntity="PostalAddress" BaseType="BaseContactMech" AutoProperties="true"/>
+	<EntityType Name="DerivedTelecomNumber" OfbizEntity="TelecomNumber" BaseType="BaseContactMech" AutoProperties="true"/>
+	<!-- 测试BaseType end-->
+
 	<EntityType Name="Product" AutoAnnotations="true" AutoProperties="true"
 				Handler="component://odata/groovyScripts/demo/Product/generateEntityListFields.groovy"
 				SearchOption="ProductKeyword(keywordTypeId=KWT_KEYWORD)/keyword">
@@ -482,6 +496,7 @@
 		<Property Name="internalName"/>
 		<Property Name="brandName"/>
 		<Property Name="productName"/>
+		<Property Name="introductionDate" Type="Edm.Date"/>
 		<Property Name="semanticDecimal1" Type="BigDecimal" Scale="3"/>
 		<Property Name="semanticDecimal2" Type="BigDecimal" Scale="3"/>
 		<Property Name="semanticString1" Type="String"/>
@@ -497,6 +512,17 @@
 		<NavigationProperty Name="Product" Type="Product" IsCollection="true"/>
 		<NavigationProperty Name="Party" Type="Party" IsCollection="false"/>
 		<NavigationProperty Name="PartyInfo" Type="PartyInfo" AutoBinding="true" IsCollection="true"/>
+	</EntityType>
+	<EntityType Name="OpenProduct" OfbizEntity="Product" OpenType="true"
+				AttrEntityName="ProductAttribute"
+				AttrNumericEntityName="ProductAttributeNumeric"
+				AttrDateEntityName="ProductAttributeDate">
+		<Property Name="productId"/>
+		<Property Name="productTypeId"/>
+<!--		<Property Name="testOpen" Type="String"/>-->
+<!--		<Property Name="internalName"/>-->
+<!--		<Property Name="brandName"/>-->
+<!--		<Property Name="productName"/>-->
 	</EntityType>
 	<EntityType Name="GlAccountOrganization" AutoProperties="true"/>
 	<EntityType Name="PartyAcctgPreference" AutoProperties="true"/>
@@ -1083,6 +1109,7 @@
 		</EntitySet>
 		<EntitySet Name="PartyInfos" EntityType="PartyInfo"/>
 		<EntitySet Name="SimpleProducts" EntityType="SimpleProduct"/>
+		<EntitySet Name="OpenProducts" EntityType="OpenProduct"/>
 		<EntitySet Name="SimpleFacilities" EntityType="SimpleFacility"/>
 		<EntitySet Name="PartyTypes" EntityType="PartyType"/>
 		<EntitySet Name="ProductPriceTypes" EntityType="ProductPriceType"/>
@@ -1122,6 +1149,9 @@
 		<EntitySet Name="Enumerations" EntityType="Enumeration"/>
 		<EntitySet Name="Uoms" EntityType="Uom"/>
 		<EntitySet Name="UomTypes" EntityType="UomType"/>
+		<EntitySet Name="BaseContactMechs" EntityType="BaseContactMech"/>
+		<EntitySet Name="DerivedPostalAddresses" EntityType="DerivedPostalAddress"/>
+		<EntitySet Name="DerivedTelecomNumbers" EntityType="DerivedTelecomNumber"/>
 		<!--<EntitySet Name="PartyAndPersonAndPhones" EntityType="PartyAndPersonAndPhone">-->
 		<!--<NavigationPropertyBinding Path="Party" Target="Parties"/>-->
 		<!--</EntitySet>-->
@@ -1179,6 +1209,7 @@
 		<EntitySet Name="PostalAddresses" EntityType="PostalAddress">
 			<NavigationPropertyBinding Path="FacilityContactMech" Target="FacilityContactMechs"/>
 		</EntitySet>
+		<EntitySet Name="TelecomNumbers" EntityType="TelecomNumber"/>
 		<EntitySet Name="OrderRoles" EntityType="OrderRole"></EntitySet>
 		<EntitySet Name="OrderItemAttributes" EntityType="OrderItemAttribute"></EntitySet>
 		<EntitySet Name="OrderAdjustments" EntityType="OrderAdjustment"></EntitySet>

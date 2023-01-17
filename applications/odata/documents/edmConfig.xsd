@@ -67,6 +67,7 @@
             <xs:attribute name="AutoNavigations" type="xs:boolean"/>
             <xs:attribute name="HasStream" type="xs:boolean"/>
             <xs:attribute name="BaseType" type="xs:NCName"/>
+            <xs:attribute name="OpenType" type="xs:boolean"/>
             <xs:attribute name="EntityCondition"/>
             <xs:attribute name="GroupBy" type="xs:boolean"/>
             <xs:attribute name="Handler" type="xs:anyURI"/>

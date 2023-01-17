@@ -615,6 +615,11 @@ public class EdmConfigLoader {
         if ("true".equals(hasDerivedEntityAttr)) {
             hasDerivedEntity = true;
         }
+        boolean openType = false;
+        String openTypeString = entityTypeElement.getAttribute("OpenType");
+        if ("true".equals(openTypeString)) {
+            openType = true;
+        }
         boolean isAbstract = false;
         String isAbstractAttr = entityTypeElement.getAttribute("Abstract");
         if ("true".equals(isAbstractAttr)) {
@@ -694,6 +699,7 @@ public class EdmConfigLoader {
         csdlEntityType.setTerms(terms);
         csdlEntityType.setHasRelField(hasRelField);
         csdlEntityType.setRelAliases(relAliases);
+        csdlEntityType.setOpenType(openType);
         return csdlEntityType;
     }
 

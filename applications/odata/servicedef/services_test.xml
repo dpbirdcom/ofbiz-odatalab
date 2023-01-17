@@ -170,4 +170,15 @@ under the License.
 		<attribute name="attrNames" mode="IN" type="List" optional="false" />
 		<attribute name="attrValues" mode="IN" type="List" optional="false" />
 	</service>
+
+	<service name="dpbird.createDerivedTelecomNumber" default-entity-name="TelecomNumber" engine="entity-auto" invoke="create" auth="true">
+		<description>Create a tel</description>
+		<auto-attributes include="pk" mode="IN" optional="false"/>
+		<auto-attributes include="nonpk" mode="IN" optional="true"/>
+	</service>
+	<service name="dpbird.updateDerivedTelecomNumber" default-entity-name="TelecomNumber" engine="entity-auto" invoke="update" auth="true">
+		<description>Create a tel</description>
+		<auto-attributes include="pk" mode="IN" optional="false"/>
+		<auto-attributes include="nonpk" mode="IN" optional="true"/>
+	</service>
 </services>

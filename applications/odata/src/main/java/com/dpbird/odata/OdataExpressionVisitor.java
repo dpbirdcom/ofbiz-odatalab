@@ -4,11 +4,15 @@ import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
 import org.apache.ofbiz.base.util.Debug;
+import org.apache.ofbiz.base.util.UtilDateTime;
+import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntity;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.*;
+import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
@@ -16,6 +20,7 @@ import org.apache.olingo.commons.api.edm.EdmProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
+import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
@@ -23,6 +28,8 @@ import org.apache.olingo.server.api.uri.queryoption.expression.Enumeration;
 import org.apache.olingo.server.api.uri.queryoption.expression.*;
 import org.apache.olingo.server.core.uri.UriResourcePrimitivePropertyImpl;
 
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.*;
 
 public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
@@ -147,7 +154,15 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                             HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
                 }
             }
-            EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
+            if (leftEdmProperty.getType() instanceof EdmDate && rightValue != null) {
+                //如果数据库是dateTime类型 但metadata是Date类型 需要做转换
+                ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+                ModelField modelField = modelEntity.getField(leftEdmProperty.getName());
+                if ("date-time".equals(modelField.getType())) {
+                    return convertDateToTime(leftEdmProperty, (Date) rightValue, operator);
+                }
+            }
+            EntityComparisonOperator<?, ?> comparisonOperator = COMPARISONOPERATORMAP.get(operator);
             return EntityCondition.makeCondition(leftEdmProperty.getName(), comparisonOperator, rightValue == null ? GenericEntity.NULL_FIELD : rightValue);
         } else if (left instanceof EntityFunction) {
             //function的处理
@@ -543,4 +558,38 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     public DynamicViewHolder getDynamicViewHolder() {
         return dynamicViewHolder;
     }
+
+    /**
+     * 将一个Date条件转换为DateTime的区间查询
+     */
+    private EntityCondition convertDateToTime(EdmProperty edmProperty, Date date, BinaryOperatorKind operator) {
+        Timestamp timestamp = UtilDateTime.toTimestamp(date);
+        Timestamp dayStart = UtilDateTime.getDayStart(timestamp);
+        Timestamp dayEnd = UtilDateTime.getDayEnd(timestamp);
+        //大于等于开始时间条件
+        EntityCondition startCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN_EQUAL_TO, dayStart);
+        //大于等于结束时间条件
+        EntityCondition endCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN_EQUAL_TO, dayEnd);
+        if (operator.equals(BinaryOperatorKind.EQ)) {
+            return EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
+        } else if (operator.equals(BinaryOperatorKind.GT)) {
+            return EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN, dayEnd);
+        } else if (operator.equals(BinaryOperatorKind.GE)) {
+            EntityCondition gtCond =  EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN, dayEnd);
+            EntityCondition eqCond = EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
+            return EntityCondition.makeCondition(UtilMisc.toList(eqCond, gtCond), EntityOperator.OR);
+        } else if (operator.equals(BinaryOperatorKind.LT)) {
+            return EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
+        } else if (operator.equals(BinaryOperatorKind.LE)) {
+            EntityCondition ltCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
+            EntityCondition eqCond = EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
+            return EntityCondition.makeCondition(UtilMisc.toList(eqCond, ltCond), EntityOperator.OR);
+        } else if (operator.equals(BinaryOperatorKind.NE)) {
+            EntityCondition neStartCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
+            EntityCondition neEndCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN_EQUAL_TO, dayEnd);
+            return EntityCondition.makeCondition(UtilMisc.toList(neStartCond, neEndCond), EntityOperator.OR);
+        }
+        return null;
+    }
+
 }

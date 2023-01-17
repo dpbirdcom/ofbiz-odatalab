@@ -38,6 +38,7 @@ import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.ex.ODataRuntimeException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
+import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDateTimeOffset;
 import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
@@ -56,6 +57,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.*;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1415,9 +1417,14 @@ public class Util {
                 }
                 return value;
             }
-            return edmPrimitiveType.valueOfString(value, edmProperty.isNullable(),
+            Object resultValue = edmPrimitiveType.valueOfString(value, edmProperty.isNullable(),
                     edmProperty.getMaxLength(), edmProperty.getPrecision(), edmProperty.getScale(),
                     edmProperty.isUnicode(), javaClass);
+            if (resultValue instanceof GregorianCalendar) {
+                GregorianCalendar gc = (GregorianCalendar) resultValue;
+                resultValue = new Date(gc.getTime().getTime());
+            }
+            return resultValue;
         } catch (EdmPrimitiveTypeException e) {
             e.printStackTrace();
             throw new OfbizODataException(OfbizMapOdata.ERROR_CODE_ONE, "Invalid value: " + value + " for property: "
