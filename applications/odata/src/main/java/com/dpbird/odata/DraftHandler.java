@@ -335,28 +335,35 @@ public class DraftHandler {
                     return null;
                 }
             } else {
-                //主外键条件 有时候主外键对应的字段名并不一致(orderId->primaryOrderId),要做转换处理
-                EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
-                ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                ModelRelation relation = modelEntity.getRelation(csdlNavigationProperty.getName());
-                if (relation != null) {
-                    Map<String, Object> fkMapping = new HashMap<>();
-                    for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
-                        ModelKeyMap currModelKey = relation.findKeyMap(entry.getKey());
-                        if (UtilValidate.isNotEmpty(currModelKey)) {
-                            fkMapping.put(currModelKey.getRelFieldName(), entry.getValue());
-                        }
-                    }
-                    keyMapCondition = EntityCondition.makeCondition(fkMapping);
-                }
                 EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);
-                entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
+                //添加主外键条件，如果是多段relations应该不需要添加
+                //有时候主外键对应的字段名并不一致(orderId->primaryOrderId),要做转换处理
+                EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
+                if (relAlias.getRelations().size() == 1) {
+                    EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
+                    ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+                    ModelRelation relation = modelEntity.getRelation(csdlNavigationProperty.getName());
+                    if (relation != null) {
+                        Map<String, Object> fkMapping = new HashMap<>();
+                        for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
+                            ModelKeyMap currModelKey = relation.findKeyMap(entry.getKey());
+                            if (UtilValidate.isNotEmpty(currModelKey)) {
+                                fkMapping.put(currModelKey.getRelFieldName(), entry.getValue());
+                            }
+                        }
+                        keyMapCondition = EntityCondition.makeCondition(fkMapping);
+                    }
+                    entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
+                }
+                //query
                 draftGenericValues = delegator.findList(navDraftEntityName, entityCondition, null, null, null, false);
+                if (UtilValidate.isEmpty(draftGenericValues)) {
+                    return null;
+                }
                 if (UtilValidate.isNotEmpty(navKeyMap)) {
                     draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, navKeyMap);
                 }
                 draftGenericValue = EntityUtil.getFirst(draftGenericValues);
-
             }
         } catch (GenericEntityException e) {
             e.printStackTrace();
@@ -620,7 +627,7 @@ public class DraftHandler {
         }
         return result;
     }
-    
+
     public OdataOfbizEntity readEntityData(EdmEntityType edmEntityType, Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)
             throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
