@@ -9,6 +9,7 @@ import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.*;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
@@ -91,15 +92,6 @@ public class OdataProcessorHelper {
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         String sapContextId = (String) odataContext.get("sapContextId");
         GenericValue genericValue = null;
-        EntityCondition entityTypeCondition = csdlEntityType.getEntityCondition();
-        if (entityTypeCondition != null) {
-            String conditionStr = entityTypeCondition.toString();
-            conditionStr = StringUtil.replaceString(conditionStr, "'", "");
-            Map<String, String> conditionMap = StringUtil.strToMap(conditionStr, true);
-            if (UtilValidate.isNotEmpty(conditionMap)) {
-                keyMap.putAll(conditionMap);
-            }
-        }
         try {
             String entityNameToFind = getEntityNameToFind(csdlEntityType, sapContextId, edmProvider);
             Map<String, Object> conditionMap = keyMap;
@@ -111,8 +103,9 @@ public class OdataProcessorHelper {
                     conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
                 }
             }
-            List<GenericValue> genericValues = delegator.findByAnd(entityNameToFind, conditionMap, null, false);
-            genericValue = EntityUtil.getFirst(genericValues);
+            EntityCondition queryCondition = EntityCondition.makeCondition(conditionMap);
+            queryCondition = Util.appendCondition(queryCondition, csdlEntityType.getEntityCondition());
+            genericValue = EntityQuery.use(delegator).from(entityNameToFind).where(queryCondition).queryFirst();
         } catch (GenericEntityException e) {
             e.printStackTrace();
         }
