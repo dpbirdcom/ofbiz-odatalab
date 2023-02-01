@@ -17,6 +17,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
@@ -25,6 +26,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -540,8 +542,9 @@ public class ProcessorServices {
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntityContainer().getEntitySet(edmBindingTarget.getName());
-        Map<String, Object> entitySetConditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), userLogin);
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
+        Map<String, Object> entitySetConditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), userLogin);
+        Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
         String entityName = csdlEntityType.getOfbizEntity();
         String draftEntityName = csdlEntityType.getDraftEntityName();
         ModelEntity modelEntity = delegator.getModelEntity(entityName);
@@ -566,6 +569,9 @@ public class ProcessorServices {
         Map<String, Object> fieldMap = Util.retrieveFieldMap(delegator, actionParameters, csdlEntityType.getDraftEntityName());
         if (UtilValidate.isNotEmpty(entitySetConditionMap)) {
             fieldMap.putAll(entitySetConditionMap);
+        }
+        if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
+            fieldMap.putAll(entityTypeConditionMap);
         }
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
                 "draftEntityName", draftEntityName, "entityType", csdlEntityType.getName(),

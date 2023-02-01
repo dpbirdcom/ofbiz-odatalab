@@ -19,6 +19,7 @@ import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 
 public class OfbizCsdlEntityType extends CsdlEntityType {
     private String ofbizEntity;
+    private String entityConditionStr;
     private EntityCondition entityCondition;
     private String fullQualifiedNameString;
     private String labelPrefix;
@@ -45,11 +46,12 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum, boolean autoId,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
-                               EntityCondition entityCondition, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
+                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
         this.entityCondition = entityCondition;
+        this.entityConditionStr = entityConditionStr;
         this.fullQualifiedNameString = null;
         this.labelPrefix = labelPrefix;
         this.referencedEntitySet = null;
@@ -79,6 +81,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public void setOfbizEntity(String ofbizEntity) {
         this.ofbizEntity = ofbizEntity;
+    }
+
+    public String getEntityConditionStr() {
+        return entityConditionStr;
+    }
+
+    public void setEntityConditionStr(String entityConditionStr) {
+        this.entityConditionStr = entityConditionStr;
     }
 
     public EntityCondition getEntityCondition() {

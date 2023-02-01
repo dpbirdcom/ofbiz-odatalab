@@ -883,14 +883,9 @@ public class OdataProcessorHelper {
                         fieldMap.put("fromDate", UtilDateTime.nowTimestamp());
                     }
                 }
-                EntityCondition entityTypeCondition = csdlEntityType.getEntityCondition();
-                if (entityTypeCondition != null) {
-                    String conditionStr = entityTypeCondition.toString();
-                    conditionStr = StringUtil.replaceString(conditionStr, "'", "");
-                    Map<String, String> conditionMap = StringUtil.strToMap(conditionStr, true);
-                    if (UtilValidate.isNotEmpty(conditionMap)) {
-                        fieldMap.putAll(conditionMap);
-                    }
+                Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+                if(UtilValidate.isNotEmpty(entityTypeConditionMap)) {
+                    fieldMap.putAll(entityTypeConditionMap);
                 }
                 newGenericValue = createGenericValue(dispatcher, serviceName, csdlEntityType.getOfbizEntity(), fieldMap);
             } else {

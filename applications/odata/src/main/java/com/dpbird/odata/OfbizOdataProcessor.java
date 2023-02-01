@@ -602,7 +602,7 @@ public class OfbizOdataProcessor {
                         OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(lastCsdlEntityType.getOfbizEntity(), lastCsdlEntityType.getHandlerClass(), lastCsdlEntityType.isAutoProperties(),
                                 false, false, lastCsdlEntityType.isFilterByDate(), lastCsdlEntityType.getDraftEntityName(), lastCsdlEntityType.getAttrEntityName(),
                                 lastCsdlEntityType.getAttrNumericEntityName(), lastCsdlEntityType.getAttrDateEntityName(), false, lastCsdlEntityType.getEntityCondition(),
-                                lastCsdlEntityType.getLabelPrefix(), null, lastCsdlEntityType.isGroupBy(), lastCsdlEntityType.hasStream());
+                                lastCsdlEntityType.getEntityConditionStr(), lastCsdlEntityType.getLabelPrefix(), null, lastCsdlEntityType.isGroupBy(), lastCsdlEntityType.hasStream());
                         newCsdlEntity.setName(lastEntityAlias);
                         newCsdlEntity.setProperties(lastCsdlEntityType.getProperties());
                         //多段式的Attribute字段排序

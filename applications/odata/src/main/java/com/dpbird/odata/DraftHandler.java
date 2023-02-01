@@ -15,6 +15,7 @@ import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
@@ -334,8 +335,21 @@ public class DraftHandler {
                     return null;
                 }
             } else {
-                EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);
+                //主外键条件 有时候主外键对应的字段名并不一致(orderId->primaryOrderId),要做转换处理
                 EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
+                ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+                ModelRelation relation = modelEntity.getRelation(csdlNavigationProperty.getName());
+                if (relation != null) {
+                    Map<String, Object> fkMapping = new HashMap<>();
+                    for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
+                        ModelKeyMap currModelKey = relation.findKeyMap(entry.getKey());
+                        if (UtilValidate.isNotEmpty(currModelKey)) {
+                            fkMapping.put(currModelKey.getRelFieldName(), entry.getValue());
+                        }
+                    }
+                    keyMapCondition = EntityCondition.makeCondition(fkMapping);
+                }
+                EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);
                 entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
                 draftGenericValues = delegator.findList(navDraftEntityName, entityCondition, null, null, null, false);
                 if (UtilValidate.isNotEmpty(navKeyMap)) {

@@ -693,7 +693,7 @@ public class EdmConfigLoader {
         OfbizCsdlEntityType csdlEntityType = createEntityType(delegator, dispatcher, fullQualifiedName, ofbizEntity,
                 draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
                 csdlProperties, csdlNavigationProperties, csdlPropertyRefs, autoId, filterByDate, baseType, hasDerivedEntity,
-                excludeProperties, entityCondition, labelPrefix, locale, searchOption, groupBy, hasStream);
+                excludeProperties, entityCondition, entityConditionStr, labelPrefix, locale, searchOption, groupBy, hasStream);
         csdlEntityType.setAbstract(isAbstract);
         csdlEntityType.setAnnotations(csdlAnnotationList);
         csdlEntityType.setTerms(terms);
@@ -1996,7 +1996,7 @@ public class EdmConfigLoader {
                                                         List<CsdlNavigationProperty> csdlNavigationProperties,
                                                         List<CsdlPropertyRef> csdlPropertyRefs, boolean autoId, boolean filterByDate,
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
-                                                        EntityCondition entityCondition, String labelPrefix, Locale locale, String searchOption,
+                                                        EntityCondition entityCondition, String entityConditionStr, String labelPrefix, Locale locale, String searchOption,
                                                         boolean groupBy, boolean hasStream) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
@@ -2056,7 +2056,7 @@ public class EdmConfigLoader {
         }
         OfbizCsdlEntityType entityType = new OfbizCsdlEntityType(ofbizEntity, handlerClass, false,
                 false, autoId, filterByDate, draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName,
-                hadDerivedEntity, entityCondition, labelPrefix, searchOption, groupBy, hasStream);
+                hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream);
         if (UtilValidate.isNotEmpty(baseType)) {
             //有BaseType, Property里就不应该再有pk
             if (modelEntity != null) {
