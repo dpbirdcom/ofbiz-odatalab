@@ -863,6 +863,7 @@ public class EdmConfigLoader {
         String name = navigationPropertyElement.getAttribute("Name");
         String type = navigationPropertyElement.getAttribute("Type");
         String autoBindingAttr = navigationPropertyElement.getAttribute("AutoBinding");
+        String stickyReadOnlyAttr = navigationPropertyElement.getAttribute("ReadOnly");
         String relationName = name;
         ModelRelation modelRelation;
         if (UtilValidate.isEmpty(UtilXml.childElementList(navigationPropertyElement))) {
@@ -875,6 +876,10 @@ public class EdmConfigLoader {
         boolean autoBinding = true;
         if (UtilValidate.isNotEmpty(autoBindingAttr)) {
             autoBinding = Boolean.valueOf(autoBindingAttr);
+        }
+        boolean stickyReadOnly = false;
+        if (UtilValidate.isNotEmpty(stickyReadOnlyAttr)) {
+            stickyReadOnly = Boolean.valueOf(stickyReadOnlyAttr);
         }
         String relationType = null;
         if (modelRelation != null) {
@@ -920,6 +925,7 @@ public class EdmConfigLoader {
         navigationProperty.setCollection(isCollection);
         navigationProperty.setContainsTarget(containsTarget);
         navigationProperty.setRelAlias(relAlias);
+        navigationProperty.setReadOnly(stickyReadOnly);
         if (UtilValidate.isNotEmpty(midEntity)) {
             navigationProperty.setMidEntity(midEntity);
         }

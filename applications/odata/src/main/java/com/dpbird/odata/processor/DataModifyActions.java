@@ -451,11 +451,12 @@ public class DataModifyActions {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         List<CsdlNavigationProperty> csdlNavigationProperties = csdlEntityType.getNavigationProperties();
         for (CsdlNavigationProperty csdlNavigationProperty : csdlNavigationProperties) {
+            OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlNavigationProperty;
             OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
             String originNavEntityName = navCsdlEntityType.getOfbizEntity();
             String draftNavEntityName = navCsdlEntityType.getDraftEntityName();
             //navigation没有draft或者navigation是主对象，不创建
-            if (draftNavEntityName == null || draftNavEntityName.equals(mainEntityDraftName)) {
+            if (draftNavEntityName == null || draftNavEntityName.equals(mainEntityDraftName) || ofbizCsdlNavigationProperty.isReadOnly()) {
                 continue;
             }
             EdmNavigationProperty edmNavigationProperty = edmEntityType.getNavigationProperty(csdlNavigationProperty.getName());

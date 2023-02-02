@@ -22,6 +22,7 @@ import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
@@ -257,16 +258,16 @@ public class ProcessorServices {
         GenericValue mainDraftAdminData = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", sapContextId), false);
         if (!mainDraftAdminData.getString("draftEntityName").equals(draftEntityName)) {
             List<GenericValue> subDraftAdminDataList = delegator.findByAnd("DraftAdministrativeData", UtilMisc.toMap("parentDraftUUID", sapContextId, "draftEntityName", draftEntityName), null, false);
-            List<String> subDraftUUIDs = new ArrayList<>();
-            for (GenericValue subDraftAdminData : subDraftAdminDataList) {
-                subDraftUUIDs.add(subDraftAdminData.getString("draftUUID"));
-            }
+            List<String> subDraftUUIDs = EntityUtil.getFieldListFromEntityList(subDraftAdminDataList, "draftUUID", false);
             List<GenericValue> draftGenericValues = delegator.findByAnd(draftEntityName, keyMap, null, false);
             for (GenericValue possibleDraftGenericValue : draftGenericValues) {
                 if (subDraftUUIDs.contains(possibleDraftGenericValue.getString("draftUUID"))) {
                     draftGenericValue = possibleDraftGenericValue;
                     break;
                 }
+            }
+            if (draftGenericValue == null) {
+                draftGenericValue = EntityQuery.use(delegator).from(draftEntityName).where(keyMap).queryFirst();
             }
         } else {
             draftGenericValue = delegator.findOne(draftEntityName, UtilMisc.toMap("draftUUID", sapContextId), false);

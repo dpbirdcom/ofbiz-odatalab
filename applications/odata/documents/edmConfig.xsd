@@ -106,6 +106,7 @@
             <xs:attribute name="Relations"/>
             <xs:attribute name="RemoveService" type="xs:NCName"/>
             <xs:attribute name="Type" type="xs:NCName"/>
+            <xs:attribute name="ReadOnly" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="EnumType">

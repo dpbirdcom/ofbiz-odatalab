@@ -19,6 +19,7 @@ public class OfbizCsdlNavigationProperty extends CsdlNavigationProperty {
     private String removeService;
     private String relOne;
     private String relTwo;
+    private boolean readOnly;
     private EntityTypeRelAlias relAlias;
     private String handler;
 
@@ -116,5 +117,13 @@ public class OfbizCsdlNavigationProperty extends CsdlNavigationProperty {
 
     public void setHandler(String handler) {
         this.handler = handler;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
     }
 }
