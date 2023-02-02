@@ -24,6 +24,7 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.*;
@@ -477,8 +478,9 @@ public class DraftHandler {
         DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, edmEntityType);
         Map<String, QueryOption> queryOptions = UtilMisc.toMap("expandOption", nestedExpandOption);
         Map<String, Object> keyMap = Util.getKeyMapFromEntity(edmProvider, entity);
+        OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-        if (navCsdlEntityType.getDraftEntityName() != null && entity.getKeyMap().containsKey("draftUUID")) {
+        if (navCsdlEntityType.getDraftEntityName() != null && entity.getKeyMap().containsKey("draftUUID") && !csdlNavigationProperty.isReadOnly()) {
             return draftHandler.findRelatedEntityCollection(csdlEntityType, keyMap, edmNavigationProperty, queryOptions);
         } else {
             try {

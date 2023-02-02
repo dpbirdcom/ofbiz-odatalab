@@ -3,6 +3,7 @@ package com.dpbird.odata.processor;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
+import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -123,13 +124,14 @@ public class UriResourceProcessor {
         OdataOfbizEntity entity = (OdataOfbizEntity) odataParts.getEntityData();
         EdmEntityType edmEntityType = odataParts.getEdmEntityType();
         OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) ofbizCsdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
         EdmEntitySet navigationTargetEntitySet = null;
         if (odataParts.getEdmBindingTarget() != null) {
             navigationTargetEntitySet = Util.getNavigationTargetEntitySet(odataParts.getEdmBindingTarget(), edmNavigationProperty);
         }
         OdataParts currentUriResourceData = new OdataParts(navigationTargetEntitySet, navigationEntityType, uriResource, null);
         boolean isCollection = resourceIsCollection(odataParts.getUriResource(), uriResource, edmProvider);
-        if (sapContextId != null && UtilValidate.isNotEmpty(navCsdlEntityType.getDraftEntityName())) {
+        if (sapContextId != null && UtilValidate.isNotEmpty(navCsdlEntityType.getDraftEntityName()) && !csdlNavigationProperty.isReadOnly()) {
             //draft
             DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
             if (isCollection && UtilValidate.isEmpty(navigationPrimaryKey)) {
