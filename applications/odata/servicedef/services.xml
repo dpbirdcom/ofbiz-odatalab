@@ -107,6 +107,8 @@ under the License.
         <attribute name="originEntityName" type="String" mode="IN"/>
         <attribute name="draftEntityName" type="String" mode="IN"/>
         <attribute name="entityType" type="String" mode="IN"/>
+        <attribute name="edmProvider" type="com.dpbird.odata.OfbizAppEdmProvider" mode="IN"/>
+        <attribute name="edmEntityType" type="org.apache.olingo.commons.api.edm.EdmEntityType" mode="IN"/>
         <attribute name="navigationProperty" type="String" mode="IN" optional="true"/>
         <attribute name="fieldMap" type="Map" mode="IN"/>
         <attribute name="sapContextId" type="String" mode="IN"/>

@@ -5,6 +5,7 @@ import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntitySet;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
+import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.processor.DataModifyActions;
@@ -89,7 +90,7 @@ public class ProcessorServices {
         Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin);
         if (UtilValidate.isNotEmpty(sapContextId)) {
             DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, edmBindingTarget.getEntityType());
-            createdEntity = draftHandler.createRelatedEntityData(entity.getKeyMap(), entityToWrite, edmNavigationProperty.getName());
+            createdEntity = draftHandler.createRelatedEntityData(entity.getKeyMap(), entityToWrite, edmNavigationProperty);
         } else {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget,
                     "edmNavigationProperty", edmNavigationProperty, "entityToWrite", entityToWrite);
@@ -289,6 +290,8 @@ public class ProcessorServices {
         String entityName = (String) context.get("originEntityName");
         String draftEntityName = (String) context.get("draftEntityName");
         String entityTypeFqn = (String) context.get("entityType");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) context.get("edmProvider");
+        EdmEntityType edmEntityType = (EdmEntityType) context.get("edmEntityType");
         String navigationProperty = (String) context.get("navigationProperty");
         Map<String, Object> result = ServiceUtil.returnSuccess();
 
@@ -343,9 +346,9 @@ public class ProcessorServices {
             noPkFieldMap.put("isActiveEntity", "N");
             noPkFieldMap.put("hasActiveEntity", "N");
             noPkFieldMap.put("hasDraftEntity", "Y");
-            draftGenericValue = delegator.makeValue(draftEntityName, pkFieldMap);
-            draftGenericValue.putAll(noPkFieldMap);
-            draftGenericValue.create();
+            //通过接口实例创建
+            EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
+            draftGenericValue = entityHandler.createToDraft(delegator, entityName, draftEntityName, pkFieldMap, noPkFieldMap);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             return ServiceUtil.returnError(e.getMessage());
@@ -576,7 +579,8 @@ public class ProcessorServices {
         }
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
                 "draftEntityName", draftEntityName, "entityType", csdlEntityType.getName(),
-                "fieldMap", fieldMap, "sapContextId", sapContextId, "userLogin", userLogin);
+                "fieldMap", fieldMap, "sapContextId", sapContextId, "edmProvider", edmProvider,
+                "edmEntityType", edmBindingTarget.getEntityType(), "userLogin", userLogin);
         Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createEntityToDraft", serviceParams);
         GenericValue draftGenericValue = (GenericValue) serviceResult.get("draftGenericValue");
         return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, null,

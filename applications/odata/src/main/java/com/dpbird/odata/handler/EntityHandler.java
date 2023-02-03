@@ -1,6 +1,8 @@
 package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
+import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
@@ -81,6 +83,17 @@ public interface EntityHandler {
      */
     void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
                 Map<String, Object> deleteParam) throws OfbizODataException;
+
+    /**
+     * 创建draft数据
+     *
+     * @param entityName entityName
+     * @param draftEntityName draftEntityName
+     * @param fieldMap 所有要插入的字段
+     * @return 返回已创建的这条数据
+     */
+    GenericValue createToDraft(Delegator delegator, String entityName, String draftEntityName, Map<String, Object> primaryKey, Map<String, Object> fieldMap)
+            throws OfbizODataException;
 
 
 }

@@ -8,6 +8,7 @@ import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.ModelEntity;
@@ -196,4 +197,18 @@ public class DefaultEntityHandler implements EntityHandler {
             }
         }
     }
+
+    @Override
+    public GenericValue createToDraft(Delegator delegator, String entityName, String draftEntityName, Map<String, Object> primaryKey, Map<String, Object> fieldMap) throws OfbizODataException {
+        try {
+            GenericValue draftGenericValue = delegator.makeValue(draftEntityName, primaryKey);
+            draftGenericValue.putAll(fieldMap);
+            draftGenericValue.create();
+            return draftGenericValue;
+        } catch (GenericEntityException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
 }

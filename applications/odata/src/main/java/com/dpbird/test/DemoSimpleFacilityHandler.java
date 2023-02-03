@@ -1,6 +1,7 @@
 package com.dpbird.test;
 
 import com.dpbird.odata.OfbizODataException;
+import com.dpbird.odata.handler.DefaultEntityHandler;
 import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerResults;
 import org.apache.ofbiz.entity.Delegator;
@@ -21,7 +22,7 @@ import java.util.Map;
 /**
  * @date 2022/11/7
  */
-public class DemoSimpleFacilityHandler implements EntityHandler {
+public class DemoSimpleFacilityHandler extends DefaultEntityHandler {
     @Override
     public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) throws OfbizODataException {
         try {
@@ -42,27 +43,6 @@ public class DemoSimpleFacilityHandler implements EntityHandler {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
-    }
-
-    @Override
-    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> create(Entity entityToWrite, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> update(Map<String, Object> primaryKey, Entity entityToWrite, Map<String, Object> odataContext,
-                                      EdmBindingTarget edmBindingTarget, Map<String, Object> createParam) {
-        return null;
-    }
-
-    @Override
-    public void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> deleteParam) throws OfbizODataException {
-
     }
 
 

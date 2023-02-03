@@ -109,7 +109,7 @@ public class DraftHandler {
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
                 "fieldMap", fieldMap, "sapContextId", sapContextId,
                 "draftEntityName", draftEntityName, "entityType", csdlEntityType.getFullQualifiedNameString(),
-                "userLogin", userLogin);
+                "userLogin", userLogin, "edmProvider", edmProvider, "edmEntityType", edmEntityType);
         Map<String, Object> result;
         try {
             result = dispatcher.runSync("dpbird.createEntityToDraft", serviceParams);
@@ -123,9 +123,10 @@ public class DraftHandler {
         return createdEntity;
     }
 
-    public OdataOfbizEntity createRelatedEntityData(Map<String, Object> keyMap, Entity entityToWrite, String navigationPropertyName)
+    public OdataOfbizEntity createRelatedEntityData(Map<String, Object> keyMap, Entity entityToWrite, EdmNavigationProperty edmNavigationProperty)
             throws OfbizODataException {
         String entityName = csdlEntityType.getOfbizEntity();
+        String navigationPropertyName = edmNavigationProperty.getName();
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
         OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
         String nestedEntityName = nestedCsdlEntityType.getOfbizEntity();
@@ -160,8 +161,8 @@ public class DraftHandler {
 
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", nestedEntityName,
                 "fieldMap", fieldMap, "sapContextId", this.sapContextId,
-                "draftEntityName", nestedDraftEntityName,
-                "entityType", nestedCsdlEntityType.getFullQualifiedNameString(),
+                "draftEntityName", nestedDraftEntityName, "edmProvider", edmProvider,
+                "entityType", nestedCsdlEntityType.getFullQualifiedNameString(), "edmEntityType", edmNavigationProperty.getType(),
                 "navigationProperty", navigationPropertyName, "userLogin", userLogin);
         Map<String, Object> result = null;
         try {
