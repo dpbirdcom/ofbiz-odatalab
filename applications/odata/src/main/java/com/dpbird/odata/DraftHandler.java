@@ -343,7 +343,7 @@ public class DraftHandler {
                 if (relAlias.getRelations().size() == 1) {
                     EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
                     ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                    ModelRelation relation = modelEntity.getRelation(csdlNavigationProperty.getName());
+                    ModelRelation relation = modelEntity.getRelation(relAlias.getRelations().get(0));
                     if (relation != null) {
                         Map<String, Object> fkMapping = new HashMap<>();
                         for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
