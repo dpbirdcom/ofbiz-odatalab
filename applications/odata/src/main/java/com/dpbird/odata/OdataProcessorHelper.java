@@ -1616,7 +1616,28 @@ public class OdataProcessorHelper {
             }
             String createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
             Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
-            createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+            ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(entityName);
+            List<String> pkFieldNames = modelEntity.getPkFieldNames();
+            //如果当前主键完整并且已经存在这条数据就不再创建
+            Map<String, Object> primaryKey = new HashMap<>();
+            boolean containsKey = true;
+            for (String pkFieldName : pkFieldNames) {
+                Object value = serviceParams.get(pkFieldName);
+                if (UtilValidate.isEmpty(value)) {
+                    containsKey = false;
+                    continue;
+                }
+                primaryKey.put(pkFieldName, serviceParams.get(pkFieldName));
+            }
+            GenericValue existGenericValue = null;
+            if (containsKey) {
+                existGenericValue = dispatcher.getDelegator().findOne(entityName, primaryKey, false);
+            }
+            if (UtilValidate.isNotEmpty(existGenericValue)) {
+                createdGenericValue = existGenericValue;
+            } else {
+                createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+            }
             if (destGenericValue == null) { // 第一个产生的createdGenericValue，就是目标GenericValue，要返回
                 destGenericValue = createdGenericValue;
             }
