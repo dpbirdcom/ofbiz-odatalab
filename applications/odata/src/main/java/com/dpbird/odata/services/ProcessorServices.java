@@ -516,7 +516,7 @@ public class ProcessorServices {
                 entityTypeFqn, keyMap, navigationProperty, userLogin);
     }
 
-    private static GenericValue createDraftAdminData(Delegator delegator, String draftUUID, String parentDraftUUID,
+    public static GenericValue createDraftAdminData(Delegator delegator, String draftUUID, String parentDraftUUID,
                                                      String originEntityName, String draftEntityName, String entityType,
                                                      Map<String, Object> keyMap, String navigationProperty,
                                                      GenericValue userLogin)
