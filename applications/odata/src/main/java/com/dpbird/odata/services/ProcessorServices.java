@@ -90,7 +90,7 @@ public class ProcessorServices {
         Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin);
         if (UtilValidate.isNotEmpty(sapContextId)) {
             DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, edmBindingTarget.getEntityType());
-            createdEntity = draftHandler.createRelatedEntityData(entity.getKeyMap(), entityToWrite, edmNavigationProperty);
+            createdEntity = draftHandler.createRelatedEntityData(entity, entityToWrite, edmNavigationProperty);
         } else {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget,
                     "edmNavigationProperty", edmNavigationProperty, "entityToWrite", entityToWrite);

@@ -1811,7 +1811,9 @@ public class Util {
         while (it.hasNext()) {
             Map.Entry<String, Object> entry = it.next();
             String relatedFieldName = getRelatedFieldName(delegator, entityName, csdlNavigationProperty, entry.getKey());
-            relatedFieldMap.put(relatedFieldName, entry.getValue());
+            if (relatedFieldName != null) {
+                relatedFieldMap.put(relatedFieldName, entry.getValue());
+            }
         }
         return relatedFieldMap;
     }
