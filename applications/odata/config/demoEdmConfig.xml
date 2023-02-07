@@ -886,6 +886,11 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Edm.String"/>
 	</Function>
+	<Function Name="testBoundCollectionFunctionPrimitive" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundCollectionFunctionPrimitive">
+		<Parameter Name="partyRole" Type="PartyRole" Nullable="false" IsCollection="true"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Function>
 	<Function Name="testBoundSetFunctionOdataQuery" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionOdataQuery">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
@@ -1091,6 +1096,24 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Party"/>
 	</Function>
+
+	<Action Name="testBoundCollectionActionPrimitive" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundCollectionActionPrimitive">
+		<Parameter Name="partyRole" Type="PartyRole" Nullable="false" IsCollection="true"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
+
+	<Action Name="testBoundSetActionComplexParam" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionComplexParam">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="testComplex" Type="TestComplexProperty" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
+
+	<Action Name="testBoundSetActionComplexCollectionParam" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionComplexCollectionParam">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="testComplex" Type="TestComplexProperty" Nullable="true" IsCollection="true"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
 
 	<ComplexType Name="MimeType" OfbizClass="com.dpbird.odata.complexType.upload.MimeType">
 		<Property Name="title" Type="String" Nullable="true"/>
