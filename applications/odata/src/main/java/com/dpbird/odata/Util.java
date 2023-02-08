@@ -1,6 +1,7 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
+import com.dpbird.odata.services.ProcessorServices;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpEntity;
@@ -33,6 +34,7 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
@@ -2321,6 +2323,7 @@ public class Util {
 
     /**
      * 判断是否是数据库不支持的orderby 比如语义化字段
+     *
      * @param orderByOption
      * @param csdlEntityType
      * @return
@@ -2359,6 +2362,38 @@ public class Util {
             return Boolean.FALSE;
         } else {
             throw new OfbizODataException("getBoolean could not map the String '" + value + "' to Boolean type");
+        }
+    }
+
+    /**
+     * 创建一条Draft数据
+     *
+     * @param parentDraftId 父级draftUUID
+     * @param primaryKey 当前要创建的主键
+     * @param navigationName Navigation Name
+     */
+    public static GenericValue createDraftData(Map<String, Object> oDataContext, String parentDraftId,
+                                                Map<String, Object> primaryKey, String navigationName,
+                                               Map<String, Object> fields) throws OfbizODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        try {
+            //创建DraftAdmin
+            GenericValue parentDraftValue = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", parentDraftId), false);
+            OfbizCsdlEntityType parentCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(parentDraftValue.getString("entityType")));
+            CsdlNavigationProperty navigationProperty = parentCsdlEntityType.getNavigationProperty(navigationName);
+            OfbizCsdlEntityType currCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+            String newDraftId = Util.generateDraftUUID();
+            ProcessorServices.createDraftAdminData(delegator, newDraftId, parentDraftId, currCsdlEntityType,
+                    primaryKey, navigationName, userLogin);
+
+            //创建Draft
+            fields.putAll(UtilMisc.toMap("isActiveEntity", "N", "hasActiveEntity", "N", "hasDraftEntity", "Y", "draftUUID", newDraftId));
+            return delegator.create(currCsdlEntityType.getDraftEntityName(), fields);
+        } catch (GenericEntityException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
