@@ -471,8 +471,6 @@ public class ProcessorServices {
             String draftEntityName = draftAdminData.getString("draftEntityName");
             OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) context.get("entity");
             Map<String, Object> entityMap = Util.entityToMap(odataOfbizEntity);
-            // id只有这个CsdlEntityType是AutoId对情况下才会出现
-            entityMap.remove("id");
             Map<String, Object> fieldMap = new HashMap<>();
             fieldMap.put("draftUUID", draftUUID);
             List<GenericValue> oldDraftGenericValues = delegator.findByAnd(draftEntityName, fieldMap, null, false);
@@ -604,7 +602,7 @@ public class ProcessorServices {
         if (ofbizEntity == null) {
             throw new OfbizODataException("The entity to edit was not found.", String.valueOf(HttpStatus.SC_NOT_FOUND));
         }
-        Map<String, Object> keyMap = ofbizEntity.getKeyMap();
+        Map<String, Object> keyMap = new HashMap<>(ofbizEntity.getKeyMap());
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         String draftEntityName = csdlEntityType.getDraftEntityName();

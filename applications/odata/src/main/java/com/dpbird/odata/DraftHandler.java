@@ -73,12 +73,7 @@ public class DraftHandler {
     public OdataOfbizEntity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite)
             throws OfbizODataException {
         GenericValue draftGenericValue = null;
-        Map<String, Object> fieldMap;
-        if (csdlEntityType.isAutoId()) {
-            fieldMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
-        } else {
-            fieldMap = new HashMap<>(keyMap);
-        }
+        Map<String, Object> fieldMap = new HashMap<>(keyMap);
         fieldMap.putAll(Util.entityToMap(entityToWrite));
 
         String entityName = csdlEntityType.getOfbizEntity();
@@ -135,7 +130,7 @@ public class DraftHandler {
         String nestedDraftEntityName = nestedCsdlEntityType.getDraftEntityName();
 
         Map<String, Object> fieldMap = Util.entityToMap(entityToWrite);
-        if (keyMap.size() == 1 && (keyMap.get("id") != null || keyMap.get("draftUUID") != null)){
+        if (keyMap.size() == 1 && (keyMap.get("id") != null || keyMap.get("draftUUID") != null)) {
             //三段式创建draft数据，要拿第二段的id给第三段当parentUUID
             String draftUUId = keyMap.get("draftUUID") != null ? (String) keyMap.get("draftUUID") : (String) keyMap.get("id");
             try {
@@ -174,21 +169,12 @@ public class DraftHandler {
             throw new OfbizODataException(e.getMessage());
         }
         GenericValue nestedGenericValue = (GenericValue) result.get("draftGenericValue");
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
-        if (nestedCsdlEntityType.isAutoId()) {
-            try {
-                entity = (OdataOfbizEntity) OdataProcessorHelper.procEntityWithAutoId(true, delegator, nestedCsdlEntityType, entity);
-            } catch (GenericEntityException e) {
-                e.printStackTrace();
-                throw new OfbizODataException(e.getMessage());
-            }
-        }
-        return entity;
+        return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
     }
 
     public EntityCollection findRelatedEntityCollection(OfbizCsdlEntityType csdlEntityType, Map<String, Object> keyMap,
                                                         EdmNavigationProperty edmNavigationProperty,
-                                                        Map<String, QueryOption> queryOptions) throws OfbizODataException{
+                                                        Map<String, QueryOption> queryOptions) throws OfbizODataException {
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
         String navEntityType = csdlNavigationProperty.getType();
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
@@ -203,22 +189,19 @@ public class DraftHandler {
         GenericValue mainDraftGenericValue;
         try {
             // find main draft entity
-            EntityCondition entityCondition;
-            if (csdlEntityType.isAutoId() && keyMap.keySet().contains("id")) {
-                mainDraftGenericValue = delegator.findOne(draftEntityName, UtilMisc.toMap("draftUUID", keyMap.get("id")), false);
-            } else {
-                mainDraftAdminDataList = delegator.findByAnd("DraftAdministrativeData",
-                        UtilMisc.toMap("entityType", entityType, "draftEntityName", draftEntityName),
-                        null, false);
-                List<String> mainDraftUUIDs = EntityUtil.getFieldListFromEntityList(mainDraftAdminDataList, "draftUUID", true);
-                mainDraftUUIDs = filterDraftUUIDsByMatchingSapContextId(mainDraftUUIDs);
-                entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, mainDraftUUIDs);
-                EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
-                entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
-                mainDraftGenericValues = delegator.findList(draftEntityName, entityCondition, null, null, null, false);
-                mainDraftGenericValue = EntityUtil.getFirst(mainDraftGenericValues);
+            mainDraftAdminDataList = delegator.findByAnd("DraftAdministrativeData",
+                    UtilMisc.toMap("entityType", entityType, "draftEntityName", draftEntityName),
+                    null, false);
+            List<String> mainDraftUUIDs = EntityUtil.getFieldListFromEntityList(mainDraftAdminDataList, "draftUUID", true);
+            mainDraftUUIDs = filterDraftUUIDsByMatchingSapContextId(mainDraftUUIDs);
+            EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, mainDraftUUIDs);
+            EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
+            entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
+            mainDraftGenericValues = delegator.findList(draftEntityName, entityCondition, null, null, null, false);
+            mainDraftGenericValue = EntityUtil.getFirst(mainDraftGenericValues);
+            if (mainDraftGenericValue == null) {
+                return new EntityCollection();
             }
-            if (mainDraftGenericValue == null) return new EntityCollection();
             mainDraftAdminData = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", mainDraftGenericValue.get("draftUUID")), false);
             String mainDraftParentUUID = mainDraftAdminData.getString("parentDraftUUID");
 
@@ -235,7 +218,7 @@ public class DraftHandler {
             List<String> draftUUIDs = EntityUtil.getFieldListFromEntityList(navDraftAdminDataList, "draftUUID", true);
             draftUUIDs = filterDraftUUIDsByMatchingSapContextId(draftUUIDs);
             if (isReverse) {
-                for (String draftUUID:draftUUIDs) {
+                for (String draftUUID : draftUUIDs) {
                     if (draftUUID.equals(mainDraftParentUUID)) {
                         GenericValue navGenericValue = delegator.findOne(navDraftEntityName, UtilMisc.toMap("draftUUID", draftUUID), false);
                         navDraftGenericValues.add(navGenericValue);
@@ -270,14 +253,9 @@ public class DraftHandler {
         }
         EntityCollection entityCollection = new EntityCollection();
         List<Entity> entityList = entityCollection.getEntities();
-        if (navDraftGenericValues != null) {
-            for (GenericValue elementGV : navDraftGenericValues) {
-                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, elementGV, locale);
-                if (navCsdlEntityType.isAutoId()) {
-                    rowEntity = procEntityWithAutoId(elementGV, rowEntity);
-                }
-                entityList.add(rowEntity);
-            }
+        for (GenericValue elementGV : navDraftGenericValues) {
+            OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, elementGV, locale);
+            entityList.add(rowEntity);
         }
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
             for (Entity entity : entityList) {
@@ -293,17 +271,7 @@ public class DraftHandler {
         return entityCollection;
     }
 
-    private static OdataOfbizEntity procEntityWithAutoId (GenericValue draftGenericValue,
-                                                OdataOfbizEntity entity) {
-        String id = draftGenericValue.getString("draftUUID");
-        entity.addProperty(new Property(null, "id", ValueType.PRIMITIVE, id));
-        return entity;
-    }
-
     public void deleteEntityData(Map<String, Object> keyMap) throws OfbizODataException {
-        if (csdlEntityType.isAutoId()) {
-            keyMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
-        }
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", csdlEntityType.getOfbizEntity(),
                 "draftEntityName", csdlEntityType.getDraftEntityName(), "keyMap", keyMap,
                 "sapContextId", sapContextId, "userLogin", userLogin);
@@ -331,52 +299,40 @@ public class DraftHandler {
                     UtilMisc.toMap("parentDraftUUID", sapContextId, "navigationProperty", edmNavigationProperty.getName(), "entityType", navEntityType),
                     null, false);
             List<String> draftUUIDs = EntityUtil.getFieldListFromEntityList(draftAdminDataList, "draftUUID", true);
-            if (navCsdlEntityType.isAutoId()) { // 主键就是id，并且值就是draftUUID
-                String id = (String) navKeyMap.get("id");
-                if (draftUUIDs.contains(id)) {
-                    draftGenericValue = delegator.findOne(navDraftEntityName, UtilMisc.toMap("draftUUID", id), false);
-                } else {
-                    return null;
-                }
-            } else {
-                EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);
-                //添加主外键条件，如果是多段relations应该不需要添加
-                //有时候主外键对应的字段名并不一致(orderId->primaryOrderId),要做转换处理
-                EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-                if (relAlias.getRelations().size() == 1) {
-                    EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
-                    ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                    ModelRelation relation = modelEntity.getRelation(relAlias.getRelations().get(0));
-                    if (relation != null) {
-                        Map<String, Object> fkMapping = new HashMap<>();
-                        for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
-                            ModelKeyMap currModelKey = relation.findKeyMap(entry.getKey());
-                            if (UtilValidate.isNotEmpty(currModelKey)) {
-                                fkMapping.put(currModelKey.getRelFieldName(), entry.getValue());
-                            }
+            EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);
+            //添加主外键条件，如果是多段relations应该不需要添加
+            //有时候主外键对应的字段名并不一致(orderId->primaryOrderId),要做转换处理
+            EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
+            if (relAlias.getRelations().size() == 1) {
+                EntityCondition keyMapCondition = EntityCondition.makeCondition(keyMap);
+                ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+                ModelRelation relation = modelEntity.getRelation(relAlias.getRelations().get(0));
+                if (relation != null) {
+                    Map<String, Object> fkMapping = new HashMap<>();
+                    for (Map.Entry<String, Object> entry : keyMap.entrySet()) {
+                        ModelKeyMap currModelKey = relation.findKeyMap(entry.getKey());
+                        if (UtilValidate.isNotEmpty(currModelKey)) {
+                            fkMapping.put(currModelKey.getRelFieldName(), entry.getValue());
                         }
-                        keyMapCondition = EntityCondition.makeCondition(fkMapping);
                     }
-                    entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
+                    keyMapCondition = EntityCondition.makeCondition(fkMapping);
                 }
-                //query
-                draftGenericValues = delegator.findList(navDraftEntityName, entityCondition, null, null, null, false);
-                if (UtilValidate.isEmpty(draftGenericValues)) {
-                    return null;
-                }
-                if (UtilValidate.isNotEmpty(navKeyMap)) {
-                    draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, navKeyMap);
-                }
-                draftGenericValue = EntityUtil.getFirst(draftGenericValues);
+                entityCondition = EntityCondition.makeCondition(entityCondition, EntityJoinOperator.AND, keyMapCondition);
             }
+            //query
+            draftGenericValues = delegator.findList(navDraftEntityName, entityCondition, null, null, null, false);
+            if (UtilValidate.isEmpty(draftGenericValues)) {
+                return null;
+            }
+            if (UtilValidate.isNotEmpty(navKeyMap)) {
+                draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, navKeyMap);
+            }
+            draftGenericValue = EntityUtil.getFirst(draftGenericValues);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
         OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, draftGenericValue, locale);
-        if (navCsdlEntityType.isAutoId()) {
-            entity = procEntityWithAutoId(draftGenericValue, entity);
-        }
         if (queryOptions != null) {
             if (queryOptions.get("expandOption") != null) {
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, navCsdlEntityType, edmNavigationProperty.getType());
@@ -573,7 +529,7 @@ public class DraftHandler {
 
     private List<String> filterDraftUUIDsByMatchingSapContextId(List<String> draftUUIDs) throws GenericEntityException {
         List<String> result = new ArrayList<>();
-        for (String draftUUID:draftUUIDs) {
+        for (String draftUUID : draftUUIDs) {
             if (isMatchSapContextId(draftUUID)) {
                 result.add(draftUUID);
             }
@@ -625,7 +581,7 @@ public class DraftHandler {
 
     private List<GenericValue> filterAdminDataListByMatchingSapContextId(List<GenericValue> draftAdminDataList) throws GenericEntityException {
         List<GenericValue> result = new ArrayList<>();
-        for (GenericValue draftAdminData:draftAdminDataList) {
+        for (GenericValue draftAdminData : draftAdminDataList) {
             if (isMatchSapContextId(draftAdminData.getString("draftUUID"))) {
                 result.add(draftAdminData);
             }
@@ -645,11 +601,7 @@ public class DraftHandler {
         OdataOfbizEntity entity;
         String draftEntityName = csdlEntityType.getDraftEntityName();
         try {
-            Map<String, Object> conditionMap = keyMap;
-            if (csdlEntityType.isAutoId() && keyMap.containsKey("id") && keyMap.size() == 1) {
-                conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
-            }
-            List<GenericValue> genericValues = delegator.findByAnd(draftEntityName, conditionMap, null, false);
+            List<GenericValue> genericValues = delegator.findByAnd(draftEntityName, keyMap, null, false);
             genericValue = EntityUtil.getFirst(genericValues);
         } catch (GenericEntityException e) {
             e.printStackTrace();
@@ -658,9 +610,6 @@ public class DraftHandler {
             throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + draftEntityName);
         }
         entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
-        if (csdlEntityType.isAutoId()) {
-            entity = procEntityWithAutoId(genericValue, entity);
-        }
         if (queryOptions != null) {
             if (queryOptions.get("expandOption") != null) {
                 addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, csdlEntityType, edmEntityType);

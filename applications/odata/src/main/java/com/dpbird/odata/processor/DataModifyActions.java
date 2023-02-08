@@ -489,7 +489,8 @@ public class DataModifyActions {
                         UtilMisc.toMap("draftUUID", navDraftUUID, "entity", entity, "userLogin", userLogin));
                 if (navLevel < 2) {
                     //暂时只支持两级的Draft Navigation
-                    copyNavigationToDraft(readerContext, navigationTargetEntitySet, odataOfbizEntity.getKeyMap(), navDraftUUID, mainEntityDraftName, 2);
+                    copyNavigationToDraft(readerContext, navigationTargetEntitySet, new HashMap<>(odataOfbizEntity.getKeyMap()),
+                            navDraftUUID, mainEntityDraftName, 2);
                 }
             }
         }

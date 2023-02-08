@@ -95,13 +95,8 @@ public class OdataProcessorHelper {
         try {
             String entityNameToFind = getEntityNameToFind(csdlEntityType, sapContextId, edmProvider);
             Map<String, Object> conditionMap = keyMap;
-            if (csdlEntityType.isAutoId() && keyMap.containsKey("id") && keyMap.size() == 1) {
-                if (UtilValidate.isEmpty(sapContextId)) {
-                    ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                    conditionMap = Util.StringToKeyMap((String) keyMap.get("id"), ",", true, null, modelEntity);
-                } else {
-                    conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
-                }
+            if (keyMap.size() == 1 && keyMap.get("draftUUID") != null) {
+                conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
             }
             EntityCondition queryCondition = EntityCondition.makeCondition(conditionMap);
             queryCondition = Util.appendCondition(queryCondition, csdlEntityType.getEntityCondition());
@@ -171,23 +166,6 @@ public class OdataProcessorHelper {
         }
     }
 
-    private static Map<String, Object> splitAutoId(Map<String, Object> keyMap, EdmEntityType edmEntityType, Map<String, Object> oDataContext) {
-        try {
-            Delegator delegator = (Delegator) oDataContext.get("delegator");
-            OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
-            if (UtilValidate.isEmpty(keyMap) || UtilValidate.isEmpty(edmProvider)) {
-                return keyMap;
-            }
-            OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-            if (entityType.isAutoId() && keyMap.containsKey("id")) {
-                ModelEntity modelEntity = delegator.getModelEntity(entityType.getOfbizEntity());
-                keyMap = Util.StringToKeyMap((String) keyMap.get("id"), ",", true, null, modelEntity);
-            }
-        } catch (OfbizODataException e) {
-            Debug.logInfo(e.getMessage(), module);
-        }
-        return keyMap;
-    }
 
     public static OdataOfbizEntity genericValueToEntity(LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
                                                         EdmEntityType edmEntityType, GenericValue genericValue,
@@ -506,9 +484,6 @@ public class OdataProcessorHelper {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         String draftEntityName = csdlEntityType.getDraftEntityName();
-        if (csdlEntityType.isAutoId() && pk.get("id") != null) {
-            pk = Util.keyMapFromId(delegator, csdlEntityType, (String) pk.get("id"));
-        }
         try {
             if (draftEntityName == null || UtilValidate.isEmpty(sapContextId)) { // 非StickySession模式
                 genericValue = delegator.findOne(entityName, true, pk);
@@ -574,29 +549,6 @@ public class OdataProcessorHelper {
             return entityList;
         }
         entityList = appendSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, entityList, locale, userLogin);
-        Entity firstEntity = entityList.get(0);
-        FullQualifiedName entityFqn = new FullQualifiedName(firstEntity.getType());
-        OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(entityFqn);
-        entityList = appendAutoId(httpServletRequest, delegator, ofbizCsdlEntityType, entityList);
-        return entityList;
-    }
-
-    public static List<Entity> appendAutoId(HttpServletRequest httpServletRequest, Delegator delegator,
-                                            OfbizCsdlEntityType ofbizCsdlEntityType,
-                                            List<Entity> entityList) throws OfbizODataException {
-        if (ofbizCsdlEntityType.isAutoId()) {
-            boolean hasSapContext = false;
-            if (httpServletRequest != null) {
-                String sapContextId = httpServletRequest.getHeader("SAP-ContextId");
-                hasSapContext = sapContextId == null ? false : true;
-            }
-            try {
-                entityList = procEntityListWithAutoId(hasSapContext, delegator, ofbizCsdlEntityType, entityList);
-            } catch (GenericEntityException e) {
-                e.printStackTrace();
-                throw new OfbizODataException(e.getMessage());
-            }
-        }
         return entityList;
     }
 
@@ -727,37 +679,6 @@ public class OdataProcessorHelper {
             }
         }
         return entityList;
-    }
-
-    public static List<Entity> procEntityListWithAutoId(boolean hasSapContext, Delegator delegator,
-                                                        OfbizCsdlEntityType ofbizCsdlEntityType,
-                                                        List<Entity> entityList) throws GenericEntityException {
-        for (Entity entity : entityList) {
-            procEntityWithAutoId(hasSapContext, delegator, ofbizCsdlEntityType, entity);
-        }
-        return entityList;
-    }
-
-    public static Entity procEntityWithAutoId(boolean hasSapContext, Delegator delegator,
-                                              OfbizCsdlEntityType csdlEntityType,
-                                              Entity entity) throws GenericEntityException {
-        OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entity;
-        GenericValue genericValue = odataOfbizEntity.getGenericValue();
-        String id = null;
-        GenericPK genericPk = genericValue.getPrimaryKey();
-        if (hasSapContext) {
-            String draftEntityName = csdlEntityType.getDraftEntityName();
-            List<GenericValue> draftGenericValues = delegator.findByAnd(draftEntityName, genericPk, null, true);
-            if (UtilValidate.isNotEmpty(draftGenericValues)) {
-                GenericValue draftGenericValue = EntityUtil.getFirst(draftGenericValues);
-                id = draftGenericValue.getString("draftUUID");
-            }
-        }
-        if (id == null) {
-            id = Util.mapToStr(genericPk);
-        }
-        entity.addProperty(new Property(null, "id", ValueType.PRIMITIVE, id));
-        return entity;
     }
 
     public static List<Entity> procEntityListWithHandler(HttpServletRequest httpServletRequest,

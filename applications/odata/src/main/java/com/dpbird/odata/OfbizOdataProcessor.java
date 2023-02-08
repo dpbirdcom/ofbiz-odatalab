@@ -600,7 +600,7 @@ public class OfbizOdataProcessor {
                     OfbizCsdlProperty property = (OfbizCsdlProperty) lastCsdlEntityType.getProperty(uriResource.getSegmentValue());
                     if (property.isAttribute() || property.isNumericAttribute() || property.isDateAttribute() || property.getRelAlias() != null) {
                         OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(lastCsdlEntityType.getOfbizEntity(), lastCsdlEntityType.getHandlerClass(), lastCsdlEntityType.isAutoProperties(),
-                                false, false, lastCsdlEntityType.isFilterByDate(), lastCsdlEntityType.getDraftEntityName(), lastCsdlEntityType.getAttrEntityName(),
+                                false, lastCsdlEntityType.isFilterByDate(), lastCsdlEntityType.getDraftEntityName(), lastCsdlEntityType.getAttrEntityName(),
                                 lastCsdlEntityType.getAttrNumericEntityName(), lastCsdlEntityType.getAttrDateEntityName(), false, lastCsdlEntityType.getEntityCondition(),
                                 lastCsdlEntityType.getEntityConditionStr(), lastCsdlEntityType.getLabelPrefix(), null, lastCsdlEntityType.isGroupBy(), lastCsdlEntityType.hasStream());
                         newCsdlEntity.setName(lastEntityAlias);

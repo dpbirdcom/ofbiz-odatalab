@@ -31,7 +31,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private boolean autoAnnotations;
     private boolean autoNavigations = true;
     private boolean autoEnum = false;
-    private boolean autoId = false;
     private boolean filterByDate = false;
     private String attrEntityName;
     private String attrNumericEntityName;
@@ -44,7 +43,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private String searchOption;
     private boolean groupBy;
 
-    public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum, boolean autoId,
+    public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
                                EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
         super();
@@ -59,7 +58,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         this.autoAnnotations = false;
         this.hasDerivedEntity = hasDerivedEntity;
         this.autoEnum = autoEnum;
-        this.autoId = autoId;
         this.filterByDate = filterByDate;
         this.draftEntityName = draftEntityName;
         this.attrEntityName = attrEntityName;
@@ -158,10 +156,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public boolean isAutoEnum() {
         return autoEnum;
-    }
-
-    public boolean isAutoId() {
-        return autoId;
     }
 
     public boolean isFilterByDate() {

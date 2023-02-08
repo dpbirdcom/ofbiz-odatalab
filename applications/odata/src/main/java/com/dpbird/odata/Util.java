@@ -218,9 +218,6 @@ public class Util {
     }
 
     public static URI createId(String entitySetName, EdmEntityType edmEntityType, OfbizCsdlEntityType ofbizCsdlEntityType, GenericValue genericValue) {
-        if (ofbizCsdlEntityType.isAutoId()) {
-            return null;
-        }
         String entityId;
         List<String> entityTypeKeys = edmEntityType.getKeyPredicateNames();
         if (entityTypeKeys.size() == 1) {
@@ -754,12 +751,7 @@ public class Util {
     }
 
     public static Map<String, Object> retrieveKeyMapFromEntity(Delegator delegator, Entity entity, OfbizCsdlEntityType csdlEntityType) {
-        Map<String, Object> pkMap = new HashMap<String, Object>();
-        if (csdlEntityType.isAutoId()) {
-            Property idProperty = entity.getProperty("id");
-            String idValue = (String) idProperty.getValue();
-            return Util.keyMapFromId(delegator, csdlEntityType, idValue);
-        }
+        Map<String, Object> pkMap = new HashMap<>();
         List<String> keyNames = csdlEntityType.getKeyPropertyNames();
         for (String keyName : keyNames) {
             Property property = entity.getProperty(keyName);
