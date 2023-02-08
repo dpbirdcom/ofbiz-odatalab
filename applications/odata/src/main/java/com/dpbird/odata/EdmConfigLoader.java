@@ -1180,7 +1180,6 @@ public class EdmConfigLoader {
                                                              Element propertyElement, Locale locale) {
         String name = propertyElement.getAttribute("Name");
         OfbizCsdlProperty property = null;
-        ModelField modelField;
         if (modelEntity != null) {
             String relAliasName = propertyElement.getAttribute("RelAlias");
             EntityTypeRelAlias entityTypeRelAlias = null;
@@ -1190,11 +1189,14 @@ public class EdmConfigLoader {
                 }
             }
             String field = propertyElement.getAttribute("Field");
-            if (UtilValidate.isNotEmpty(entityTypeRelAlias) && UtilValidate.isNotEmpty(field)) {
-                property = generatePropertyFromRelAlias(dispatcher.getDelegator(), dispatcher, modelEntity, entityTypeRelAlias, field, false);
+            if (UtilValidate.isNotEmpty(field)) {
+                if (UtilValidate.isNotEmpty(entityTypeRelAlias)) {
+                    property = generatePropertyFromRelAlias(dispatcher.getDelegator(), dispatcher, modelEntity, entityTypeRelAlias, field, false);
+                } else {
+                    property = generatePropertyFromField(dispatcher.getDelegator(), dispatcher, modelEntity.getField(field), false);
+                }
             } else {
-                modelField = modelEntity.getField(name);
-                property = generatePropertyFromField(dispatcher.getDelegator(), dispatcher, modelField, false);
+                property = generatePropertyFromField(dispatcher.getDelegator(), dispatcher, modelEntity.getField(name), false);
             }
         }
         if (property == null) {

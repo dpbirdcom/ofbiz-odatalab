@@ -286,4 +286,15 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     public CsdlProperty getStreamProperty() {
         return properties.stream().filter(p -> "Edm.Stream".equals(p.getType())).findFirst().orElse(null);
     }
+
+    public CsdlProperty getPropertyFromField(String ofbizFieldName) {
+        for (CsdlProperty property : properties) {
+            OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
+            if (ofbizFieldName.equals(ofbizCsdlProperty.getOfbizFieldName())) {
+                return property;
+            }
+        }
+        return null;
+    }
+
 }
