@@ -87,10 +87,11 @@ public class UriResourceProcessor {
     }
 
     private OdataParts readUriResourceEntitySet(UriResource uriResource, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResource;
         EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
         EdmEntityType edmEntityType = edmEntitySet.getEntityType();
-        Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType);
+        Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType, edmProvider);
         Object entityData;
         if (sapContextId != null && UtilValidate.isNotEmpty(primaryKey)) {
             DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
@@ -118,7 +119,7 @@ public class UriResourceProcessor {
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationEntityType.getFullQualifiedName());
 
-        Map<String, Object> navigationPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), navigationEntityType);
+        Map<String, Object> navigationPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), navigationEntityType, edmProvider);
         //last uriResource
         OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
         OdataOfbizEntity entity = (OdataOfbizEntity) odataParts.getEntityData();

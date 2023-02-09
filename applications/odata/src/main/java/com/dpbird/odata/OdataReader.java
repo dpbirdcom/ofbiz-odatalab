@@ -20,6 +20,8 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
@@ -202,14 +204,23 @@ public class OdataReader extends OfbizOdataProcessor {
         List<GenericValue> resultList = new ArrayList<>();
         try {
             // select
-            Set<String> selectSet = new HashSet<>(this.edmEntityType.getPropertyNames());
+            Set<String> selectSet = new HashSet<>();
             if (UtilValidate.isNotEmpty(fieldsToSelect)) {
                 selectSet = new HashSet<>(fieldsToSelect);
                 //后面要处理expand，添加外键
                 selectSet.addAll(Util.getEntityFk(modelEntity));
+            } else {
+                OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+                for (String propertyName : edmEntityType.getPropertyNames()) {
+                    OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
+                    if (property == null && csdlEntityType.getBaseType() != null) {
+                        property = csdlEntityType.getBaseTypeProperty(propertyName, edmProvider);
+                    }
+                    if (property != null && property.getRelAlias() == null && property.getOfbizFieldName() != null) {
+                        selectSet.add(property.getOfbizFieldName());
+                    }
+                }
             }
-            //select排除语义化字段
-            selectSet.removeIf(property -> !modelEntity.getAllFieldNames().contains(property));
 
             //query
             EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity);
@@ -370,7 +381,8 @@ public class OdataReader extends OfbizOdataProcessor {
         EntityCondition condition = null;
         //filter的条件
         if (filterOption != null) {
-            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+//            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
             OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
             try {
                 condition = (EntityCondition) filterOption.getExpression().accept(expressionVisitor);
@@ -381,7 +393,8 @@ public class OdataReader extends OfbizOdataProcessor {
         EdmEntityType edmNavigationPropertyType = edmNavigationProperty.getType();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
-        List<String> orderbyList = Util.retrieveSimpleOrderByOption(orderbyOption);
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+        List<String> orderbyList = Util.convertOrderbyToField(navCsdlEntityType, orderbyOption);
         List<GenericValue> genericValueList = entityList.stream().map(e -> ((OdataOfbizEntity) e).getGenericValue()).collect(Collectors.toList());
         //find
         List<GenericValue> relatedGenericList = getAllDataFromRelations(genericValueList, csdlNavigationProperty, condition, orderbyList);

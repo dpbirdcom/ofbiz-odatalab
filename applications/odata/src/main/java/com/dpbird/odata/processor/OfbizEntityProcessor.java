@@ -245,7 +245,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 //update
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) lastUriResource;
                 edmBindingTarget = uriResourceEntitySet.getEntitySet();
-                Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmBindingTarget.getEntityType());
+                Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmBindingTarget.getEntityType(), edmProvider);
                 DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmBindingTarget.getEntityType());
                 Map<String, Object> serviceParms = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", edmBindingTarget,
                         "primaryKey", primaryKey, "entityToWrite", result.getEntity(), "sapContextId", sapContextId, "userLogin", userLogin);
@@ -257,7 +257,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
                 Map<String, Object> primaryKey = null;
                 if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
-                    primaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+                    primaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType(), edmProvider);
                 }
                 UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), OdataProcessorHelper.getQuernOptions(uriInfo), sapContextId);
                 ArrayList<UriResource> uriResources = new ArrayList<>(resourceParts.subList(0, resourceParts.size() - 1));
@@ -415,7 +415,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
             EdmEntityType edmEntityType = uriResourceEntitySet.getEntityType();
             List<UriParameter> keyPredicates = uriResourceEntitySet.getKeyPredicates();
-            Map<String, Object> keyMap = Util.uriParametersToMap(keyPredicates, edmEntityType);
+            Map<String, Object> keyMap = Util.uriParametersToMap(keyPredicates, edmEntityType, edmProvider);
             OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceEntitySet.getEntityType().getFullQualifiedName());
 
             //获取request表单数据

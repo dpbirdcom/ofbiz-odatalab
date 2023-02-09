@@ -249,7 +249,7 @@ public class OdataWriter extends OfbizOdataProcessor {
                 throw new OfbizODataException("Execpted an entity-id for entity set " + edmEntitySet.getName()
                         + " but found id for entity set " + entitySetResource.getEntitySet().getName());
             }
-            return Util.uriParametersToMap(entitySetResource.getKeyPredicates(), entitySetResource.getEntityType());
+            return Util.uriParametersToMap(entitySetResource.getKeyPredicates(), entitySetResource.getEntityType(), edmProvider);
         } catch (DeserializerException e) {
             throw new OfbizODataException(entityId + " is not a valid entity-Id");
         }

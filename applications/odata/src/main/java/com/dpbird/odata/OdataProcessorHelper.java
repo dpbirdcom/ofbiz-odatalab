@@ -184,6 +184,7 @@ public class OdataProcessorHelper {
         try {
             OdataOfbizEntity e1 = new OdataOfbizEntity(csdlEntityType, genericValue);
             e1.setType(csdlEntityType.getFullQualifiedNameString());
+            e1.setRequestEntityTypeFQN(csdlEntityType.getFullQualifiedNameString());
             ModelEntity modelEntity;
             String pkFieldName = null;
             Object pkFieldValue = null;
@@ -472,7 +473,7 @@ public class OdataProcessorHelper {
                                                EdmEntityType edmEntityType, List<UriParameter> keyPredicates,
                                                String sapContextId)
             throws OfbizODataException {
-        Map<String, Object> pk = Util.uriParametersToMap(keyPredicates, edmEntityType);
+        Map<String, Object> pk = Util.uriParametersToMap(keyPredicates, edmEntityType, edmProvider);
         return getGenericValue(delegator, edmProvider, edmEntityType, pk, sapContextId);
     }
 
@@ -511,8 +512,10 @@ public class OdataProcessorHelper {
                                                     LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
                                                     Map<String, QueryOption> queryOptions, List<Entity> entityList,
                                                     Locale locale, GenericValue userLogin) throws OfbizODataException {
-        Entity firstEntity = entityList.get(0);
-        FullQualifiedName entityFqn = new FullQualifiedName(firstEntity.getType());
+        OdataOfbizEntity firstEntity = (OdataOfbizEntity) entityList.get(0);
+        String entityType = UtilValidate.isNotEmpty(firstEntity.getRequestEntityTypeFQN()) ?
+                firstEntity.getRequestEntityTypeFQN() : firstEntity.getType();
+        FullQualifiedName entityFqn = new FullQualifiedName(entityType);
         OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(entityFqn);
         if (ofbizCsdlEntityType.isHasRelField()) {
             try {

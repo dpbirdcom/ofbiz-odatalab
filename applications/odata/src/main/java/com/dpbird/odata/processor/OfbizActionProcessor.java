@@ -310,7 +310,7 @@ public class OfbizActionProcessor
         UriResourcePartTyped boundEntity = (UriResourcePartTyped) uriResource;
         UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) boundEntity;
         EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
-        Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType());
+        Map<String, Object> keyMap = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType(), edmProvider);
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
 
         List<GenericValue> draftAdminDataList = delegator.findByAnd("DraftAdministrativeData", UtilMisc.toMap(

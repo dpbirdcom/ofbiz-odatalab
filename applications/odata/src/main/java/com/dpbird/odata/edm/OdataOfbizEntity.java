@@ -24,6 +24,7 @@ public class OdataOfbizEntity extends Entity {
 	private Map<String, Object> keyMap = null;
 	private boolean isDraft = false;
 	private List<OdataParts> odataParts = new ArrayList<>();
+	private String requestEntityTypeFQN;
 
 	public Map<String, Object> getKeyMap() {
 		return keyMap;
@@ -84,4 +85,11 @@ public class OdataOfbizEntity extends Entity {
 		this.odataParts.add(odataParts);
 	}
 
+	public String getRequestEntityTypeFQN() {
+		return requestEntityTypeFQN;
+	}
+
+	public void setRequestEntityTypeFQN(String requestEntityTypeFQN) {
+		this.requestEntityTypeFQN = requestEntityTypeFQN;
+	}
 }

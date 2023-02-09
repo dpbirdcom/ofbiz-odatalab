@@ -11,6 +11,7 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
+import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
 import com.dpbird.odata.Util;
@@ -290,5 +291,15 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         }
         return null;
     }
+
+    public CsdlEntityType getBaseEntityType(OfbizAppEdmProvider edmProvider) {
+        try {
+            FullQualifiedName baseTypeFQN = getBaseTypeFQN();
+            return baseTypeFQN != null ? edmProvider.getEntityType(baseTypeFQN) : null;
+        } catch (OfbizODataException e) {
+            return null;
+        }
+    }
+
 
 }

@@ -556,11 +556,10 @@ public class ProcessorServices {
         Map<String, Object> internalKeyMap = new HashMap<>();
         for (String pkFieldName : pkFieldNames) {
             Object pkFieldValue = actionParameters.get(pkFieldName);
-            if (pkFieldValue == null && pkFieldNames.size() == 1) { // i.e. productId
+            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) { // i.e. productId
                 ModelField modelField = modelEntity.getField(pkFieldName);
-                if (modelField.getType().equals("id")) {
-                    String idValue = "ID" + delegator.getNextSeqId(entityName);
-                    pkFieldValue = idValue;
+                if ("id".equals(modelField.getType())) {
+                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
                 }
             }
             internalKeyMap.put(pkFieldName, pkFieldValue);
@@ -575,6 +574,7 @@ public class ProcessorServices {
         if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
             fieldMap.putAll(entityTypeConditionMap);
         }
+        fieldMap.putAll(internalKeyMap);
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
                 "draftEntityName", draftEntityName, "entityType", csdlEntityType.getName(),
                 "fieldMap", fieldMap, "sapContextId", sapContextId, "edmProvider", edmProvider,

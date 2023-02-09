@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class EdmConfigLoader {
@@ -2040,27 +2041,36 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isEmpty(propertyRefs) && UtilValidate.isNotEmpty(modelEntity)) { // EntityType的Key还没有定义
             // 先添加主键，所有odata的EntityType必须映射到一个ofbiz对象作为主对象，所以，总是可以从ofbiz主对象中获取主键字段
-            Iterator<ModelField> pksIterator = modelEntity.getPksIterator();
-            Set<String> pkFieldNames = new HashSet<>();
+//            Iterator<ModelField> pksIterator = modelEntity.getPksIterator();
+            List<String> ofbizAllPk = modelEntity.getPkFieldNames();
             propertyRefs = new ArrayList<>();
-            while (pksIterator.hasNext()) {
-                ModelField field = pksIterator.next();
-                String fieldName = field.getName();
-                pkFieldNames.add(fieldName);
-                CsdlPropertyRef propertyRef = new CsdlPropertyRef();
-                propertyRef.setName(fieldName);
-                propertyRefs.add(propertyRef);
+            for (CsdlProperty csdlProperty : csdlProperties) {
+                OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlProperty;
+                if (ofbizCsdlProperty.getRelAlias() != null) {
+                    continue;
+                }
+                if (ofbizAllPk.contains(ofbizCsdlProperty.getOfbizFieldName())) {
+                    CsdlPropertyRef propertyRef = new CsdlPropertyRef();
+                    propertyRef.setName(ofbizCsdlProperty.getName());
+                    propertyRefs.add(propertyRef);
+                }
             }
+//            while (pksIterator.hasNext()) {
+//                ModelField field = pksIterator.next();
+//                String fieldName = field.getName();
+//                pkFieldNames.add(fieldName);
+//                CsdlPropertyRef propertyRef = new CsdlPropertyRef();
+//                propertyRef.setName(fieldName);
+//                propertyRefs.add(propertyRef);
+//            }
         }
         OfbizCsdlEntityType entityType = new OfbizCsdlEntityType(ofbizEntity, handlerClass, false,
                 false, filterByDate, draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName,
                 hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream);
         if (UtilValidate.isNotEmpty(baseType)) {
             //有BaseType, Property里就不应该再有pk
-            if (modelEntity != null) {
-                List<String> pkFieldNames = modelEntity.getPkFieldNames();
-                csdlProperties.removeIf(cdp -> pkFieldNames.contains(cdp.getName()));
-            }
+            List<String> propertyRefNames = propertyRefs.stream().map(CsdlPropertyRef::getName).collect(Collectors.toList());
+            csdlProperties.removeIf(cp -> propertyRefNames.contains(cp.getName()));
             if (baseType.indexOf('.') == -1) {
                 entityType.setBaseType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, baseType));
             } else {

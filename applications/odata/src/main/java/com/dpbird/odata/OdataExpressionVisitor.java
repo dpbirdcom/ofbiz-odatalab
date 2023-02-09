@@ -18,6 +18,7 @@ import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.edm.EdmProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
@@ -114,69 +115,71 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
         Debug.logInfo("------------------- right = " + right, module);
 
         //目前针对前端传来的string类型的时间进行格式化处理，其他则不处理
-        if (left instanceof EntityCondition) {
-            EntityJoinOperator joinOperator = JOINOPERATORMAP.get(operator);
-            List<EntityCondition> exprs = new ArrayList<>();
-
-            exprs.add((EntityCondition) left);
-            if (right instanceof EntityCondition) {
-                exprs.add((EntityCondition) right);
-            }
-            return EntityCondition.makeCondition(exprs, joinOperator);
-        } else if (left instanceof String) {
-            if (left.toString().contains("$count")) {
-                return null;
-            }
-            EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
-            String realLeft = (String) left;
+        try {
+            if (left instanceof EntityCondition) {
+                EntityJoinOperator joinOperator = JOINOPERATORMAP.get(operator);
+                List<EntityCondition> exprs = new ArrayList<>();
+                exprs.add((EntityCondition) left);
+                if (right instanceof EntityCondition) {
+                    exprs.add((EntityCondition) right);
+                }
+                return EntityCondition.makeCondition(exprs, joinOperator);
+            } else if (left instanceof String) {
+                if (left.toString().contains("$count")) {
+                    return null;
+                }
+                EntityComparisonOperator comparisonOperator = COMPARISONOPERATORMAP.get(operator);
+                String realLeft = (String) left;
 //            if (lastAlias != null) {
 //                realLeft = lastAlias + left;
 //            }
-            Object rightValue = right;
-            try {
+                Object rightValue = right;
                 EdmProperty edmProperty = (EdmProperty) dynamicViewHolder.edmPropertyMap.get(left);
                 if (!(edmProperty.getType() instanceof EdmEnumType)) {
                     rightValue = Util.readPrimitiveValue(edmProperty, (String) right);
                 }
-            } catch (ODataException e) {
-                throw new ODataApplicationException(e.getMessage(),
-                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
-            }
-            return EntityCondition.makeCondition(realLeft, comparisonOperator, rightValue);
-        } else if (left instanceof EdmProperty) {
-            EdmProperty leftEdmProperty = (EdmProperty) left;
-            Object rightValue = right;
-            if (!(leftEdmProperty.getType() instanceof EdmEnumType)) {
-                try {
+                return EntityCondition.makeCondition(realLeft, comparisonOperator, rightValue);
+            } else if (left instanceof EdmProperty) {
+                EdmProperty leftEdmProperty = (EdmProperty) left;
+                Object rightValue = right;
+                if (!(leftEdmProperty.getType() instanceof EdmEnumType)) {
                     rightValue = Util.readPrimitiveValue((EdmProperty) left, (String) right);
-                } catch (ODataException e) {
-                    throw new ODataApplicationException(e.getMessage(),
-                            HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
                 }
-            }
-            if (leftEdmProperty.getType() instanceof EdmDate && rightValue != null) {
-                //如果数据库是dateTime类型 但metadata是Date类型 需要做转换
-                ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-                ModelField modelField = modelEntity.getField(leftEdmProperty.getName());
-                if ("date-time".equals(modelField.getType())) {
-                    return convertDateToTime(leftEdmProperty, (Date) rightValue, operator);
+                String realFieldName = leftEdmProperty.getName();
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(leftEdmProperty.getName());
+                if (UtilValidate.isEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
+                    csdlProperty = (OfbizCsdlProperty) edmProvider.getEntityType(csdlEntityType.getBaseTypeFQN()).getProperty(leftEdmProperty.getName());
                 }
+                if (csdlProperty.getOfbizFieldName() != null) {
+                    realFieldName = csdlProperty.getOfbizFieldName();
+                }
+                if (leftEdmProperty.getType() instanceof EdmDate && rightValue != null) {
+                    //如果数据库是dateTime类型 但metadata是Date类型 需要做转换
+                    ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+                    ModelField modelField = modelEntity.getField(realFieldName);
+                    if ("date-time".equals(modelField.getType())) {
+                        return convertDateToTime(realFieldName, (Date) rightValue, operator);
+                    }
+                }
+                EntityComparisonOperator<?, ?> comparisonOperator = COMPARISONOPERATORMAP.get(operator);
+                return EntityCondition.makeCondition(realFieldName, comparisonOperator, rightValue == null ? GenericEntity.NULL_FIELD : rightValue);
+            } else if (left instanceof EntityFunction) {
+                //function的处理
+                String value = right.toString();
+                if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.substring(1, value.length() - 1);
+                }
+                return EntityCondition.makeCondition(left, COMPARISONOPERATORMAP.get(operator), value);
+            } else if (UtilValidate.isEmpty(left)) {
+                //lambda后面再跟普通条件会来第二次 这个时候left=null,但right已经是完整的条件,直接返回
+                return right;
+            } else {
+                throw new ODataApplicationException("Binary operation " + operator.name() + " is not implemented",
+                        HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ENGLISH);
             }
-            EntityComparisonOperator<?, ?> comparisonOperator = COMPARISONOPERATORMAP.get(operator);
-            return EntityCondition.makeCondition(leftEdmProperty.getName(), comparisonOperator, rightValue == null ? GenericEntity.NULL_FIELD : rightValue);
-        } else if (left instanceof EntityFunction) {
-            //function的处理
-            String value = right.toString();
-            if (value.startsWith("'") && value.endsWith("'")) {
-                value = value.substring(1, value.length() - 1);
-            }
-            return EntityCondition.makeCondition(left, COMPARISONOPERATORMAP.get(operator), value);
-        } else if (UtilValidate.isEmpty(left)) {
-            //lambda后面再跟普通条件会来第二次 这个时候left=null,但right已经是完整的条件,直接返回
-            return right;
-        } else {
-            throw new ODataApplicationException("Binary operation " + operator.name() + " is not implemented",
-                    HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ENGLISH);
+        } catch (OfbizODataException e) {
+            throw new ODataApplicationException(e.getMessage(),
+                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
         }
     }
 
@@ -453,6 +456,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             return relPropertyName;
         } else {
             //普通的多段式字段查询
+            propertyName = csdlProperty.getOfbizFieldName();
             String filterProperty = dynamicViewHolder.addFilterProperty(lastAlias, propertyName);
             dynamicViewHolder.edmPropertyMap.put(filterProperty, property);
             return filterProperty;
@@ -562,31 +566,31 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     /**
      * 将一个Date条件转换为DateTime的区间查询
      */
-    private EntityCondition convertDateToTime(EdmProperty edmProperty, Date date, BinaryOperatorKind operator) {
+    private EntityCondition convertDateToTime(String propertyName, Date date, BinaryOperatorKind operator) {
         Timestamp timestamp = UtilDateTime.toTimestamp(date);
         Timestamp dayStart = UtilDateTime.getDayStart(timestamp);
         Timestamp dayEnd = UtilDateTime.getDayEnd(timestamp);
         //大于等于开始时间条件
-        EntityCondition startCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN_EQUAL_TO, dayStart);
+        EntityCondition startCond = EntityCondition.makeCondition(propertyName, EntityOperator.GREATER_THAN_EQUAL_TO, dayStart);
         //大于等于结束时间条件
-        EntityCondition endCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN_EQUAL_TO, dayEnd);
+        EntityCondition endCond = EntityCondition.makeCondition(propertyName, EntityOperator.LESS_THAN_EQUAL_TO, dayEnd);
         if (operator.equals(BinaryOperatorKind.EQ)) {
             return EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
         } else if (operator.equals(BinaryOperatorKind.GT)) {
-            return EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN, dayEnd);
+            return EntityCondition.makeCondition(propertyName, EntityOperator.GREATER_THAN, dayEnd);
         } else if (operator.equals(BinaryOperatorKind.GE)) {
-            EntityCondition gtCond =  EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN, dayEnd);
+            EntityCondition gtCond = EntityCondition.makeCondition(propertyName, EntityOperator.GREATER_THAN, dayEnd);
             EntityCondition eqCond = EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
             return EntityCondition.makeCondition(UtilMisc.toList(eqCond, gtCond), EntityOperator.OR);
         } else if (operator.equals(BinaryOperatorKind.LT)) {
-            return EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
+            return EntityCondition.makeCondition(propertyName, EntityOperator.LESS_THAN, dayStart);
         } else if (operator.equals(BinaryOperatorKind.LE)) {
-            EntityCondition ltCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
+            EntityCondition ltCond = EntityCondition.makeCondition(propertyName, EntityOperator.LESS_THAN, dayStart);
             EntityCondition eqCond = EntityCondition.makeCondition(UtilMisc.toList(startCond, endCond));
             return EntityCondition.makeCondition(UtilMisc.toList(eqCond, ltCond), EntityOperator.OR);
         } else if (operator.equals(BinaryOperatorKind.NE)) {
-            EntityCondition neStartCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.LESS_THAN, dayStart);
-            EntityCondition neEndCond = EntityCondition.makeCondition(edmProperty.getName(), EntityOperator.GREATER_THAN_EQUAL_TO, dayEnd);
+            EntityCondition neStartCond = EntityCondition.makeCondition(propertyName, EntityOperator.LESS_THAN, dayStart);
+            EntityCondition neEndCond = EntityCondition.makeCondition(propertyName, EntityOperator.GREATER_THAN_EQUAL_TO, dayEnd);
             return EntityCondition.makeCondition(UtilMisc.toList(neStartCond, neEndCond), EntityOperator.OR);
         }
         return null;
