@@ -39,7 +39,7 @@ public class OrderStickyDemo {
             draftFields.put("orderTypeId", orderType.getString("orderTypeId"));
             draftFields.put("description", orderType.getString("description"));
             //create
-            GenericValue orderTypeDraft = Util.createDraftData(oDataContext, sapContextId, keyMap, "OrderType", draftFields);
+            GenericValue orderTypeDraft = Util.createNavDraftData(oDataContext, sapContextId, keyMap, "OrderType", draftFields);
         }
         return ofbizEntity;
     }

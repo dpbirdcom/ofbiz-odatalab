@@ -2340,6 +2340,9 @@ public class Util {
             if (uriResourceParts.size() > 1) continue;
             String segmentValue = uriResourceParts.get(0).getSegmentValue();
             OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(segmentValue);
+            if (csdlProperty.getOfbizFieldName() != null) {
+                segmentValue = csdlProperty.getOfbizFieldName();
+            }
             //如果这个字段是语义化字段 需要自定义处理
             ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
             if (modelEntity != null) {
@@ -2372,7 +2375,7 @@ public class Util {
      * @param primaryKey 当前要创建的主键
      * @param navigationName Navigation Name
      */
-    public static GenericValue createDraftData(Map<String, Object> oDataContext, String parentDraftId,
+    public static GenericValue createNavDraftData(Map<String, Object> oDataContext, String parentDraftId,
                                                 Map<String, Object> primaryKey, String navigationName,
                                                Map<String, Object> fields) throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
