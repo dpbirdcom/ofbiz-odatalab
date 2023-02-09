@@ -160,7 +160,7 @@ public class DataModifyActions {
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         Locale locale = (Locale) oDataContext.get("locale");
         String draftUUID = navDraftAdminData.getString("draftUUID");
-        Map<String, Object> keyMap = mainGenericValue.getPrimaryKey();
+        Map<String, Object> keyMap = new HashMap<>(mainGenericValue.getPrimaryKey());
         try {
             GenericValue draftAdminData = delegator.findOne("DraftAdministrativeData",
                     UtilMisc.toMap("draftUUID", draftUUID), true);
@@ -168,7 +168,6 @@ public class DataModifyActions {
             String draftEntityName = draftAdminData.getString("draftEntityName");
             String entityType = draftAdminData.getString("entityType");
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityType));
-            String entityTypeHandler = csdlEntityType.getHandlerClass();
             GenericValue draftGenericValue = delegator.findOne(draftEntityName,
                     UtilMisc.toMap("draftUUID", draftUUID), false);
             boolean isDelete = false;
