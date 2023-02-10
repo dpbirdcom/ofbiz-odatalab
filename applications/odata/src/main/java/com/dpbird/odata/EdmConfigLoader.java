@@ -855,15 +855,7 @@ public class EdmConfigLoader {
         String type = navigationPropertyElement.getAttribute("Type");
         String autoBindingAttr = navigationPropertyElement.getAttribute("AutoBinding");
         String stickyReadOnlyAttr = navigationPropertyElement.getAttribute("ReadOnly");
-        String relationName = name;
-        ModelRelation modelRelation;
-        if (UtilValidate.isEmpty(UtilXml.childElementList(navigationPropertyElement))) {
-            modelRelation = modelEntity.getRelation(name);
-        } else {
-            relationName = type;
-            //处理ReferentialConstraint
-            modelRelation = processReferentialConstraint(delegator, modelEntity, navigationPropertyElement);
-        }
+
         boolean autoBinding = true;
         if (UtilValidate.isNotEmpty(autoBindingAttr)) {
             autoBinding = Boolean.valueOf(autoBindingAttr);
@@ -872,24 +864,7 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(stickyReadOnlyAttr)) {
             stickyReadOnly = Boolean.valueOf(stickyReadOnlyAttr);
         }
-        String relationType = null;
-        if (modelRelation != null) {
-            relationType = modelRelation.getType();
-        }
-        if (UtilValidate.isEmpty(type) && modelRelation != null) {
-            type = modelRelation.getRelEntityName();
-        }
-        String isCollectionStr = navigationPropertyElement.getAttribute("IsCollection");
-        boolean isCollection = false;
-        if (UtilValidate.isEmpty(isCollectionStr)) {
-            if ("many".equals(relationType)) {
-                isCollection = true;
-            }
-        } else {
-            if (isCollectionStr.equals("true")) {
-                isCollection = true;
-            }
-        }
+
         boolean filterByDate = false;
         String filterByDateAttr = navigationPropertyElement.getAttribute("FilterByDate");
         if (UtilValidate.isNotEmpty(filterByDateAttr)) {
@@ -907,7 +882,38 @@ public class EdmConfigLoader {
         String relationsAttr = navigationPropertyElement.getAttribute("Relations");
         String handlerAttr = navigationPropertyElement.getAttribute("Handler");
         String partner = navigationPropertyElement.getAttribute("Partner");
-        EntityTypeRelAlias relAlias = loadRelAliasFromAttribute(delegator, modelEntity, relationName, relationsAttr);
+        EntityTypeRelAlias relAlias = loadRelAliasFromAttribute(delegator, modelEntity, name, relationsAttr);
+        //处理完RelAlias再处理
+        ModelRelation modelRelation = null;
+//        if (UtilValidate.isEmpty(UtilXml.childElementList(navigationPropertyElement))) {
+//            modelRelation = modelEntity.getRelation(name);
+//        } else {
+//            //处理ReferentialConstraint 根据ReferentialConstraint在数据库生成一个Relation
+//            modelRelation = processReferentialConstraint(delegator, modelEntity, navigationPropertyElement);
+//        }
+        //获取modelRelation
+        if (UtilValidate.isNotEmpty(relAlias) && relAlias.getRelations().size() == 1) {
+            modelRelation = relAlias.getRelationsEntity().get(relAlias.getRelations().get(0));
+        }
+        String relationType = null;
+        if (modelRelation != null) {
+            relationType = modelRelation.getType();
+        }
+        if (UtilValidate.isEmpty(type) && modelRelation != null) {
+            type = modelRelation.getRelEntityName();
+        }
+        String isCollectionStr = navigationPropertyElement.getAttribute("IsCollection");
+        boolean isCollection = false;
+        if (UtilValidate.isEmpty(isCollectionStr)) {
+            if ("many".equals(relationType)) {
+                isCollection = true;
+            }
+        } else {
+            if ("true".equals(isCollectionStr)) {
+                isCollection = true;
+            }
+        }
+
         OfbizCsdlNavigationProperty navigationProperty = new OfbizCsdlNavigationProperty();
         navigationProperty.setName(name);
         navigationProperty.setAutoBinding(autoBinding);

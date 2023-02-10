@@ -492,6 +492,9 @@ public class OdataReader extends OfbizOdataProcessor {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
+            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+            //添加Navigation对应EntityType的Condition
+            condition = Util.appendCondition(condition, navCsdlEntityType.getEntityCondition());
             List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(), csdlNavigationProperty.isFilterByDate());
             if (condition != null) {
                 relatedList = EntityUtil.filterByCondition(relatedList, condition);

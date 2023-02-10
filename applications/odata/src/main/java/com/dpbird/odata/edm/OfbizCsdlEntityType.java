@@ -292,14 +292,4 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         return null;
     }
 
-    public CsdlEntityType getBaseEntityType(OfbizAppEdmProvider edmProvider) {
-        try {
-            FullQualifiedName baseTypeFQN = getBaseTypeFQN();
-            return baseTypeFQN != null ? edmProvider.getEntityType(baseTypeFQN) : null;
-        } catch (OfbizODataException e) {
-            return null;
-        }
-    }
-
-
 }
