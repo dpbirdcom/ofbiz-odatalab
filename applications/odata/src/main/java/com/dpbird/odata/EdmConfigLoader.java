@@ -1204,6 +1204,7 @@ public class EdmConfigLoader {
         String nullable = propertyElement.getAttribute("Nullable");
         String isCollection = propertyElement.getAttribute("IsCollection");
         String maxLength = propertyElement.getAttribute("MaxLength");
+        String defaultValue = propertyElement.getAttribute("DefaultValue");
         // attribute for annotation
 //        String labelAttr = propertyElement.getAttribute("Label");
         String label = propertyElement.getAttribute("Label");
@@ -1306,6 +1307,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(mimeType)) {
             property.setMimeType(mimeType);
+        }
+        if (UtilValidate.isNotEmpty(defaultValue)) {
+            property.setDefaultValue(defaultValue);
         }
         List<? extends Element> propertyChildren = UtilXml.childElementList(propertyElement);
         List<CsdlAnnotation> annotations = new ArrayList<>();

@@ -705,7 +705,7 @@
 <!--  别名字段demo start	-->
 	<EntityType Name="DemoContent" OfbizEntity="Content" AttrEntityName="ContentAttribute">
 		<Property Name="demoContentId" Field="contentId"/>
-		<Property Name="demoContentName" Field="contentName"/>
+		<Property Name="demoContentName" Field="contentName" DefaultValue="test_Con_Name"/>
 		<Property Name="testStringAttr" Type="String" IsAttribute="true"/>
 		<NavigationProperty Name="DemoContentAttribute" Type="DemoContentAttribute" Relations="ContentAttribute"/>
 		<NavigationProperty Name="DemoDataResource" Type="DemoDataResource" Relations="DataResource"/>
@@ -717,7 +717,7 @@
 	</EntityType>
 	<EntityType Name="DemoDataResource" OfbizEntity="DataResource">
 		<Property Name="demoDataResourceId" Field="dataResourceId"/>
-		<Property Name="demoDataResourceName" Field="dataResourceName"/>
+		<Property Name="demoDataResourceName" Field="dataResourceName" DefaultValue="def_resourceName"/>
 		<NavigationProperty Name="DemoDataResourceAttribute" Type="DemoDataResourceAttribute"
 							Relations="DataResourceAttribute"/>
 	</EntityType>

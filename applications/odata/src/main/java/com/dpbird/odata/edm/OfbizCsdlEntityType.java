@@ -44,6 +44,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private List<EntityTypeRelAlias> relAliases = null;
     private String searchOption;
     private boolean groupBy;
+    private Map<String, Object> defaultValueProperties = new HashMap<>();;
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
@@ -293,4 +294,18 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         return null;
     }
 
+    @Override
+    public CsdlEntityType setProperties(final List<CsdlProperty> properties) {
+        this.properties = properties;
+        for (CsdlProperty property : properties) {
+            if (UtilValidate.isNotEmpty(property.getDefaultValue())) {
+                defaultValueProperties.put(property.getName(), property.getDefaultValue());
+            }
+        }
+        return this;
+    }
+
+    public Map<String, Object> getDefaultValueProperties() {
+        return defaultValueProperties;
+    }
 }

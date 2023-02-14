@@ -727,8 +727,11 @@ public class OdataProcessorHelper {
             String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
             Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
-            fieldMap = Util.propertyToField(fieldMap, csdlEntityType);
-            fieldMap = Util.prepareServiceParameters(modelService, fieldMap);
+            //添加DefaultValue
+            for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
+                fieldMap.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+            fieldMap = Util.prepareServiceParameters(modelService, Util.propertyToField(fieldMap, csdlEntityType));
             if (serviceName != null) { // ofbiz存在创建这个对象的service，那就建议用户调用service，不要直接创建
                 if (userLogin == null) {
                     Debug.logInfo("------------- using system userlogin to create object", module);
@@ -1539,6 +1542,7 @@ public class OdataProcessorHelper {
             createEntityMap.put("userLogin", userLogin);
             // 如果是最后一个relation，要把entityToWrite放进来
             if (i == relationSize - 1) {
+                navEntityType = navCsdlEntityType;
                 Map<String, Object> fieldMap = Util.entityToMap(entityToWrite);
                 createEntityMap.putAll(fieldMap);
                 //添加EntityType的Condition
@@ -1546,7 +1550,10 @@ public class OdataProcessorHelper {
                     Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
                     createEntityMap.putAll(entityTypeConditionMap);
                 }
-                navEntityType = navCsdlEntityType;
+                //添加DefaultValue
+                for (Map.Entry<String, Object> entry : navCsdlEntityType.getDefaultValueProperties().entrySet()) {
+                    createEntityMap.putIfAbsent(entry.getKey(), entry.getValue());
+                }
             }
             if (i == 0) { // 第一个relation，要把main genericValue的pk放进来
                 Map<String, Object> relationPossibleKeyMap = new HashMap<>();
