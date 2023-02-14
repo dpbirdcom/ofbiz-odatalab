@@ -724,7 +724,7 @@ public class OdataProcessorHelper {
         String entityName = csdlEntityType.getOfbizEntity();
         try {
             /********** 获取系统所有的service **************************************************/
-            String serviceName = Util.getEntityActionService(entityName, "create", delegator);
+            String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
             Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
             fieldMap = Util.propertyToField(fieldMap, csdlEntityType);
@@ -779,13 +779,13 @@ public class OdataProcessorHelper {
         String attributeNumericServiceName = null;
         String attributeDateServiceName = null;
         if (csdlEntityType.getAttrEntityName() != null) {
-            attributeServiceName = Util.getEntityActionService(csdlEntityType.getAttrEntityName(), "create", dispatcher.getDelegator());
+            attributeServiceName = Util.getEntityActionService(null, csdlEntityType.getAttrEntityName(), "create", dispatcher.getDelegator());
         }
         if (csdlEntityType.getAttrNumericEntityName() != null) {
-            attributeNumericServiceName = Util.getEntityActionService(csdlEntityType.getAttrNumericEntityName(), "create", dispatcher.getDelegator());
+            attributeNumericServiceName = Util.getEntityActionService(null, csdlEntityType.getAttrNumericEntityName(), "create", dispatcher.getDelegator());
         }
         if (csdlEntityType.getAttrDateEntityName() != null) {
-            attributeDateServiceName = Util.getEntityActionService(csdlEntityType.getAttrDateEntityName(), "create", dispatcher.getDelegator());
+            attributeDateServiceName = Util.getEntityActionService(null, csdlEntityType.getAttrDateEntityName(), "create", dispatcher.getDelegator());
         }
         Map<String, Object> resultMap = new HashMap<>();
         try {
@@ -861,13 +861,13 @@ public class OdataProcessorHelper {
 
                     //这个Attribute不存在并且value有值, 创建
                     if (UtilValidate.isEmpty(attributeEntity) && entry.getValue() != null) {
-                        String createService = Util.getEntityActionService(attrEntityName, "create", delegator);
+                        String createService = Util.getEntityActionService(null, attrEntityName, "create", delegator);
                         dispatcher.runSync(createService, paramMap);
                     }
                     //Attribute已经存在, 更新或删除
                     if (UtilValidate.isNotEmpty(attributeEntity)) {
-                        String updateService = Util.getEntityActionService(attrEntityName, "update", delegator);
-                        String deleteService = Util.getEntityActionService(attrEntityName, "delete", delegator);
+                        String updateService = Util.getEntityActionService(null, attrEntityName, "update", delegator);
+                        String deleteService = Util.getEntityActionService(null, attrEntityName, "delete", delegator);
                         String serviceName = entry.getValue() == null ? deleteService : updateService;
                         dispatcher.runSync(serviceName, paramMap);
                     }
@@ -897,7 +897,7 @@ public class OdataProcessorHelper {
             GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
             String serviceName;
             try {
-                serviceName = Util.getEntityActionService(entityName, "update", delegator);
+                serviceName = Util.getEntityActionService(csdlEntityType, entityName, "update", delegator);
             } catch (OfbizODataException e) {
                 Debug.logInfo(e.getMessage(), module);
                 if (delegator.getModelEntity(entityName) instanceof ModelViewEntity) {
@@ -1075,7 +1075,7 @@ public class OdataProcessorHelper {
             }
             relGenericValue = EntityUtil.getFirst(relGenericValues);
         }
-        String deleteService = Util.getEntityActionService(relGenericValue.getEntityName(), "delete", delegator);
+        String deleteService = Util.getEntityActionService(null, relGenericValue.getEntityName(), "delete", delegator);
 
         Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(deleteService), relGenericValue);
         serviceParams.put("userLogin", userLogin);
@@ -1171,7 +1171,7 @@ public class OdataProcessorHelper {
         Map<String, Object> relationFieldMap = relAlias.getRelationsFieldMap().get(firstRelation);
         try {
             List<GenericValue> relatedGenericValues = genericValue.getRelated(firstRelation, relationFieldMap, null, true);
-            String deleteService = Util.getEntityActionService(relationsEntity.get(firstRelation).getRelEntityName(), "delete", dispatcher.getDelegator());
+            String deleteService = Util.getEntityActionService(null, relationsEntity.get(firstRelation).getRelEntityName(), "delete", dispatcher.getDelegator());
             for (GenericValue relatedGenericValue : relatedGenericValues) {
                 Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(deleteService), relatedGenericValue);
                 serviceParams.put("userLogin", userLogin);
@@ -1232,7 +1232,7 @@ public class OdataProcessorHelper {
             String deleteService = null;
             String modelEntityName = relationsEntity.get(firstRelation).getRelEntityName();
             try {
-                deleteService = Util.getEntityActionService(modelEntityName, "delete", dispatcher.getDelegator());
+                deleteService = Util.getEntityActionService(null, modelEntityName, "delete", dispatcher.getDelegator());
             } catch (OfbizODataException e) {
                 //如果没有定义service并且是个viewEntity, 调用viewEntity主对象的service
                 ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(modelEntityName);
@@ -1241,7 +1241,7 @@ public class OdataProcessorHelper {
                 } else {
                     ModelViewEntity modelViewEntity = (ModelViewEntity) modelEntity;
                     ModelEntity memberModelEntity = modelViewEntity.getMemberModelEntity(modelViewEntity.getViewLink(0).getEntityAlias());
-                    deleteService = Util.getEntityActionService(memberModelEntity.getEntityName(), "delete", dispatcher.getDelegator());
+                    deleteService = Util.getEntityActionService(null, memberModelEntity.getEntityName(), "delete", dispatcher.getDelegator());
                 }
             }
 
@@ -1306,7 +1306,7 @@ public class OdataProcessorHelper {
                 createEntityMap.putAll(relationPossibleKeyMap);
             }
 //            String createService = OfbizMapOdata.CREATE_SERVICE_MAP.get(entityName).get("create");
-            String createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
+            String createService = Util.getEntityActionService(null, entityName, "create", dispatcher.getDelegator());
             try {
                 Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
                 createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
@@ -1394,7 +1394,7 @@ public class OdataProcessorHelper {
                 }
                 createEntityMap.putAll(relationPossibleKeyMap);
             }
-            String createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
+            String createService = Util.getEntityActionService(null, entityName, "create", dispatcher.getDelegator());
             Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
             createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
             if (destGenericValue == null) { // 第一个产生的createdGenericValue，就是目标GenericValue，要返回
@@ -1475,7 +1475,7 @@ public class OdataProcessorHelper {
                 }
                 createEntityMap.putAll(relationPossibleKeyMap);
             }
-            String createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
+            String createService = Util.getEntityActionService(null, entityName, "create", dispatcher.getDelegator());
             Map<String, Object> serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
             ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(entityName);
             List<String> pkFieldNames = modelEntity.getPkFieldNames();
@@ -1517,7 +1517,6 @@ public class OdataProcessorHelper {
         if (UtilValidate.isNotEmpty(entityToWrite.getType())) {
             navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityToWrite.getType()));
         }
-
         GenericValue genericValue = mainEntity.getGenericValue();
         List<String> relations = relAlias.getRelations();
         int relationSize = relations.size();
@@ -1527,6 +1526,7 @@ public class OdataProcessorHelper {
         // 从最后一个relation开始，因为最后一个relation对应的entity最先创建
         for (int i = relationSize - 1; i >= 0; i--) { // 倒着轮询RelAlias中所有的relation
             String relation = relations.get(i);
+            OfbizCsdlEntityType navEntityType = null;
             Map<String, Map<String, Object>> relationsFieldMap = relAlias.getRelationsFieldMap();
             Map<String, ModelRelation> relationsEntity = relAlias.getRelationsEntity();
             ModelRelation modelRelation = relationsEntity.get(relation);
@@ -1546,6 +1546,7 @@ public class OdataProcessorHelper {
                     Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
                     createEntityMap.putAll(entityTypeConditionMap);
                 }
+                navEntityType = navCsdlEntityType;
             }
             if (i == 0) { // 第一个relation，要把main genericValue的pk放进来
                 Map<String, Object> relationPossibleKeyMap = new HashMap<>();
@@ -1572,7 +1573,7 @@ public class OdataProcessorHelper {
             String createService = null;
             Map<String, Object> serviceParams;
             try {
-                createService = Util.getEntityActionService(entityName, "create", dispatcher.getDelegator());
+                createService = Util.getEntityActionService(navEntityType, entityName, "create", dispatcher.getDelegator());
                 if (UtilValidate.isNotEmpty(entityToWrite.getType())) {
                     OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityToWrite.getType()));
                     createEntityMap = Util.propertyToField(createEntityMap, csdlEntityType);

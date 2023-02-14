@@ -1851,7 +1851,23 @@ public class Util {
         return relationsFieldMap.get(lastRelation);
     }
 
-    public static String getEntityActionService(String entityName, String action, Delegator delegator) throws OfbizODataException {
+    public static String getEntityActionService(OfbizCsdlEntityType csdlEntityType, String entityName, String action, Delegator delegator) throws OfbizODataException {
+        String serviceName;
+        if (UtilValidate.isNotEmpty(csdlEntityType)) {
+            serviceName = getEntityActionService(csdlEntityType.getName(), action, delegator);
+            if (UtilValidate.isNotEmpty(serviceName)) {
+                return serviceName;
+            }
+        }
+        serviceName = getEntityActionService(entityName, action, delegator);
+        //没有定义service
+        if (UtilValidate.isEmpty(serviceName)) {
+            throw new OfbizODataException(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode() + "", "No defined service found: " + action + entityName);
+        }
+        return serviceName;
+    }
+
+    private static String getEntityActionService(String entityName, String action, Delegator delegator) {
         String property = "service." + entityName + "." + action;
         String serviceName = EntityUtilProperties.getPropertyValue(ODATA_PROPERTIES, property, delegator);
         if (UtilValidate.isEmpty(serviceName)) {
@@ -1863,12 +1879,9 @@ public class Util {
                 serviceName = entityActions.get(action);
             }
         }
-        //没有定义service
-        if (UtilValidate.isEmpty(serviceName)) {
-            throw new OfbizODataException(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode() + "", "No defined service found: " + action + entityName);
-        }
         return serviceName;
     }
+
 
     public static boolean isAggregate(ApplyOption applyOption) {
         for (ApplyItem applyItem : applyOption.getApplyItems()) {

@@ -19,6 +19,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.queryoption.ApplyOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
@@ -162,8 +163,8 @@ public class DefaultEntityHandler implements EntityHandler {
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         if (UtilValidate.isEmpty(deleteParam)) {
             //delete
-            String entityName = edmBindingTarget.getEntityType().getName();
-            String serviceName = Util.getEntityActionService(entityName, "delete", delegator);
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
+            String serviceName = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "delete", delegator);
             OdataOfbizEntity toDelEntity = (OdataOfbizEntity) entityToDelete;
             GenericValue entityGenericValue = toDelEntity.getGenericValue();
             Map<String, Object> serviceParam = new HashMap<>(entityGenericValue.getPrimaryKey());

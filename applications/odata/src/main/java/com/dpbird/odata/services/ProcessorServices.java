@@ -770,7 +770,7 @@ public class ProcessorServices {
                 mainAction = "create";
             }
             mainEntityFieldMap.put("userLogin", context.get("userLogin"));
-            String entityActionService = Util.getEntityActionService(mainModelEntity.getEntityName(), mainAction, delegator);
+            String entityActionService = Util.getEntityActionService(null, mainModelEntity.getEntityName(), mainAction, delegator);
             Map<String, Object> mainEntityServiceResult = dispatcher.runSync(entityActionService, mainEntityFieldMap);
             mainEntityServiceResult.putAll(mainEntityFieldMap);
             Map<String, Object> entityPkFromMap = getEntityPkFromMap(mainModelEntity, mainEntityServiceResult);
@@ -838,7 +838,7 @@ public class ProcessorServices {
                                                                        Delegator delegator, LocalDispatcher dispatcher) throws GenericEntityException, OfbizODataException, GenericServiceException {
 
         ModelEntity relModelEntity = modelViewEntity.getMemberModelEntity(viewLink.getRelEntityAlias());
-        String relEntityService = Util.getEntityActionService(relModelEntity.getEntityName(), "create", delegator);
+        String relEntityService = Util.getEntityActionService(null, relModelEntity.getEntityName(), "create", delegator);
         //把condition字段添加到entityDateMap
         ModelViewEntity.ViewEntityCondition viewEntityCondition = viewLink.getViewEntityCondition();
         if (viewEntityCondition != null) {
@@ -875,7 +875,7 @@ public class ProcessorServices {
                 updateField.put(alias.getField(), entry.getValue());
             }
         }
-        String relEntityService = Util.getEntityActionService(relGenericValue.getEntityName(), "update", delegator);
+        String relEntityService = Util.getEntityActionService(null, relGenericValue.getEntityName(), "update", delegator);
         ModelService modelService = dispatcher.getDispatchContext().getModelService(relEntityService);
         updateField = OdataProcessorHelper.addRequiredParams(modelService, relGenericValue, updateField);
         //执行service

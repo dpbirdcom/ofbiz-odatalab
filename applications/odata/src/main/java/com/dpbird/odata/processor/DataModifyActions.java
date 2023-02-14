@@ -112,7 +112,7 @@ public class DataModifyActions {
                 if (genericValue == null) {
                     return null;
                 } else {
-                    deleteEntityWithService(dispatcher, entityName, keyMap, userLogin);
+                    deleteEntityWithService(dispatcher, csdlEntityType, entityName, keyMap, userLogin);
                 }
             } else {
 //                List<String> noPkFieldNames = modelEntity.getNoPkFieldNames();
@@ -310,10 +310,10 @@ public class DataModifyActions {
         return true;
     }
 
-    private static void deleteEntityWithService(LocalDispatcher dispatcher, String entityName,
+    private static void deleteEntityWithService(LocalDispatcher dispatcher, OfbizCsdlEntityType csdlEntityType, String entityName,
                                                 Map<String, Object> keyMap, GenericValue userLogin)
             throws GenericServiceException, OfbizODataException {
-        String serviceName = Util.getEntityActionService(entityName, "delete", dispatcher.getDelegator());
+        String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "delete", dispatcher.getDelegator());
         ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
         Map<String, Object> serviceParams = Util.prepareServiceParameters(modelService, keyMap);
         serviceParams.put("userLogin", userLogin);
@@ -383,7 +383,7 @@ public class DataModifyActions {
             if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
                 allField.putAll(entityTypeConditionMap);
             }
-            serviceName = Util.getEntityActionService(entityName, "create", delegator);
+            serviceName = Util.getEntityActionService(csdlEntityType, entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
             serviceParams = Util.prepareServiceParameters(modelService, allField);
         } catch (OfbizODataException e) {

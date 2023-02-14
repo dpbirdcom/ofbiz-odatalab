@@ -101,7 +101,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
                     midFields.put("fromDate", UtilDateTime.nowTimestamp());
                 }
                 midFields.put("userLogin", userLogin);
-                String serviceName = Util.getEntityActionService(relModelEntity.getEntityName(), "create", delegator);
+                String serviceName = Util.getEntityActionService(null, relModelEntity.getEntityName(), "create", delegator);
                 try {
                     Map<String, Object> createResult = dispatcher.runSync(serviceName, midFields);
                     if (ServiceUtil.isError(createResult)) {
