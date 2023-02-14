@@ -1656,7 +1656,8 @@ public class Util {
     }
 
     // Please reference StringUtil.strToMap method
-    public static Map<String, Object> StringToKeyMap(String str, String delim, boolean trim, String pairsSeparator, ModelEntity modelEntity) {
+    public static Map<String, Object> StringToKeyMap(String str, String delim, boolean trim, String pairsSeparator,
+                                                     ModelEntity modelEntity, OfbizCsdlEntityType csdlEntityType) {
         if (UtilValidate.isEmpty(str)) {
             return null;
         }
@@ -1683,6 +1684,13 @@ public class Util {
 
             if (value != null && name != null) {
                 ModelField modelField = modelEntity.getField(name);
+                if (UtilValidate.isEmpty(modelField)) {
+                    OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(name);
+                    if (UtilValidate.isNotEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlProperty.getOfbizFieldName())) {
+                        name = csdlProperty.getOfbizFieldName();
+                        modelField = modelEntity.getField(name);
+                    }
+                }
                 String fieldType = modelField.getType();
                 if (fieldType.equals("date-time")) {
                     Timestamp dateTime = null;
@@ -1821,15 +1829,15 @@ public class Util {
 
     public static Map<String, Object> getRelatedFieldMap(Delegator delegator, String entityName,
                                                          OfbizCsdlNavigationProperty csdlNavigationProperty,
-                                                         Map<String, Object> fieldMap) {
+                                                         Map<String, Object> fieldMap, OfbizAppEdmProvider edmProvider) throws OfbizODataException {
+        OfbizCsdlEntityType navCsdlEntityTye = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
         Map<String, Object> relatedFieldMap = new HashMap<>();
-        Set<Map.Entry<String, Object>> entrySet = fieldMap.entrySet();
-        Iterator<Map.Entry<String, Object>> it = entrySet.iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Object> entry = it.next();
+        for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
             String relatedFieldName = getRelatedFieldName(delegator, entityName, csdlNavigationProperty, entry.getKey());
             if (relatedFieldName != null) {
-                relatedFieldMap.put(relatedFieldName, entry.getValue());
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) navCsdlEntityTye.getPropertyFromField(relatedFieldName);
+                String propertyName = UtilValidate.isNotEmpty(csdlProperty) ? csdlProperty.getName() : relatedFieldName;
+                relatedFieldMap.put(propertyName, entry.getValue());
             }
         }
         return relatedFieldMap;
@@ -2394,13 +2402,13 @@ public class Util {
     /**
      * 创建一条Draft数据
      *
-     * @param parentDraftId 父级draftUUID
-     * @param primaryKey 当前要创建的主键
+     * @param parentDraftId  父级draftUUID
+     * @param primaryKey     当前要创建的主键
      * @param navigationName Navigation Name
      */
     public static GenericValue createNavDraftData(Map<String, Object> oDataContext, String parentDraftId,
-                                                Map<String, Object> primaryKey, String navigationName,
-                                               Map<String, Object> fields) throws OfbizODataException {
+                                                  Map<String, Object> primaryKey, String navigationName,
+                                                  Map<String, Object> fields) throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
@@ -2448,5 +2456,35 @@ public class Util {
         }
         return orderByList;
     }
+
+    //ofbiz字段转property
+    public static Map<String, Object> fieldToProperty(Map<String, Object> fieldMap, OfbizCsdlEntityType csdlEntityType) throws OfbizODataException {
+        Map<String, Object> resultMap = new HashMap<>();
+        for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
+            OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getPropertyFromField(entry.getKey());
+            if (UtilValidate.isNotEmpty(property) && UtilValidate.isEmpty(property.getRelAlias())) {
+                resultMap.put(property.getName(), entry.getValue());
+            } else {
+                resultMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return resultMap;
+    }
+
+    //property转ofbiz字段
+    public static Map<String, Object> propertyToField(Map<String, Object> fieldMap, OfbizCsdlEntityType ofbizCsdlEntityType) {
+        Map<String, Object> resultMap = new HashMap<>();
+        for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
+            OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) ofbizCsdlEntityType.getProperty(entry.getKey());
+            if (UtilValidate.isNotEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlProperty.getOfbizFieldName())
+                && UtilValidate.isEmpty(csdlProperty.getRelAlias())) {
+                resultMap.put(csdlProperty.getOfbizFieldName(), entry.getValue());
+            } else {
+                resultMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return resultMap;
+    }
+
 
 }

@@ -24,6 +24,7 @@ import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
@@ -74,12 +75,12 @@ public class DraftHandler {
             throws OfbizODataException {
         GenericValue draftGenericValue = null;
         Map<String, Object> fieldMap = new HashMap<>(keyMap);
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        fieldMap = Util.fieldToProperty(fieldMap, csdlEntityType);
         fieldMap.putAll(Util.entityToMap(entityToWrite));
 
-        String entityName = csdlEntityType.getOfbizEntity();
         if (csdlEntityType.getDraftEntityName() != null) {
-            Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
-                    "draftEntityName", csdlEntityType.getDraftEntityName(),
+            Map<String, Object> serviceParams = UtilMisc.toMap("csdlEntityType", csdlEntityType,
                     "sapContextId", this.sapContextId, "fieldMap", fieldMap, "userLogin", userLogin);
             Map<String, Object> result = null;
             try {
@@ -136,7 +137,7 @@ public class DraftHandler {
             try {
                 //补全子对象的主键
                 GenericValue parentDraftGV = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", draftUUId), false);
-                Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, entityName, csdlNavigationProperty, parentDraftGV);
+                Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, entityName, csdlNavigationProperty, parentDraftGV, edmProvider);
                 for (String relKey : relatedFieldMap.keySet()) {
                     if (!fieldMap.containsKey(relKey)) {
                         fieldMap.put(relKey, relatedFieldMap.get(relKey));
@@ -146,7 +147,8 @@ public class DraftHandler {
                 e.printStackTrace();
             }
         } else {
-            fieldMap.putAll(Util.getRelatedFieldMap(delegator, entityName, csdlNavigationProperty, keyMap));
+            Map<String, Object> propertyKey = Util.propertyToField(keyMap, csdlEntityType);
+            fieldMap.putAll(Util.getRelatedFieldMap(delegator, entityName, csdlNavigationProperty, propertyKey, edmProvider));
         }
         Map<String, Object> relatedConditionMap = Util.getRelatedConditionMap(csdlNavigationProperty);
         if (UtilValidate.isNotEmpty(relatedConditionMap)) {
@@ -325,7 +327,8 @@ public class DraftHandler {
                 return null;
             }
             if (UtilValidate.isNotEmpty(navKeyMap)) {
-                draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, navKeyMap);
+                Map<String, Object> propertyKey = Util.fieldToProperty(navKeyMap, navCsdlEntityType);
+                draftGenericValues = EntityUtil.filterByAnd(draftGenericValues, propertyKey);
             }
             draftGenericValue = EntityUtil.getFirst(draftGenericValues);
         } catch (GenericEntityException e) {
@@ -449,12 +452,14 @@ public class DraftHandler {
                 GenericValue mainGenericValue = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", pkValue), false);
                 //saveAction之后的expand
                 if (UtilValidate.isEmpty(mainGenericValue)) {
-                    mainGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), keyMap, false);
+                    Map<String, Object> fieldKey = Util.propertyToField(keyMap, csdlEntityType);
+                    mainGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), fieldKey, false);
                 }
                 //draft未保存的数据
                 if (UtilValidate.isEmpty(mainGenericValue)) {
                     //尝试根据现有主键查询Draft数据 用Draft数据的GenericValue去查询expand
-                    List<GenericValue> findByAnd = delegator.findByAnd(csdlEntityType.getDraftEntityName(), keyMap, null, false);
+                    Map<String, Object> fieldKey = Util.propertyToField(keyMap, csdlEntityType);
+                    List<GenericValue> findByAnd = delegator.findByAnd(csdlEntityType.getDraftEntityName(), fieldKey, null, false);
                     if (UtilValidate.isNotEmpty(findByAnd)) {
                         mainGenericValue = EntityUtil.getFirst(findByAnd);
                     } else {
@@ -600,6 +605,7 @@ public class DraftHandler {
         GenericValue genericValue = null;
         OdataOfbizEntity entity;
         String draftEntityName = csdlEntityType.getDraftEntityName();
+        keyMap = Util.fieldToProperty(keyMap, csdlEntityType);
         try {
             List<GenericValue> genericValues = delegator.findByAnd(draftEntityName, keyMap, null, false);
             genericValue = EntityUtil.getFirst(genericValues);

@@ -110,7 +110,7 @@ public class DefaultEntityHandler implements EntityHandler {
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) createParam.get("edmNavigationProperty");
             OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty) entityType.getNavigationProperty(edmNavigationProperty.getName());
-            genericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, navigationProperty.getRelAlias(), dispatcher, delegator, userLogin);
+            genericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, navigationProperty.getRelAlias(), edmProvider, dispatcher, delegator, userLogin);
         }
         return genericValue;
     }
@@ -137,7 +137,7 @@ public class DefaultEntityHandler implements EntityHandler {
             fieldMapToWrite.put("lastModifiedDate", UtilDateTime.nowTimestamp());
         }
         //更新实体
-        GenericValue genericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), primaryKey, fieldMapToWrite, userLogin);
+        GenericValue genericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), primaryKey, fieldMapToWrite, csdlEntityType, userLogin);
         OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         //更新Attribute
         if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
@@ -191,7 +191,7 @@ public class DefaultEntityHandler implements EntityHandler {
                 List<String> relations = navigationProperty.getRelAlias().getRelations();
                 if (relations.size() == 1) {
                     ModelRelation modelRelation = modelEntity.getRelation(relations.get(0));
-                    OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, entityType.getOfbizEntity(), entity.getKeyMap(), modelRelation, userLogin);
+                    OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, entityType.getOfbizEntity(), entity.getKeyMap(), modelRelation, entityType, userLogin);
                 }
                 OdataProcessorHelper.clearNavigationLink(entity.getGenericValue(), navigationProperty.getRelAlias(), dispatcher, userLogin);
             }

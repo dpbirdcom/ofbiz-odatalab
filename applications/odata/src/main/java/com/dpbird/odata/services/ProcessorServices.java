@@ -1,10 +1,7 @@
 package com.dpbird.odata.services;
 
 import com.dpbird.odata.*;
-import com.dpbird.odata.edm.OdataOfbizEntity;
-import com.dpbird.odata.edm.OfbizCsdlEntitySet;
-import com.dpbird.odata.edm.OfbizCsdlEntityType;
-import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
+import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
@@ -30,6 +27,8 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.ODataApplicationException;
@@ -205,9 +204,9 @@ public class ProcessorServices {
         Delegator delegator = dispatcher.getDelegator();
         Locale locale = (Locale) context.get("locale");
         GenericValue userLogin = (GenericValue) context.get("userLogin");
-        String entityName = (String) context.get("originEntityName");
-        ModelEntity modelEntity = delegator.getModelEntity(entityName);
-        String draftEntityName = (String) context.get("draftEntityName");
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) context.get("csdlEntityType");
+        ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+        String draftEntityName = csdlEntityType.getDraftEntityName();
         String sapContextId = (String) context.get("sapContextId");
         GenericValue draftGenericValue = null;
         Map<String, Object> fieldMap = (Map<String, Object>) context.get("fieldMap");
@@ -225,7 +224,7 @@ public class ProcessorServices {
 
         }
         try {
-            List<String> pkFieldNames = modelEntity.getPkFieldNames();
+            List<String> pkFieldNames = csdlEntityType.getKeyPropertyNames();
             Map<String, Object> keyMap = new HashMap<>();
             for (String pkFieldName : pkFieldNames) {
                 keyMap.put(pkFieldName, fieldMap.get(pkFieldName));
@@ -299,18 +298,33 @@ public class ProcessorServices {
         ModelEntity modelEntity = delegator.getModelEntity(entityName);
         ModelEntity draftModelEntity = delegator.getModelEntity(draftEntityName);
         List<String> pkFieldNames = modelEntity.getPkFieldNames();
+        CsdlEntityType csdlEntityType = edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+//        Map<String, Object> pkFieldMap = new HashMap<>();
+//        for (String pkFieldName : pkFieldNames) {
+//            Object pkFieldValue = fieldMap.get(pkFieldName);
+//            if (pkFieldValue == null && pkFieldNames.size() == 1) { // i.e. productId
+//                ModelField modelField = modelEntity.getField(pkFieldName);
+//                if (modelField.getType().equals("id")) {
+//                    String idValue = "ID" + delegator.getNextSeqId(entityName);
+//                    pkFieldValue = idValue;
+//                }
+//            }
+//            pkFieldMap.put(pkFieldName, pkFieldValue);
+//        }
         Map<String, Object> pkFieldMap = new HashMap<>();
-        for (String pkFieldName : pkFieldNames) {
-            Object pkFieldValue = fieldMap.get(pkFieldName);
-            if (pkFieldValue == null && pkFieldNames.size() == 1) { // i.e. productId
-                ModelField modelField = modelEntity.getField(pkFieldName);
-                if (modelField.getType().equals("id")) {
-                    String idValue = "ID" + delegator.getNextSeqId(entityName);
-                    pkFieldValue = idValue;
+        for (CsdlPropertyRef csdlPropertyRef : csdlEntityType.getKey()) {
+            Object pkFieldValue = fieldMap.get(csdlPropertyRef.getName());
+            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(csdlPropertyRef.getName());
+                String ofbizFieldName = csdlProperty.getOfbizFieldName();
+                ModelField modelField = modelEntity.getField(ofbizFieldName);
+                if ("id".equals(modelField.getType())) {
+                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
                 }
             }
-            pkFieldMap.put(pkFieldName, pkFieldValue);
+            pkFieldMap.put(csdlPropertyRef.getName(), pkFieldValue);
         }
+
         pkFieldMap = Util.makeupFromDate(pkFieldMap, modelEntity);
         List<String> noPkFieldNames = draftModelEntity.getNoPkFieldNames();
         Map<String, Object> noPkFieldMap = new HashMap<>();
@@ -339,7 +353,8 @@ public class ProcessorServices {
             }
             pkFieldMap.put("draftUUID", draftUUID);
             // 先检查内存数据库是否有此条记录
-            List<GenericValue> draftGenericValues = delegator.findByAnd(draftEntityName, pkFieldMap, null, false);
+//            List<GenericValue> draftGenericValues = delegator.findByAnd(draftEntityName, pkFieldMap, null, false);
+            List<GenericValue> draftGenericValues = delegator.findByAnd(draftEntityName, UtilMisc.toMap("draftUUID", draftUUID), null, false);
             if (UtilValidate.isNotEmpty(draftGenericValues)) { // 已有数据，不能创建
                 return ServiceUtil.returnError("Data already exists, can't create a new one");
             }
@@ -515,9 +530,9 @@ public class ProcessorServices {
     }
 
     public static GenericValue createDraftAdminData(Delegator delegator, String draftUUID, String parentDraftUUID,
-                                                     String originEntityName, String draftEntityName, String entityType,
-                                                     Map<String, Object> keyMap, String navigationProperty,
-                                                     GenericValue userLogin)
+                                                    String originEntityName, String draftEntityName, String entityType,
+                                                    Map<String, Object> keyMap, String navigationProperty,
+                                                    GenericValue userLogin)
             throws GenericEntityException {
         Timestamp currentTime = UtilDateTime.nowTimestamp();
         Map<String, Object> fieldMap = new HashMap<>();
@@ -554,16 +569,29 @@ public class ProcessorServices {
         List<String> pkFieldNames = modelEntity.getPkFieldNames();
         // 传入的keyMap应该是空
         Map<String, Object> internalKeyMap = new HashMap<>();
-        for (String pkFieldName : pkFieldNames) {
-            Object pkFieldValue = actionParameters.get(pkFieldName);
-            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) { // i.e. productId
-                ModelField modelField = modelEntity.getField(pkFieldName);
+        for (CsdlPropertyRef csdlPropertyRef : csdlEntityType.getKey()) {
+            Object pkFieldValue = actionParameters.get(csdlPropertyRef.getName());
+            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(csdlPropertyRef.getName());
+                String ofbizFieldName = csdlProperty.getOfbizFieldName();
+                ModelField modelField = modelEntity.getField(ofbizFieldName);
                 if ("id".equals(modelField.getType())) {
                     pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
                 }
             }
-            internalKeyMap.put(pkFieldName, pkFieldValue);
+            internalKeyMap.put(csdlPropertyRef.getName(), pkFieldValue);
         }
+
+//        for (String pkFieldName : csdlEntityType.getPropertyRefNames()) {
+//            Object pkFieldValue = actionParameters.get(pkFieldName);
+//            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) { // i.e. productId
+//                ModelField modelField = modelEntity.getField(pkFieldName);
+//                if ("id".equals(modelField.getType())) {
+//                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
+//                }
+//            }
+//            internalKeyMap.put(pkFieldName, pkFieldValue);
+//        }
         String sapContextId = (String) oDataContext.get("sapContextId");
         // 对于有draft table的EntityType，如果直接新建，应该建在内存数据库，并且生成sapContextId返回给客户端
         ProcessorServices.createDraftAdminData(delegator, sapContextId, null, csdlEntityType, internalKeyMap, null, userLogin);

@@ -98,7 +98,7 @@ public class OdataWriterHelper {
                 }
             }
             if (nestedGenericValue == null) {
-                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, dispatcher, delegator, userLogin);
+                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, edmProvider, dispatcher, delegator, userLogin);
                 if (nestedGenericValue == null) {
                     return null;
                 }
@@ -153,6 +153,7 @@ public class OdataWriterHelper {
             }
             if (updatedGenericValue == null) {
                 Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+                fieldMap = Util.propertyToField(fieldMap, csdlEntityType);
                 //如果draft提交保存数据，保留值为null的字段
                 if (entityToWrite instanceof OdataOfbizEntity && ((OdataOfbizEntity) entityToWrite).isDraft()) {
                     OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entityToWrite;
@@ -167,7 +168,8 @@ public class OdataWriterHelper {
                 if (delegator.getModelEntity(entityName).isField("lastModifiedDate")) {
                     fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
                 }
-                updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), keyMap, fieldMap, userLogin);
+                updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(),
+                        keyMap, fieldMap, csdlEntityType, userLogin);
                 if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
                         UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||
                         UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {

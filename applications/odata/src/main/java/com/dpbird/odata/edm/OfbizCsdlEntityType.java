@@ -1,6 +1,7 @@
 package com.dpbird.odata.edm;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;

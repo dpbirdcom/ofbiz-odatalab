@@ -93,8 +93,7 @@ under the License.
     <service name="dpbird.updateEntityToDraft" engine="java"
              location="com.dpbird.odata.services.ProcessorServices" invoke="updateEntityToDraft" auth="true">
         <description>Update data in memory database</description>
-        <attribute name="originEntityName" type="String" mode="IN"/>
-        <attribute name="draftEntityName" type="String" mode="IN"/>
+        <attribute name="csdlEntityType" type="com.dpbird.odata.edm.OfbizCsdlEntityType" mode="IN"/>
         <attribute name="fieldMap" type="Map" mode="IN"/>
         <attribute name="sapContextId" type="String" mode="IN"/>
 <!--        <attribute name="parentDraftUUID" type="String" mode="IN" optional="true"/>-->

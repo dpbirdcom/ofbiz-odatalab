@@ -702,6 +702,33 @@
 		<NavigationProperty Name="DataResource"/>
 	</EntityType>
 
+<!--  别名字段demo start	-->
+	<EntityType Name="DemoContent" OfbizEntity="Content" AttrEntityName="ContentAttribute">
+		<Property Name="demoContentId" Field="contentId"/>
+		<Property Name="demoContentName" Field="contentName"/>
+		<Property Name="testStringAttr" Type="String" IsAttribute="true"/>
+		<NavigationProperty Name="DemoContentAttribute" Type="DemoContentAttribute" Relations="ContentAttribute"/>
+		<NavigationProperty Name="DemoDataResource" Type="DemoDataResource" Relations="DataResource"/>
+	</EntityType>
+	<EntityType Name="DemoContentAttribute" OfbizEntity="ContentAttribute">
+		<Property Name="demoContentId" Field="contentId"/>
+		<Property Name="demoAttrName" Field="attrName"/>
+		<Property Name="demoAttrValue" Field="attrValue"/>
+	</EntityType>
+	<EntityType Name="DemoDataResource" OfbizEntity="DataResource">
+		<Property Name="demoDataResourceId" Field="dataResourceId"/>
+		<Property Name="demoDataResourceName" Field="dataResourceName"/>
+		<NavigationProperty Name="DemoDataResourceAttribute" Type="DemoDataResourceAttribute"
+							Relations="DataResourceAttribute"/>
+	</EntityType>
+	<EntityType Name="DemoDataResourceAttribute" OfbizEntity="DataResourceAttribute">
+		<Property Name="demoDataResourceId" Field="dataResourceId"/>
+		<Property Name="demoAttrName" Field="attrName"/>
+		<Property Name="demoAttrValue" Field="attrValue"/>
+	</EntityType>
+<!--  别名字段demo end	-->
+
+
 	<Action Name="ProductEditAction" IsBound="true" EntitySetPath="product">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
 		<ReturnType Type="Product"/>
@@ -1404,6 +1431,10 @@
 		<EntitySet Name="PartyIdentifications" EntityType="PartyIdentification"/>
 		<EntitySet Name="UserLogins" EntityType="UserLogin"/>
 		<EntitySet Name="FixedAssets" EntityType="FixedAsset"/>
+		<EntitySet Name="DemoContents" EntityType="DemoContent"/>
+		<EntitySet Name="DemoContentAttributes" EntityType="DemoContentAttribute"/>
+		<EntitySet Name="DemoDataResources" EntityType="DemoDataResource"/>
+		<EntitySet Name="DemoDataResourceAttributes" EntityType="DemoDataResourceAttribute"/>
 		<ActionImport Name="DiscardAction" Action="DiscardAction"/>
 
 		<ActionImport Name="testImportActionPrimitive" Action="testImportActionPrimitive"/>

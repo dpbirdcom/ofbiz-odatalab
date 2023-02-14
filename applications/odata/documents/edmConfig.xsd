@@ -131,6 +131,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="Parameter"/>
                 <xs:element ref="ReturnType"/>
             </xs:sequence>
+            <xs:attribute name="EntitySetPath" type="xs:anyURI"/>
             <xs:attribute name="IsBound" type="xs:boolean"/>
             <xs:attribute name="IsComposable" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>

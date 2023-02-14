@@ -21,6 +21,7 @@ import org.apache.ofbiz.service.ModelService;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.ODataRequest;
@@ -100,7 +101,7 @@ public class DataModifyActions {
             }
             String entityKeyMapStr = draftAdminData.getString("entityKeyMap");
             ModelEntity modelEntity = delegator.getModelEntity(entityName);
-            Map<String, Object> keyMap = Util.StringToKeyMap(entityKeyMapStr, ",", true, null, modelEntity);
+            Map<String, Object> keyMap = Util.StringToKeyMap(entityKeyMapStr, ",", true, null, modelEntity, csdlEntityType);
             // mainEntity应该没有fromDate
 //            keyMap = Util.makeupFromDate(keyMap, modelEntity);
             GenericValue genericValue = null;
@@ -114,18 +115,18 @@ public class DataModifyActions {
                     deleteEntityWithService(dispatcher, entityName, keyMap, userLogin);
                 }
             } else {
-                List<String> noPkFieldNames = modelEntity.getNoPkFieldNames();
-                Map<String, Object> noPkFieldMap = new HashMap<>();
-                Map<String, Object> draftFields = draftGenericValue.getAllFields();
-                Set<String> draftFieldNames = draftFields.keySet();
-                for (String noPkFieldName : noPkFieldNames) {
-                    if (draftFieldNames.contains(noPkFieldName)) {
-                        Object noPkFieldValue = draftFields.get(noPkFieldName);
-                        noPkFieldMap.put(noPkFieldName, noPkFieldValue);
-                    } else {
-                        noPkFieldMap.put(noPkFieldName, null);
-                    }
-                }
+//                List<String> noPkFieldNames = modelEntity.getNoPkFieldNames();
+//                Map<String, Object> noPkFieldMap = new HashMap<>();
+//                Map<String, Object> draftFields = draftGenericValue.getAllFields();
+//                Set<String> draftFieldNames = draftFields.keySet();
+//                for (String noPkFieldName : noPkFieldNames) {
+//                    if (draftFieldNames.contains(noPkFieldName)) {
+//                        Object noPkFieldValue = draftFields.get(noPkFieldName);
+//                        noPkFieldMap.put(noPkFieldName, noPkFieldValue);
+//                    } else {
+//                        noPkFieldMap.put(noPkFieldName, null);
+//                    }
+//                }
                 Entity draftEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, draftGenericValue, locale);
                 if (genericValue == null) {
                     keyMap = createMainEntityFromDraft(dispatcher, delegator, httpServletRequest, csdlEntityType, edmProvider, draftGenericValue, userLogin, locale, draftEntity);
@@ -168,6 +169,8 @@ public class DataModifyActions {
             String draftEntityName = draftAdminData.getString("draftEntityName");
             String entityType = draftAdminData.getString("entityType");
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityType));
+            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+
             GenericValue draftGenericValue = delegator.findOne(draftEntityName,
                     UtilMisc.toMap("draftUUID", draftUUID), false);
             boolean isDelete = false;
@@ -180,7 +183,7 @@ public class DataModifyActions {
             String entityKeyMapStr = draftAdminData.getString("entityKeyMap");
             ModelEntity modelEntity = delegator.getModelEntity(entityName);
             // 对于新建的DraftEntity，navKeyMap是null
-            Map<String, Object> navKeyMap = Util.StringToKeyMap(entityKeyMapStr, ",", true, null, modelEntity);
+            Map<String, Object> navKeyMap = Util.StringToKeyMap(entityKeyMapStr, ",", true, null, modelEntity, navCsdlEntityType);
             navKeyMap = Util.makeupFromDate(navKeyMap, modelEntity);
             GenericValue genericValue = null;
             if (UtilValidate.isNotEmpty(navKeyMap)) {
@@ -212,7 +215,7 @@ public class DataModifyActions {
                 if (genericValue == null) {
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
                             csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
-                } else if (!draftHasSamePk(draftGenericValue, navKeyMap)) {
+                } else if (!draftHasSamePk(draftGenericValue, navKeyMap, navCsdlEntityType)) {
                     deleteRelatedEntity(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
                             csdlNavigationProperty.getName(), navKeyMap, userLogin, locale);
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
@@ -288,15 +291,22 @@ public class DataModifyActions {
 
     }
 
-    private static boolean draftHasSamePk(GenericValue draftGenericValue, Map<String, Object> keyMap) {
-        Set<Map.Entry<String, Object>> entrySet = keyMap.entrySet();
-        Iterator it = entrySet.iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) it.next();
+    private static boolean draftHasSamePk(GenericValue draftGenericValue, Map<String, Object> keyMap, OfbizCsdlEntityType csdlEntityType) throws OfbizODataException {
+        Map<String, Object> primaryKey = Util.fieldToProperty(keyMap, csdlEntityType);
+        for (Map.Entry<String, Object> entry : primaryKey.entrySet()) {
             if (!entry.getValue().equals(draftGenericValue.get(entry.getKey()))) {
                 return false;
             }
         }
+
+//        Set<Map.Entry<String, Object>> entrySet = keyMap.entrySet();
+//        Iterator it = entrySet.iterator();
+//        while (it.hasNext()) {
+//            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) it.next();
+//            if (!entry.getValue().equals(draftGenericValue.get(entry.getKey()))) {
+//                return false;
+//            }
+//        }
         return true;
     }
 
@@ -323,7 +333,7 @@ public class DataModifyActions {
             }
         }
         if (UtilValidate.isEmpty(pkMap)) {
-            pkMap = createEntityWithService(dispatcher, delegator, csdlEntityType.getOfbizEntity(), draftGenericValue, userLogin);
+            pkMap = createEntityWithService(dispatcher, delegator, csdlEntityType, draftGenericValue, userLogin);
            try {
                //创建relAlias字段
                GenericValue createdGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), pkMap, false);
@@ -361,15 +371,21 @@ public class DataModifyActions {
         return genericValue.getPrimaryKey();
     }
 
-    private static Map<String, Object> createEntityWithService(LocalDispatcher dispatcher, Delegator delegator, String entityName,
+    private static Map<String, Object> createEntityWithService(LocalDispatcher dispatcher, Delegator delegator, OfbizCsdlEntityType csdlEntityType,
                                                                GenericValue genericValue, GenericValue userLogin)
             throws GenericServiceException, OfbizODataException {
+        String entityName = csdlEntityType.getOfbizEntity();
         String serviceName;
         Map<String, Object> serviceParams;
         try {
+            Map<String, Object> allField = Util.propertyToField(genericValue.getAllFields(), csdlEntityType);
+            Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+            if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
+                allField.putAll(entityTypeConditionMap);
+            }
             serviceName = Util.getEntityActionService(entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
-            serviceParams = Util.prepareServiceParameters(modelService, genericValue);
+            serviceParams = Util.prepareServiceParameters(modelService, allField);
         } catch (OfbizODataException e) {
             if (!(delegator.getModelEntity(entityName) instanceof ModelViewEntity)) {
                 throw e;
