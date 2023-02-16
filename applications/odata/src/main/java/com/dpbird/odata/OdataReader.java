@@ -580,23 +580,13 @@ public class OdataReader extends OfbizOdataProcessor {
         ModelRelation modelRelation = relAlias.getRelationsEntity().get(relations.get(0));
         Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relations.get(0));
         //所有的查询条件
-        List<EntityCondition> conditionList = new ArrayList<>();
-        if (condition != null) {
-            conditionList.add(condition);
-        }
+        EntityCondition entityCondition = Util.appendCondition(condition, getRangeCondition(genericValueList, relAlias));
         //添加数据的范围条件
-        String rangeCondPrefix = null;
-        if (relations.size() > 1) {
-            rangeCondPrefix = relations.get(0);
-        }
-        conditionList.add(getRangeCondition(genericValueList, modelRelation, rangeCondPrefix));
-        EntityCondition entityCondition = EntityCondition.makeCondition(conditionList);
         try {
             if (relations.size() > 1) {
-                //如果relations是多段的 使用dynamicView做一次查询 TODO: 优化代码可读性
+                //如果relations是多段的 使用dynamicView做一次查询
                 DynamicViewEntity dynamicViewEntity = new DynamicViewEntity();
                 Map<String, ModelRelation> relationsEntity = relAlias.getRelationsEntity();
-                Map<String, EntityCondition> relationsCondition = relAlias.getRelationsCondition();
                 ModelRelation firstModelRelation = relationsEntity.get(relations.get(0));
                 Map<String, Object> firstConditionField = relAlias.getRelationsFieldMap().get(relations.get(0));
                 dynamicViewEntity.addMemberEntity(relations.get(0), firstModelRelation.getRelEntityName());
@@ -661,10 +651,14 @@ public class OdataReader extends OfbizOdataProcessor {
     }
 
     //获取实体集合查询子对象的条件
-    private static EntityCondition getRangeCondition(List<GenericValue> genericValues,
-                                                     ModelRelation modelRelation, String prefix) {
+    private static EntityCondition getRangeCondition(List<GenericValue> genericValues, EntityTypeRelAlias relAlias) {
+        List<String> relations = relAlias.getRelations();
+        ModelRelation modelRelation = relAlias.getRelationsEntity().get(relations.get(0));
         List<ModelKeyMap> keyMaps = modelRelation.getKeyMaps();
-        EntityCondition rangeCondition;
+        String prefix = null;
+        if (relations.size() > 1) {
+            prefix = relations.get(0);
+        }
         //单个key可以直接使用in
         if (keyMaps.size() == 1) {
             String relFieldName = keyMaps.get(0).getRelFieldName();
@@ -672,7 +666,7 @@ public class OdataReader extends OfbizOdataProcessor {
                 relFieldName = prefix + Util.firstUpperCase(relFieldName);
             }
             List<Object> fks = EntityUtil.getFieldListFromEntityList(genericValues, keyMaps.get(0).getFieldName(), true);
-            rangeCondition = EntityCondition.makeCondition(relFieldName, EntityOperator.IN, fks);
+            return EntityCondition.makeCondition(relFieldName, EntityOperator.IN, fks);
         } else {
             //如果relation是多个字段 要拼范围条件: (id=a AND seqId=01) OR (id=a AND seqId=02) OR ...
             List<EntityCondition> conditionList = new ArrayList<>();
@@ -687,9 +681,8 @@ public class OdataReader extends OfbizOdataProcessor {
                 }
                 conditionList.add(EntityCondition.makeCondition(currentConditions, EntityOperator.OR));
             }
-            rangeCondition = EntityCondition.makeCondition(conditionList, EntityOperator.AND);
+            return EntityCondition.makeCondition(conditionList, EntityOperator.AND);
         }
-        return rangeCondition;
     }
 
     /**

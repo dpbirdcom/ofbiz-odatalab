@@ -115,7 +115,7 @@ public class OfbizOdataProcessor {
         }
     }
 
-    private Map<String, Object> getOdataContext() {
+    public Map<String, Object> getOdataContext() {
         return UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                 "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
     }

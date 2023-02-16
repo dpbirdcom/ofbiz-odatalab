@@ -6,14 +6,18 @@ import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.handler.EntityHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
+import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.service.ModelService;
 import org.apache.ofbiz.service.ServiceValidationException;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ServiceMetadata;
@@ -21,11 +25,8 @@ import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.uri.UriResourceEntitySet;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 public class OdataWriter extends OfbizOdataProcessor {
     public static final String module = OdataWriter.class.getName();
@@ -115,7 +116,12 @@ public class OdataWriter extends OfbizOdataProcessor {
         //更新
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         Map<String, Object> updateResult = entityHandler.update(primaryKey, entityToWrite, odataContext, edmBindingTarget, updateParam);
-        return resultToEntity(edmNavigationProperty.getType(), updateResult);
+        OdataOfbizEntity updatedEntity = resultToEntity(edmNavigationProperty.getType(), updateResult);
+
+        // Create nested entities
+        EdmBindingTarget relatedBindingTarget = edmBindingTarget.getRelatedBindingTarget(edmNavigationProperty.getName());
+        createNestedEntities(updatedEntity, entityToWrite, relatedBindingTarget);
+        return updatedEntity;
     }
 
     public void deleteEntity(OdataOfbizEntity entity) throws OfbizODataException {
@@ -187,22 +193,80 @@ public class OdataWriter extends OfbizOdataProcessor {
         }
     }
 
+    /**
+     * 创建/更新 子对象数据
+     */
     private void createNestedEntities(OdataOfbizEntity entityCreated, Entity entityToWrite, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
         for (final Link link : entityToWrite.getNavigationLinks()) {
             if (UtilValidate.isEmpty(link.getInlineEntity()) && UtilValidate.isEmpty(link.getInlineEntitySet())) {
                 continue;
             }
-            EdmNavigationProperty edmNavigationProperty = edmBindingTarget.getEntityType().getNavigationProperty(link.getTitle());
+            EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+            EdmNavigationProperty edmNavigationProperty = edmEntityType.getNavigationProperty(link.getTitle());
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget,
                     "edmNavigationProperty", edmNavigationProperty, "entityToWrite", entityCreated);
             OdataWriter writer = new OdataWriter(odataContext, null, edmParams);
             List<Entity> inLineEntities = edmNavigationProperty.isCollection() ?
                     link.getInlineEntitySet().getEntities() : UtilMisc.toList(link.getInlineEntity());
             for (Entity nestedEntityToCreate : inLineEntities) {
-                Entity nestedEntityCreated = writer.createRelatedEntity(entityCreated, nestedEntityToCreate);
-                setLink(entityCreated, edmNavigationProperty.getName(), nestedEntityCreated);
+                //判断子对象是否是存在的 要创建还是要更新
+                boolean isUpdate = false;
+                Map<String, Object> navPrimaryKey = new HashMap<>();
+                if (!edmNavigationProperty.isCollection()) {
+                    //非collection没有传递主键 做一下查询
+                    OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
+                    Entity relatedOne = reader.findRelatedOne(entityCreated, edmEntityType, edmNavigationProperty, new HashMap<>());
+                    if (UtilValidate.isNotEmpty(relatedOne)) {
+                        isUpdate = true;
+                        navPrimaryKey = getEntityPrimaryKey(relatedOne, edmNavigationProperty.getType());
+                    }
+                } else {
+                    if (isExistEntity(nestedEntityToCreate, edmNavigationProperty.getType())) {
+                        isUpdate = true;
+                        navPrimaryKey = getEntityPrimaryKey(nestedEntityToCreate, edmNavigationProperty.getType());
+                    }
+                }
+                if (isUpdate) {
+                    //update
+                    Entity nestedEntityUpdate = writer.updateRelatedEntity(entityCreated, nestedEntityToCreate, navPrimaryKey);
+                    setLink(entityCreated, edmNavigationProperty.getName(), nestedEntityUpdate);
+                } else {
+                    //create
+                    Entity nestedEntityCreated = writer.createRelatedEntity(entityCreated, nestedEntityToCreate);
+                    setLink(entityCreated, edmNavigationProperty.getName(), nestedEntityCreated);
+                }
             }
         }
+    }
+
+    private boolean isExistEntity(Entity entity, EdmEntityType edmEntityType) throws OfbizODataException {
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        Map<String, Object> primaryKey = getEntityPrimaryKey(entity, edmEntityType);
+        if (UtilValidate.isEmpty(primaryKey)) {
+            return false;
+        }
+        try {
+            GenericValue delegatorOne = delegator.findOne(csdlEntityType.getOfbizEntity(), primaryKey, true);
+            return UtilValidate.isNotEmpty(delegatorOne);
+        } catch (GenericEntityException e) {
+            Debug.logError(e.getMessage(), module);
+            return false;
+        }
+    }
+
+    private Map<String, Object> getEntityPrimaryKey(Entity entity, EdmEntityType edmEntityType) throws OfbizODataException {
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        Map<String, Object> fieldMap = Util.propertyToField(Util.entityToMap(entity), csdlEntityType);
+        ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+        Map<String, Object> primaryKey = new HashMap<>();
+        for (String pkFieldName : modelEntity.getPkFieldNames()) {
+            Object pkValue = fieldMap.get(pkFieldName);
+            if (UtilValidate.isEmpty(pkValue)) {
+                return null;
+            }
+            primaryKey.put(pkFieldName, pkValue);
+        }
+        return primaryKey;
     }
 
     private void setLink(Entity entity, String navigationPropertyName, Entity nestedEntity) {
