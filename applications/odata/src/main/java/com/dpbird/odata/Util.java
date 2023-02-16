@@ -790,6 +790,9 @@ public class Util {
         Map<String, Object> fieldMap = new HashMap<String, Object>();
         for (String fieldName : fieldNames) {
             Object value = otherMap.get(fieldName);
+            if ("".equals(value)) {
+                value = null;
+            }
             fieldMap.put(fieldName, value);
         }
         return fieldMap;

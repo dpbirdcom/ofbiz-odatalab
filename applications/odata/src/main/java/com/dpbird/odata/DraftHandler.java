@@ -150,6 +150,7 @@ public class DraftHandler {
             Map<String, Object> propertyKey = Util.propertyToField(keyMap, csdlEntityType);
             fieldMap.putAll(Util.getRelatedFieldMap(delegator, entityName, csdlNavigationProperty, propertyKey, edmProvider));
         }
+        //添加Navigation Condition
         Map<String, Object> relatedConditionMap = Util.getRelatedConditionMap(csdlNavigationProperty);
         if (UtilValidate.isNotEmpty(relatedConditionMap)) {
             fieldMap.putAll(relatedConditionMap);
@@ -157,7 +158,10 @@ public class DraftHandler {
         //补充seqId
         OfbizCsdlEntityType navOfbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
         addDraftNextSeqId(navOfbizCsdlEntityType, fieldMap);
-
+        //添加Entity DefaultProperty
+        for (Map.Entry<String, Object> entry : navOfbizCsdlEntityType.getDefaultValueProperties().entrySet()) {
+            fieldMap.putIfAbsent(entry.getKey(), entry.getValue());
+        }
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", nestedEntityName,
                 "fieldMap", fieldMap, "sapContextId", this.sapContextId,
                 "draftEntityName", nestedDraftEntityName, "edmProvider", edmProvider,

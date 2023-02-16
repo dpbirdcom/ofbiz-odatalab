@@ -6,11 +6,14 @@ import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.HandlerResults;
 import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.http.HttpStatus;
+import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.condition.EntityExpr;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
@@ -354,7 +357,7 @@ public class OdataReader extends OfbizOdataProcessor {
         //filter、orderby、page
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
-        if (filterOption != null) {
+        if (filterOption != null || orderbyOption != null) {
             Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, navCsdlEntityType,
                     edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
@@ -375,7 +378,7 @@ public class OdataReader extends OfbizOdataProcessor {
      * 只有ofbiz缺省的Navigation查询会使用，这里跳过Handler，直接通过ofbiz查询所有关联数据
      */
     public void addDefaultExpandLink(Collection<Entity> entityList, EdmNavigationProperty edmNavigationProperty,
-                                                            Map<String, QueryOption> queryOptions) throws OfbizODataException {
+                                     Map<String, QueryOption> queryOptions) throws OfbizODataException {
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
         EntityCondition condition = null;
@@ -407,12 +410,19 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         //获取relation关联字段
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-        List<ModelKeyMap> relKeyMaps = modelEntity.getRelation(csdlNavigationProperty.getRelAlias().getRelations().get(0)).getKeyMaps();
+        EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
+        List<String> relations = relAlias.getRelations();
+        List<ModelKeyMap> relKeyMaps = modelEntity.getRelation(relations.get(0)).getKeyMaps();
         List<String> fieldNames = new ArrayList<>();
         List<String> relFieldNames = new ArrayList<>();
         for (ModelKeyMap relKeyMap : relKeyMaps) {
             fieldNames.add(relKeyMap.getFieldName());
-            relFieldNames.add(relKeyMap.getRelFieldName());
+            String relFieldName = relKeyMap.getRelFieldName();
+            //多段的relations查询时是添加了前缀的,所以当取值的时候也要加前缀
+            if (relations.size() > 1) {
+                relFieldName = relations.get(0) + Util.firstUpperCase(relFieldName);
+            }
+            relFieldNames.add(relFieldName);
         }
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, relatedEntityList, locale, userLogin);
@@ -421,7 +431,7 @@ public class OdataReader extends OfbizOdataProcessor {
             expandDataMap.put(relatedGenericList.get(i), relatedEntityList.get(i));
         }
         //处理下一层expand
-        recursionExpand(entityList, expandDataMap, edmNavigationProperty, fieldNames, relFieldNames);
+        recursionExpand(entityList, expandDataMap, edmNavigationProperty, relAlias, fieldNames, relFieldNames);
         //将查询出来的数据根据主外键进行匹配
         if (edmNavigationProperty.isCollection()) {
             Map<String, Entity> mainEntityMap = new HashMap<>();
@@ -458,7 +468,8 @@ public class OdataReader extends OfbizOdataProcessor {
 
     //处理当前所有子实体的expand
     private void recursionExpand(Collection<Entity> mainEntityList, Map<GenericValue, Entity> expandEntityMap,
-                                 EdmNavigationProperty edmNavigationProperty, List<String> fieldNames, List<String> relFieldNames) throws OfbizODataException {
+                                 EdmNavigationProperty edmNavigationProperty, EntityTypeRelAlias relAlias,
+                                 List<String> fieldNames, List<String> relFieldNames) throws OfbizODataException {
         Map<String, Entity> mainEntityMap = new HashMap<>();
         for (Entity entity : mainEntityList) {
             OdataOfbizEntity mainOfbizEn = (OdataOfbizEntity) entity;
@@ -570,52 +581,62 @@ public class OdataReader extends OfbizOdataProcessor {
         Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relations.get(0));
         //所有的查询条件
         List<EntityCondition> conditionList = new ArrayList<>();
-        //第一段Relation的条件
-        List<ModelKeyMap> keyMaps = modelRelation.getKeyMaps();
-        if (UtilValidate.isNotEmpty(relFieldMap)) {
-            conditionList.add(EntityCondition.makeCondition(relFieldMap));
-        }
-        //数据的范围条件，单个字段直接使用in，多主键使用and+or
-        if (keyMaps.size() == 1) {
-            List<Object> fks = EntityUtil.getFieldListFromEntityList(genericValueList, keyMaps.get(0).getFieldName(), true);
-            conditionList.add(EntityCondition.makeCondition(keyMaps.get(0).getRelFieldName(), EntityOperator.IN, fks));
-        } else {
-            //如果relation是多个字段 要拼范围条件: (id=a AND seqId=01) OR (id=a AND seqId=02) OR ...
-            List<EntityCondition> rangeCondition = new ArrayList<>();
-            for (GenericValue genericValue : genericValueList) {
-                List<EntityCondition> currentConditions = new ArrayList<>();
-                for (ModelKeyMap keyMap : keyMaps) {
-                    currentConditions.add(EntityCondition.makeCondition(keyMap.getRelFieldName(), EntityOperator.EQUALS, genericValue.get(keyMap.getFieldName())));
-                }
-                rangeCondition.add(EntityCondition.makeCondition(currentConditions, EntityOperator.OR));
-            }
-            conditionList.add(EntityCondition.makeCondition(rangeCondition, EntityOperator.AND));
-        }
         if (condition != null) {
             conditionList.add(condition);
         }
+        //添加数据的范围条件
+        String rangeCondPrefix = null;
+        if (relations.size() > 1) {
+            rangeCondPrefix = relations.get(0);
+        }
+        conditionList.add(getRangeCondition(genericValueList, modelRelation, rangeCondPrefix));
         EntityCondition entityCondition = EntityCondition.makeCondition(conditionList);
         try {
             if (relations.size() > 1) {
-                //如果relations是多段的 使用dynamicView做一次查询
+                //如果relations是多段的 使用dynamicView做一次查询 TODO: 优化代码可读性
                 DynamicViewEntity dynamicViewEntity = new DynamicViewEntity();
                 Map<String, ModelRelation> relationsEntity = relAlias.getRelationsEntity();
                 Map<String, EntityCondition> relationsCondition = relAlias.getRelationsCondition();
                 ModelRelation firstModelRelation = relationsEntity.get(relations.get(0));
+                Map<String, Object> firstConditionField = relAlias.getRelationsFieldMap().get(relations.get(0));
                 dynamicViewEntity.addMemberEntity(relations.get(0), firstModelRelation.getRelEntityName());
-                dynamicViewEntity.addAliasAll(relations.get(0), null, null);
+                //防止字段名重复 除了最后一段之外的Alias都要添加前缀
+                String prefix = relations.get(0);
+                dynamicViewEntity.addAliasAll(relations.get(0), prefix, null);
+                //第一段的condition
+                if (UtilValidate.isNotEmpty(firstConditionField)) {
+                    for (Map.Entry<String, Object> entry : firstConditionField.entrySet()) {
+                        String condFieldName = prefix + Util.firstUpperCase(entry.getKey());
+                        EntityCondition currCondition = EntityCondition.makeCondition(condFieldName, entry.getValue());
+                        entityCondition = Util.appendCondition(entityCondition, currCondition);
+                    }
+                }
                 for (int i = 1; i < relations.size(); i++) {
                     String currRel = relations.get(i);
                     String lastRel = relations.get(i - 1);
+                    String currPrefix = null;
                     ModelRelation currRelation = relationsEntity.get(currRel);
                     dynamicViewEntity.addMemberEntity(currRel, currRelation.getRelEntityName());
-                    dynamicViewEntity.addAliasAll(currRel, null, null);
+                    if (i < relations.size() - 1) {
+                        currPrefix = relations.get(i);
+                    }
+                    dynamicViewEntity.addAliasAll(currRel, currPrefix, null);
                     //add Link
                     ModelViewEntity modelViewEntity = dynamicViewEntity.makeModelViewEntity(delegator);
                     ModelViewEntity.ViewEntityCondition viewEntityCondition = null;
-                    EntityCondition relCondition = relationsCondition.get(currRel);
-                    if (relCondition != null) {
-                        viewEntityCondition = new ModelViewEntity.ViewEntityCondition(modelViewEntity, null, false, false, null, currRel, null, relCondition);
+                    Map<String, Object> currConditionFields = relAlias.getRelationsFieldMap().get(currRel);
+                    if (UtilValidate.isNotEmpty(currConditionFields)) {
+                        List<EntityCondition> linkConditions = new ArrayList<>();
+                        for (Map.Entry<String, Object> entry : currConditionFields.entrySet()) {
+                            String fieldName = entry.getKey();
+                            String fieldCondName = entry.getKey();
+                            if (currPrefix != null) {
+                                fieldCondName = currPrefix + Util.firstUpperCase(fieldName);
+                            }
+                            linkConditions.add(EntityCondition.makeCondition(fieldCondName, entry.getValue()));
+                        }
+                        viewEntityCondition = new ModelViewEntity.ViewEntityCondition(modelViewEntity, null,
+                                false, false, null, currRel, null, EntityCondition.makeCondition(linkConditions));
                     }
                     ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(lastRel, currRel, false, viewEntityCondition, currRelation.getKeyMaps());
                     dynamicViewEntity.addViewLink(modelViewLink);
@@ -623,6 +644,10 @@ public class OdataReader extends OfbizOdataProcessor {
                 Util.printDynamicView(dynamicViewEntity, null, module);
                 return EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).orderBy(orderByList).queryList();
             } else {
+                //添加第一段Relation的条件
+                if (UtilValidate.isNotEmpty(relFieldMap)) {
+                    entityCondition = Util.appendCondition(entityCondition, EntityCondition.makeCondition(relFieldMap));
+                }
                 //使用in一次性将所有主实体的所有子对象都查询出来
                 EntityQuery entityQuery = EntityQuery.use(delegator).from(modelRelation.getRelEntityName()).orderBy(orderByList).where(entityCondition);
                 if (filterByDate) {
@@ -633,6 +658,38 @@ public class OdataReader extends OfbizOdataProcessor {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+    //获取实体集合查询子对象的条件
+    private static EntityCondition getRangeCondition(List<GenericValue> genericValues,
+                                                     ModelRelation modelRelation, String prefix) {
+        List<ModelKeyMap> keyMaps = modelRelation.getKeyMaps();
+        EntityCondition rangeCondition;
+        //单个key可以直接使用in
+        if (keyMaps.size() == 1) {
+            String relFieldName = keyMaps.get(0).getRelFieldName();
+            if (prefix != null) {
+                relFieldName = prefix + Util.firstUpperCase(relFieldName);
+            }
+            List<Object> fks = EntityUtil.getFieldListFromEntityList(genericValues, keyMaps.get(0).getFieldName(), true);
+            rangeCondition = EntityCondition.makeCondition(relFieldName, EntityOperator.IN, fks);
+        } else {
+            //如果relation是多个字段 要拼范围条件: (id=a AND seqId=01) OR (id=a AND seqId=02) OR ...
+            List<EntityCondition> conditionList = new ArrayList<>();
+            for (GenericValue genericValue : genericValues) {
+                List<EntityCondition> currentConditions = new ArrayList<>();
+                for (ModelKeyMap keyMap : keyMaps) {
+                    String relFieldName = keyMap.getRelFieldName();
+                    if (prefix != null) {
+                        relFieldName = prefix + Util.firstUpperCase(relFieldName);
+                    }
+                    currentConditions.add(EntityCondition.makeCondition(relFieldName, EntityOperator.EQUALS, genericValue.get(keyMap.getFieldName())));
+                }
+                conditionList.add(EntityCondition.makeCondition(currentConditions, EntityOperator.OR));
+            }
+            rangeCondition = EntityCondition.makeCondition(conditionList, EntityOperator.AND);
+        }
+        return rangeCondition;
     }
 
     /**

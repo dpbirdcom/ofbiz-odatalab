@@ -378,14 +378,20 @@ public class DataModifyActions {
         String serviceName;
         Map<String, Object> serviceParams;
         try {
-            Map<String, Object> allField = Util.propertyToField(genericValue.getAllFields(), csdlEntityType);
+            Map<String, Object> allFields = new HashMap<>(Util.propertyToField(genericValue.getAllFields(), csdlEntityType));
+            //添加EntityType condition字段
             Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
             if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
-                allField.putAll(entityTypeConditionMap);
+                allFields.putAll(entityTypeConditionMap);
+            }
+            //添加缺省字段
+            Map<String, Object> defaultFields = Util.propertyToField(csdlEntityType.getDefaultValueProperties(), csdlEntityType);
+            for (Map.Entry<String, Object> entry : defaultFields.entrySet()) {
+                allFields.putIfAbsent(entry.getKey(), entry.getValue());
             }
             serviceName = Util.getEntityActionService(csdlEntityType, entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
-            serviceParams = Util.prepareServiceParameters(modelService, allField);
+            serviceParams = Util.prepareServiceParameters(modelService, allFields);
         } catch (OfbizODataException e) {
             if (!(delegator.getModelEntity(entityName) instanceof ModelViewEntity)) {
                 throw e;
