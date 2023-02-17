@@ -494,7 +494,7 @@ public class ProcessorServices {
                 fieldMap.put("hasActiveEntity", "Y");
                 fieldMap.put("hasDraftEntity", "N");
                 fieldMap.putAll(entityMap);
-                GenericValue draftGenericValue = delegator.makeValue(draftEntityName, fieldMap);
+                GenericValue draftGenericValue = delegator.makeValidValue(draftEntityName, fieldMap);
                 draftGenericValue.create();
                 result.put("draftGenericValue", draftGenericValue);
             } else { // 内存数据库有记录，则更新内存数据库的记录
