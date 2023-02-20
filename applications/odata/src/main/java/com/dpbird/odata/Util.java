@@ -1854,6 +1854,13 @@ public class Util {
         return relationsFieldMap.get(lastRelation);
     }
 
+    /**
+     * 获取实体的service
+     *
+     * @param csdlEntityType 优先用这个EntityType的Name去找Service
+     * @param entityName    如果前者没有找到，再根据这个实体名称去查
+     * @param action        操作类型： create、update、delete
+     */
     public static String getEntityActionService(OfbizCsdlEntityType csdlEntityType, String entityName, String action, Delegator delegator) throws OfbizODataException {
         String serviceName;
         if (UtilValidate.isNotEmpty(csdlEntityType)) {

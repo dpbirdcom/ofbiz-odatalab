@@ -152,8 +152,8 @@ public class OdataWriterHelper {
                 }
             }
             if (updatedGenericValue == null) {
-                Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
-                fieldMap = Util.propertyToField(fieldMap, csdlEntityType);
+                Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+                Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);
                 //如果draft提交保存数据，保留值为null的字段
                 if (entityToWrite instanceof OdataOfbizEntity && ((OdataOfbizEntity) entityToWrite).isDraft()) {
                     OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entityToWrite;

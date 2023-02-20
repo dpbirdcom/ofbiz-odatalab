@@ -726,12 +726,14 @@ public class OdataProcessorHelper {
             /********** 获取系统所有的service **************************************************/
             String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "create", delegator);
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
-            Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
+            Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
             //添加DefaultValue
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
-                fieldMap.putIfAbsent(entry.getKey(), entry.getValue());
+                propertyMap.putIfAbsent(entry.getKey(), entry.getValue());
             }
-            fieldMap = Util.prepareServiceParameters(modelService, Util.propertyToField(fieldMap, csdlEntityType));
+            //转成数据库字段
+            Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);
+            fieldMap = Util.prepareServiceParameters(modelService, fieldMap);
             if (serviceName != null) { // ofbiz存在创建这个对象的service，那就建议用户调用service，不要直接创建
                 if (userLogin == null) {
                     Debug.logInfo("------------- using system userlogin to create object", module);
