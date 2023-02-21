@@ -131,9 +131,10 @@ public class DraftHandler {
         String nestedDraftEntityName = nestedCsdlEntityType.getDraftEntityName();
 
         Map<String, Object> fieldMap = Util.entityToMap(entityToWrite);
-        if (keyMap.size() == 1 && (keyMap.get("id") != null || keyMap.get("draftUUID") != null)) {
+        if (keyMap.size() == 1 && keyMap.get("draftUUID") != null) {
             //三段式创建draft数据，要拿第二段的id给第三段当parentUUID
-            String draftUUId = keyMap.get("draftUUID") != null ? (String) keyMap.get("draftUUID") : (String) keyMap.get("id");
+            String draftUUId = (String) keyMap.get("draftUUID");
+            fieldMap.put("parentDraftUUID", draftUUId);
             try {
                 //补全子对象的主键
                 GenericValue parentDraftGV = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", draftUUId), false);
@@ -300,9 +301,14 @@ public class DraftHandler {
         List<GenericValue> draftAdminDataList;
         List<GenericValue> draftGenericValues;
         GenericValue draftGenericValue;
+        String draftUUId = sapContextId;
+        if (keyMap.containsKey("draftUUID")) {
+            //三段式查询
+            draftUUId = (String) keyMap.get("draftUUID");
+        }
         try {
             draftAdminDataList = delegator.findByAnd("DraftAdministrativeData",
-                    UtilMisc.toMap("parentDraftUUID", sapContextId, "navigationProperty", edmNavigationProperty.getName(), "entityType", navEntityType),
+                    UtilMisc.toMap("parentDraftUUID", draftUUId, "navigationProperty", edmNavigationProperty.getName(), "entityType", navEntityType),
                     null, false);
             List<String> draftUUIDs = EntityUtil.getFieldListFromEntityList(draftAdminDataList, "draftUUID", true);
             EntityCondition entityCondition = EntityCondition.makeCondition("draftUUID", EntityJoinOperator.IN, draftUUIDs);

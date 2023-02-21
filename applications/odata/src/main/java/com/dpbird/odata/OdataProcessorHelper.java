@@ -705,6 +705,9 @@ public class OdataProcessorHelper {
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, String serviceName, String entityName, Map<String, Object> fieldMap)
             throws GenericServiceException, GenericEntityException, OfbizODataException {
         Map<String, Object> result = dispatcher.runSync(serviceName, fieldMap);
+        if (ServiceUtil.isError(result)) {
+            throw new OfbizODataException(result.get("errorMessageList").toString());
+        }
         // 光运行了创建entity的service，我们都还不知道是哪个具体的数据被创建了，所以需要获取新创建的entity的pk，然后从数据库获取这个新创建的GenericValue
         Map<String, Object> pkMap;
         if (result.containsKey("pkMap")) {
@@ -716,11 +719,10 @@ public class OdataProcessorHelper {
     }
 
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
-                                                  EdmEntityType edmEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
+                                                  OfbizCsdlEntityType csdlEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
                                                   OfbizAppEdmProvider edmProvider, GenericValue userLogin)
             throws OfbizODataException {
         GenericValue newGenericValue = null;
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         try {
             /********** 获取系统所有的service **************************************************/

@@ -94,7 +94,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             if (resourceParts.size() == 1) {
                 //create
                 edmBindingTarget = ((UriResourceEntitySet) lastUriResource).getEntitySet();
-                ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType);
+                ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType, serviceMetadata);
                 DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmBindingTarget.getEntityType());
                 Map<String, Object> serviceParms = UtilMisc.toMap("odataContext", odataContext, "edmBindingTarget", edmBindingTarget,
                         "entityToWrite", result.getEntity(), "sapContextId", sapContextId, "userLogin", userLogin);
@@ -110,7 +110,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 edmBindingTarget = lastResourceData.getEdmBindingTarget();
                 UriResourceNavigation resourceNavigation = (UriResourceNavigation) lastUriResource;
                 EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType);
+                ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType, serviceMetadata);
                 DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmNavigationProperty.getType());
                 Map<String, Object> serviceParms = UtilMisc.toMap("odataContext", odataContext, "entity", entity,
                         "edmBindingTarget", edmBindingTarget, "entityToWrite", result.getEntity(), "edmNavigationProperty", edmNavigationProperty,
@@ -234,7 +234,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
     public void updateEntity(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo, ContentType requestContentType,
                              ContentType responseContentType) throws ODataApplicationException, ODataLibraryException {
         OdataOfbizEntity updatedEntity;
-        ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType);
+        ODataDeserializer deserializer = this.odata.createDeserializer(requestContentType, serviceMetadata);
         String sapContextId = DataModifyActions.checkSapContextId(delegator, oDataRequest, null);
 
         EdmBindingTarget edmBindingTarget;
@@ -245,8 +245,9 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
                 //update
                 UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) lastUriResource;
                 edmBindingTarget = uriResourceEntitySet.getEntitySet();
-                Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmBindingTarget.getEntityType(), edmProvider);
-                DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmBindingTarget.getEntityType());
+                EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
+                Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntityType, edmProvider);
+                DeserializerResult result = deserializer.entity(oDataRequest.getBody(), edmEntityType);
                 Map<String, Object> serviceParms = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", edmBindingTarget,
                         "primaryKey", primaryKey, "entityToWrite", result.getEntity(), "sapContextId", sapContextId, "userLogin", userLogin);
                 Map<String, Object> createdResult = dispatcher.runSync("dpbird.updateEntity", serviceParms);

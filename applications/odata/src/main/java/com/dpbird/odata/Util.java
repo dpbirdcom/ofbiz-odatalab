@@ -1086,6 +1086,9 @@ public class Util {
 
     public static Map<String, Object> uriParametersToMap(List<UriParameter> keyParams, EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider)
             throws OfbizODataException {
+        if (edmEntityType.getBaseType() != null) {
+            edmEntityType = edmEntityType.getBaseType();
+        }
         Map<String, Object> pk = new HashMap<String, Object>();
         if (edmEntityType == null) { // 将来不会为null的，这种字符串处理参数的方式，要被封杀
             for (UriParameter keyPredicate : keyParams) {
@@ -1858,8 +1861,8 @@ public class Util {
      * 获取实体的service
      *
      * @param csdlEntityType 优先用这个EntityType的Name去找Service
-     * @param entityName    如果前者没有找到，再根据这个实体名称去查
-     * @param action        操作类型： create、update、delete
+     * @param entityName     如果前者没有找到，再根据这个实体名称去查
+     * @param action         操作类型： create、update、delete
      */
     public static String getEntityActionService(OfbizCsdlEntityType csdlEntityType, String entityName, String action, Delegator delegator) throws OfbizODataException {
         String serviceName;
@@ -2500,7 +2503,7 @@ public class Util {
         for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
             OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) ofbizCsdlEntityType.getProperty(entry.getKey());
             if (UtilValidate.isNotEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlProperty.getOfbizFieldName())
-                && UtilValidate.isEmpty(csdlProperty.getRelAlias())) {
+                    && UtilValidate.isEmpty(csdlProperty.getRelAlias())) {
                 resultMap.put(csdlProperty.getOfbizFieldName(), entry.getValue());
             } else {
                 resultMap.put(entry.getKey(), entry.getValue());
@@ -2509,5 +2512,29 @@ public class Util {
         return resultMap;
     }
 
+    /**
+     * 将BaseType的主键传递给DerivedEntity
+     *
+     * @param csdlEntityType BaseType CsdlEntityType
+     * @param baseGenericValue BaseType GenericValue
+     * @param derivedEntity DerivedType Entity
+     */
+    public static void addBasePrimaryKey(LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
+                                                OfbizCsdlEntityType csdlEntityType, GenericValue baseGenericValue, Entity derivedEntity) throws OfbizODataException {
+        OdataOfbizEntity baseEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, baseGenericValue, null);
+        if (UtilValidate.isEmpty(baseEntity)) {
+            return;
+        }
+        ModelEntity modelEntity = baseGenericValue.getModelEntity();
+        for (String pkFieldName : modelEntity.getPkFieldNames()) {
+            Property property = derivedEntity.getProperty(pkFieldName);
+            if (UtilValidate.isEmpty(property)) {
+                derivedEntity.addProperty(baseEntity.getProperty(pkFieldName));
+            } else if (UtilValidate.isEmpty(property.getValue())) {
+                Property baseEntityProperty = baseEntity.getProperty(pkFieldName);
+                property.setValue(baseEntityProperty.getValueType(), baseEntityProperty.getValue());
+            }
+        }
+    }
 
 }
