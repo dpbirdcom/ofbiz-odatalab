@@ -206,28 +206,9 @@ public class OdataReader extends OfbizOdataProcessor {
         Util.printDynamicView(dynamicViewEntity, entityCondition, module);
         List<GenericValue> resultList = new ArrayList<>();
         try {
-            // select
-            Set<String> selectSet = new HashSet<>();
-            if (UtilValidate.isNotEmpty(fieldsToSelect)) {
-                selectSet = new HashSet<>(fieldsToSelect);
-                //后面要处理expand，添加外键
-                selectSet.addAll(Util.getEntityFk(modelEntity));
-            } else {
-                OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-                for (String propertyName : edmEntityType.getPropertyNames()) {
-                    OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
-                    if (property == null && csdlEntityType.getBaseType() != null) {
-                        property = csdlEntityType.getBaseTypeProperty(propertyName, edmProvider);
-                    }
-                    if (property != null && property.getRelAlias() == null && property.getOfbizFieldName() != null) {
-                        selectSet.add(property.getOfbizFieldName());
-                    }
-                }
-            }
-
             //query
             EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity);
-            entityQuery = entityQuery.select(selectSet).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();
+            entityQuery = entityQuery.select(getValidSelect()).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();
             int listCount;
             List<GenericValue> dataItems;
             try (EntityListIterator iterator = entityQuery.queryIterator()) {
@@ -241,6 +222,40 @@ public class OdataReader extends OfbizOdataProcessor {
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+    /**
+     * 获取有效的select
+     * 如果请求带有select就使用，如果没有就select所有的字段，但查询数据库时都必须排除掉语义化字段。
+     */
+    private Set<String> getValidSelect() throws OfbizODataException {
+        Set<String> selectSet = new HashSet<>();
+        List<OfbizCsdlProperty> selectProperty = new ArrayList<>();
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        if (UtilValidate.isNotEmpty(fieldsToSelect)) {
+            for (String selectField : fieldsToSelect) {
+                OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(selectField);
+                selectProperty.add(property);
+            }
+            //后面要处理expand，添加外键
+            selectSet.addAll(Util.getEntityFk(modelEntity));
+        } else {
+            for (String propertyName : edmEntityType.getPropertyNames()) {
+                OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
+                if (property == null && csdlEntityType.getBaseType() != null) {
+                    property = csdlEntityType.getBaseTypeProperty(propertyName, edmProvider);
+                }
+                if (property!= null) {
+                    selectProperty.add(property);
+                }
+            }
+        }
+        for (OfbizCsdlProperty csdlProperty : selectProperty) {
+            if (csdlProperty != null && csdlProperty.getRelAlias() == null && csdlProperty.getOfbizFieldName() != null) {
+                selectSet.add(csdlProperty.getOfbizFieldName());
+            }
+        }
+        return selectSet;
     }
 
     public OdataOfbizEntity makeEntityFromGv(GenericValue genericValue) throws OfbizODataException {
