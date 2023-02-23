@@ -16,6 +16,7 @@ import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
@@ -84,6 +85,7 @@ public class OdataWriterHelper {
                                                                        Locale locale) throws OfbizODataException {
         OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
         try {
             GenericValue nestedGenericValue = null;
@@ -98,7 +100,7 @@ public class OdataWriterHelper {
                 }
             }
             if (nestedGenericValue == null) {
-                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, edmProvider, dispatcher, delegator, userLogin);
+                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin);
                 if (nestedGenericValue == null) {
                     return null;
                 }

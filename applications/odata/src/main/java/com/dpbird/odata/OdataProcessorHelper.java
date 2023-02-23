@@ -436,7 +436,7 @@ public class OdataProcessorHelper {
         if ("DynamicViewEntity".equals(genericValue.getEntityName())) {
             return null;
         }
-        ModelEntity typeModelEntity = delegator.getModelEntity(genericValue.getModelEntity().getEntityName() + "Type");
+        ModelEntity typeModelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity() + "Type");
         String typeIdName = typeModelEntity.getOnlyPk().getName();
         String typeIdValue = genericValue.getString(typeIdName);
         Map<String, Object> typePrimaryKey = UtilMisc.toMap(typeModelEntity.getOnlyPk().getName(), typeIdValue);
@@ -1516,14 +1516,9 @@ public class OdataProcessorHelper {
 
 
     public static GenericValue createRelatedGenericValue(Entity entityToWrite, OdataOfbizEntity mainEntity,
-                                                         EntityTypeRelAlias relAlias, OfbizAppEdmProvider edmProvider,
-                                                         LocalDispatcher dispatcher, Delegator delegator,
+                                                         EntityTypeRelAlias relAlias,OfbizCsdlEntityType navCsdlEntityType,
+                                                         OfbizAppEdmProvider edmProvider, LocalDispatcher dispatcher, Delegator delegator,
                                                          GenericValue userLogin) throws OfbizODataException {
-        //获取要创建实体的EntityType 如果有EntityType有Condition也要添加进去
-        OfbizCsdlEntityType navCsdlEntityType = null;
-        if (UtilValidate.isNotEmpty(entityToWrite.getType())) {
-            navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(entityToWrite.getType()));
-        }
         GenericValue genericValue = mainEntity.getGenericValue();
         List<String> relations = relAlias.getRelations();
         int relationSize = relations.size();

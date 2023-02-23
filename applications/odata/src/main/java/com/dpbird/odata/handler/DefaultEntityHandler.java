@@ -130,8 +130,15 @@ public class DefaultEntityHandler implements EntityHandler {
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) createParam.get("edmNavigationProperty");
             OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty) entityType.getNavigationProperty(edmNavigationProperty.getName());
-            genericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, navigationProperty.getRelAlias(), edmProvider, dispatcher, delegator, userLogin);
-            //TODO:创建DerivedEntity.
+            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+            genericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, navigationProperty.getRelAlias(), navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin);
+            if (navCsdlEntityType.isHasDerivedEntity()) {
+                //创建DerivedEntity
+                FullQualifiedName qualifiedName = new FullQualifiedName(entityToWrite.getType());
+                Util.addBasePrimaryKey(dispatcher, edmProvider, navCsdlEntityType, genericValue, entityToWrite);
+                OfbizCsdlEntityType derivedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(qualifiedName);
+                OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedCsdlEntityType, entityToWrite, edmProvider, userLogin);
+            }
         }
         return genericValue;
     }

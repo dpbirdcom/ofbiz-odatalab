@@ -352,6 +352,14 @@
 	<EntityType Name="TelecomNumber" BaseType="ContactMech" AutoProperties="true"/>
 
 	<!-- 测试BaseType start-->
+	<EntityType Name="BaseOrderHeader" OfbizEntity="OrderHeader">
+		<Property Name="orderId"/>
+		<Property Name="orderName"/>
+		<Property Name="externalId"/>
+		<Property Name="orderTypeId"/>
+		<NavigationProperty Name="BaseContactMech" Type="BaseContactMech" IsCollection="true"
+							Relations="OrderContactMech(contactMechPurposeTypeId=SHIPPING_LOCATION)/ContactMech"/>
+	</EntityType>
 	<EntityType Name="BaseContactMech" OfbizEntity="ContactMech" hasDerivedEntity="true" AutoProperties="true">
 		<NavigationProperty Name="DerivedPostalAddress" Type="DerivedPostalAddress" Relations="PostalAddress"/>
 		<NavigationProperty Name="DerivedTelecomNumber" Type="DerivedTelecomNumber" Relations="TelecomNumber"/>
@@ -1396,6 +1404,7 @@
 		<EntitySet Name="ProductCategoryMembers" EntityType="ProductCategoryMember"/>
 		<EntitySet Name="ProductFeatureTypes" EntityType="ProductFeatureType"></EntitySet>
 		<EntitySet Name="ProductFeatures" EntityType="ProductFeature"/>
+		<EntitySet Name="BaseOrderHeaders" EntityType="BaseOrderHeader"/>
 		<EntitySet Name="ProductCategories" EntityType="ProductCategory">
 		    <NavigationPropertyBinding Path="MemberProduct" Target="Products" />
 			<NavigationPropertyBinding Path="ProductCategoryMember" Target="ProductCategoryMembers"/>
