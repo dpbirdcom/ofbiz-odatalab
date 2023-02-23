@@ -695,6 +695,7 @@ public class ProcessorServices {
         persistentTwoLevelNavEntity(oDataContext, mainGenericValue, csdlEntityType, sapContextId, 1);
         try {
             DataModifyActions.clearEntityDraft(oDataContext, sapContextId);
+            delegator.refresh(mainGenericValue);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
