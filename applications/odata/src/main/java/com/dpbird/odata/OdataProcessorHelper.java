@@ -1516,7 +1516,7 @@ public class OdataProcessorHelper {
 
 
     public static GenericValue createRelatedGenericValue(Entity entityToWrite, OdataOfbizEntity mainEntity,
-                                                         EntityTypeRelAlias relAlias,OfbizCsdlEntityType navCsdlEntityType,
+                                                         EntityTypeRelAlias relAlias, OfbizCsdlEntityType navCsdlEntityType,
                                                          OfbizAppEdmProvider edmProvider, LocalDispatcher dispatcher, Delegator delegator,
                                                          GenericValue userLogin) throws OfbizODataException {
         GenericValue genericValue = mainEntity.getGenericValue();
@@ -1595,7 +1595,26 @@ public class OdataProcessorHelper {
                 }
             }
             try {
-                createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+                //如果当前主键完整并且已经存在这条数据就不再创建
+                Map<String, Object> primaryKey = new HashMap<>();
+                boolean containsKey = true;
+                for (String pkFieldName : delegator.getModelEntity(entityName).getPkFieldNames()) {
+                    Object value = serviceParams.get(pkFieldName);
+                    if (UtilValidate.isEmpty(value)) {
+                        containsKey = false;
+                        continue;
+                    }
+                    primaryKey.put(pkFieldName, serviceParams.get(pkFieldName));
+                }
+                GenericValue existGenericValue = null;
+                if (containsKey) {
+                    existGenericValue = delegator.findOne(entityName, primaryKey, false);
+                }
+                if (UtilValidate.isNotEmpty(existGenericValue)) {
+                    createdGenericValue = existGenericValue;
+                } else {
+                    createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
+                }
             } catch (GenericServiceException | GenericEntityException e) {
                 throw new OfbizODataException(e.getMessage());
             }
