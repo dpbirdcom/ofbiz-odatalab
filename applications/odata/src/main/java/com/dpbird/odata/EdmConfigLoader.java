@@ -2287,7 +2287,10 @@ public class EdmConfigLoader {
                     modelEntity.addField(ModelField.create(modelEntity, property.getName(), ofbizPropertyType, false));
                 }
             }
-
+            //如果有Derived 把Derived的字段和relation也添加进去以支持编辑
+            if (entityType.isHasDerivedEntity()) {
+                addDerivedModelElement(entityType, edmWebConfig, delegator, modelEntity);
+            }
             //Draft固定的relation
             ModelRelation draftAdminRelation = ModelRelation.create(modelEntity, null, "one-nofk", null, "DraftAdministrativeData", null, ModelKeyMap.makeKeyMapList("draftUUID"), false);
             modelEntity.addRelation(draftAdminRelation);
@@ -2329,6 +2332,22 @@ public class EdmConfigLoader {
             entityCache.put(modelEntity.getEntityName(), modelEntity);
             Map<String, String> groupCache = delegator.getModelGroupReader().getGroupCache(delegator.getDelegatorBaseName());
             groupCache.put(modelEntity.getEntityName(), "org.apache.ofbiz.memory");
+        }
+    }
+
+    private static void addDerivedModelElement(OfbizCsdlEntityType baseCsdlEntityType, EdmWebConfig edmWebConfig, Delegator delegator, ModelEntity baseDraftModelEntity) {
+        for (OfbizCsdlEntityType csdlEntityType : edmWebConfig.getEntityTypes()) {
+            if (csdlEntityType.getBaseTypeFQN() != null && baseCsdlEntityType.getName().equals(csdlEntityType.getBaseTypeFQN().getName())) {
+                for (CsdlProperty property : csdlEntityType.getProperties()) {
+                    OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
+                    //忽略Complex字段
+                    if (!baseDraftModelEntity.isField(property.getName()) && !property.getType().contains(OfbizMapOdata.NAMESPACE)) {
+                        String ofbizPropertyType = getPropertyOfbizType(csdlEntityType, ofbizCsdlProperty, delegator);
+                        baseDraftModelEntity.addField(ModelField.create(baseDraftModelEntity, property.getName(), ofbizPropertyType, false));
+                    }
+                }
+                //TODO: add relation.
+            }
         }
     }
 

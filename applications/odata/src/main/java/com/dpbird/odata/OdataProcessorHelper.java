@@ -430,9 +430,8 @@ public class OdataProcessorHelper {
         }
     }
 
-    private static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator delegator,
-                                                      OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType) throws GenericEntityException {
-        GenericValue genericValue = ofbizEntity.getGenericValue();
+    public static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator delegator,
+                                                      GenericValue genericValue, OfbizCsdlEntityType csdlEntityType) throws OfbizODataException {
         if ("DynamicViewEntity".equals(genericValue.getEntityName())) {
             return null;
         }
@@ -440,24 +439,35 @@ public class OdataProcessorHelper {
         String typeIdName = typeModelEntity.getOnlyPk().getName();
         String typeIdValue = genericValue.getString(typeIdName);
         Map<String, Object> typePrimaryKey = UtilMisc.toMap(typeModelEntity.getOnlyPk().getName(), typeIdValue);
-        GenericValue typeGenericValue = delegator.findOne(typeModelEntity.getEntityName(), typePrimaryKey, true);
-        if (UtilValidate.isEmpty(typeGenericValue)) {
-            //没有衍生类型 保持原始类型
-            return null;
-        }
-        String derivedEntityName = null;
-        if (typeGenericValue.getBoolean("hasTable")) {
-            derivedEntityName = Util.underlineToUpperHump(typeIdValue);
-        }
-        for (CsdlEntityType csdlEntity : edmProvider.cachedSchema.getEntityTypes()) {
-            OfbizCsdlEntityType currET = (OfbizCsdlEntityType) csdlEntity;
-            if (currET.getBaseTypeFQN() != null &&
-                    csdlEntityType.getName().equals(currET.getBaseTypeFQN().getName()) &&
-                    currET.getOfbizEntity().equals(derivedEntityName)) {
-                return currET;
+        try {
+            GenericValue typeGenericValue = delegator.findOne(typeModelEntity.getEntityName(), typePrimaryKey, true);
+            if (UtilValidate.isEmpty(typeGenericValue)) {
+                //没有衍生类型 保持原始类型
+                return null;
             }
+            String derivedEntityName = null;
+            if (typeGenericValue.getBoolean("hasTable")) {
+                derivedEntityName = Util.underlineToUpperHump(typeIdValue);
+            }
+            for (CsdlEntityType csdlEntity : edmProvider.cachedSchema.getEntityTypes()) {
+                OfbizCsdlEntityType currET = (OfbizCsdlEntityType) csdlEntity;
+                if (currET.getBaseTypeFQN() != null &&
+                        csdlEntityType.getName().equals(currET.getBaseTypeFQN().getName()) &&
+                        currET.getOfbizEntity().equals(derivedEntityName)) {
+                    return currET;
+                }
+            }
+            return null;
+        } catch (GenericEntityException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
-        return null;
+
+    }
+
+    public static OfbizCsdlEntityType getDerivedType(OfbizAppEdmProvider edmProvider, Delegator delegator,
+                                                      OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType) throws OfbizODataException {
+        return getDerivedType(edmProvider, delegator, ofbizEntity.getGenericValue(), csdlEntityType);
 
     }
 

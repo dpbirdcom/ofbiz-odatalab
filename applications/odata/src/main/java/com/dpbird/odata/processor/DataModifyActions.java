@@ -323,7 +323,7 @@ public class DataModifyActions {
     private static Map<String, Object> createMainEntityFromDraft(LocalDispatcher dispatcher, Delegator delegator, HttpServletRequest httpServletRequest,
                                                                  OfbizCsdlEntityType csdlEntityType, OfbizAppEdmProvider edmProvider,
                                                                  GenericValue draftGenericValue, GenericValue userLogin, Locale locale, Entity entity)
-            throws GenericServiceException, ODataException {
+            throws GenericServiceException, ODataException, GenericEntityException {
         Map<String, Object> pkMap = null;
         if (csdlEntityType.getHandlerClass() != null) {
             try {
@@ -334,18 +334,25 @@ public class DataModifyActions {
         }
         if (UtilValidate.isEmpty(pkMap)) {
             pkMap = createEntityWithService(dispatcher, delegator, csdlEntityType, draftGenericValue, userLogin);
-           try {
-               //创建relAlias字段
-               GenericValue createdGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), pkMap, false);
-               OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, createdGenericValue, locale);
-               if (entityCreated != null) {
-                   OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider,
-                           entity, entityCreated, locale, userLogin);
-               }
-           } catch (GenericEntityException e) {
-               e.printStackTrace();
-               throw new OfbizODataException(e.getMessage());
-           }
+            //创建DerivedEntity
+            if (csdlEntityType.isHasDerivedEntity()) {
+                OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, draftGenericValue, csdlEntityType);
+                if (UtilValidate.isNotEmpty(derivedType)) {
+                    createEntityWithService(dispatcher, delegator, derivedType, draftGenericValue, userLogin);
+                }
+            }
+            try {
+                //创建relAlias字段
+                GenericValue createdGenericValue = delegator.findOne(csdlEntityType.getOfbizEntity(), pkMap, false);
+                OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, createdGenericValue, locale);
+                if (entityCreated != null) {
+                    OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                            entity, entityCreated, locale, userLogin);
+                }
+            } catch (GenericEntityException e) {
+                e.printStackTrace();
+                throw new OfbizODataException(e.getMessage());
+            }
         }
         return pkMap;
     }
