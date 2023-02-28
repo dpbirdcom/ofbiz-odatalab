@@ -11,12 +11,10 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
@@ -100,6 +98,16 @@ public class OdataWriterHelper {
                 nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin);
                 if (nestedGenericValue == null) {
                     return null;
+                }
+            }
+            //创建Derived
+            if (navCsdlEntityType.isHasDerivedEntity()) {
+                OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, (OdataOfbizEntity) entityToWrite, navCsdlEntityType);
+                if (UtilValidate.isNotEmpty(derivedType)) {
+                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entityToWrite;
+                    Entity derivedEntity = Util.mapToEntity(derivedType, ofbizEntity.getGenericValue());
+                    Util.addBasePrimaryKey(dispatcher, edmProvider, navCsdlEntityType, nestedGenericValue, derivedEntity);
+                    OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedType, derivedEntity, edmProvider, userLogin);
                 }
             }
             OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
