@@ -27,9 +27,11 @@ import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.*;
+import org.apache.olingo.server.api.uri.UriHelper;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.UriParameter;
 import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.core.uri.UriHelperImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,6 +39,7 @@ import javax.servlet.http.HttpSession;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -302,6 +305,15 @@ public class OdataProcessorHelper {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OdataOfbizEntity odataOfbizEntity =
                 genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
+        try {
+            if (odataOfbizEntity.getId() == null) {
+                final UriHelper uriHelper = new UriHelperImpl();
+                String idName = edmBindingTarget == null ? edmEntityType.getName() : edmBindingTarget.getName();
+                odataOfbizEntity.setId(URI.create(idName + '(' + uriHelper.buildKeyPredicate(edmEntityType, odataOfbizEntity) + ')'));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         /****** set edit link ********************/
         Link link = new Link();
         if (odataOfbizEntity.getId() != null) { // TODO:要检查一下为什么会有id为null的情况

@@ -101,7 +101,7 @@ public class OdataReader extends OfbizOdataProcessor {
         if (UtilValidate.isEmpty(resultMap)) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Not found.");
         }
-        OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
+        OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, resultMap);
         entity.addOdataParts(new OdataParts(edmEntitySet, edmEntityType, null, entity));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
@@ -134,7 +134,7 @@ public class OdataReader extends OfbizOdataProcessor {
             HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, queryOptions, null);
             entityCollection.setCount(results.getResultCount());
             for (Map<String, Object> result : results.getResultData()) {
-                OdataOfbizEntity resultToEntity = (OdataOfbizEntity) findResultToEntity(edmEntityType, result);
+                OdataOfbizEntity resultToEntity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, result);
                 resultToEntity.addOdataParts(new OdataParts(edmEntitySet, edmEntityType, null, resultToEntity));
                 entities.add(resultToEntity);
             }
@@ -314,14 +314,14 @@ public class OdataReader extends OfbizOdataProcessor {
         if (resultData == null) {
             return null;
         }
-        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
-        OdataOfbizEntity relEntity = (OdataOfbizEntity) findResultToEntity(edmNavigationProperty.getType(), resultData.get(0));
-        List<OdataParts> odataPartsList = new ArrayList<>(ofbizEntity.getOdataParts());
         EdmBindingTarget navBindingTarget = null;
         if (edmParams.get("edmBindingTarget") != null) {
             EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
             navBindingTarget = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
         }
+        OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+        OdataOfbizEntity relEntity = (OdataOfbizEntity) findResultToEntity(navBindingTarget, edmNavigationProperty.getType(), resultData.get(0));
+        List<OdataParts> odataPartsList = new ArrayList<>(ofbizEntity.getOdataParts());
         odataPartsList.add(new OdataParts(navBindingTarget, edmNavigationProperty.getType(), null, relEntity));
         relEntity.setOdataParts(odataPartsList);
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
@@ -355,13 +355,13 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
         for (Map<String, Object> navigationDatum : results.getResultData()) {
-            OdataOfbizEntity navigationEntity = (OdataOfbizEntity) findResultToEntity(edmNavigationProperty.getType(), navigationDatum);
-            List<OdataParts> odataParts = new ArrayList<>(ofbizEntity.getOdataParts());
             EdmBindingTarget navBindingTarget = null;
             if (edmParams.get("edmBindingTarget") != null) {
                 EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
                 navBindingTarget = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
             }
+            OdataOfbizEntity navigationEntity = (OdataOfbizEntity) findResultToEntity(navBindingTarget, edmNavigationProperty.getType(), navigationDatum);
+            List<OdataParts> odataParts = new ArrayList<>(ofbizEntity.getOdataParts());
             odataParts.add(new OdataParts(navBindingTarget, edmNavigationProperty.getType(), null, navigationEntity));
             navigationEntity.setOdataParts(odataParts);
             entityCollection.getEntities().add(navigationEntity);
@@ -421,7 +421,7 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         List<Entity> relatedEntityList = new ArrayList<>();
         for (GenericValue genericValue : relatedGenericList) {
-            relatedEntityList.add(findResultToEntity(edmNavigationPropertyType, genericValue));
+            relatedEntityList.add(findResultToEntity(null, edmNavigationPropertyType, genericValue));
         }
         //获取relation关联字段
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
@@ -703,9 +703,9 @@ public class OdataReader extends OfbizOdataProcessor {
     /**
      * 查询结果转成Entity
      */
-    private Entity findResultToEntity(EdmEntityType edmEntityType, Map<String, Object> resultMap) throws OfbizODataException {
+    private Entity findResultToEntity(EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType, Map<String, Object> resultMap) throws OfbizODataException {
         if (resultMap instanceof GenericValue) {
-            return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntityType, (GenericValue) resultMap, locale);
+            return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, edmEntityType, (GenericValue) resultMap, locale);
         } else {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             return Util.mapToEntity(csdlEntityType, resultMap);
