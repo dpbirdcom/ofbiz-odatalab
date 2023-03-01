@@ -139,6 +139,13 @@ public class DefaultEntityHandler implements EntityHandler {
                 OfbizCsdlEntityType derivedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(qualifiedName);
                 OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedCsdlEntityType, entityToWrite, edmProvider, userLogin);
             }
+            //创建Attribute
+            if (navCsdlEntityType.getAttrEntityName() != null || navCsdlEntityType.getAttrNumericEntityName() != null || navCsdlEntityType.getAttrDateEntityName() != null) {
+                OdataProcessorHelper.createAttrGenericValue(navCsdlEntityType, entityToWrite, userLogin, genericValue.getPrimaryKey(), dispatcher);
+            }
+            //创建RelAlias
+            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, genericValue, locale);
+            OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider, entityToWrite, entityCreated, locale, userLogin);
         }
         return genericValue;
     }

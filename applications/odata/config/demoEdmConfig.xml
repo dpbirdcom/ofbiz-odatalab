@@ -426,6 +426,8 @@
 				AttrEntityName="ContentAttribute"
 				AttrDateEntityName="ContentAttributeDate"
 				AttrNumericEntityName="ContentAttributeNumeric">
+		<RelAlias Name="DataResource" Relations="DataResource"/>
+		<Property Name="dataResourceName" RelAlias="DataResource" Type="String" Field="dataResourceName"/>
         <Property Name="statusId" Type="ContentStatus"/>
 		<Property Name="testStringAttr" Type="String" IsAttribute="true"/>
 		<Property Name="contentAttrNumeric" Type="BigDecimal" Scale="6" IsNumericAttribute="true"/>
@@ -511,6 +513,7 @@
 		<Property Name="semanticString2" Type="String"/>
 		<Property Name="semanticDateTime1" Type="Edm.DateTimeOffset"/>
 		<Property Name="semanticDateTime2" Type="Edm.DateTimeOffset"/>
+		<NavigationProperty Name="Content" Relations="ProductContent(productContentTypeId=IMAGE)/Content" Type="Content" IsCollection="true"/>
 	</EntityType>
 	<EntityType Name="SimpleFacility" OfbizEntity="Facility">
 		<Property Name="facilityId"/>

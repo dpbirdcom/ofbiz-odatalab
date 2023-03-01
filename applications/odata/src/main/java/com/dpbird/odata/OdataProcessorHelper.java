@@ -1041,25 +1041,25 @@ public class OdataProcessorHelper {
         }
     }
 
-    public static void updateSemanticFields(LocalDispatcher dispatcher, OfbizCsdlEntityType csdlEntityType,
-                                            GenericValue draftGenericValue, OdataOfbizEntity entityUpdated,
-                                            Locale locale, GenericValue userLogin) throws OfbizODataException {
-        List<EntityTypeRelAlias> relAliases = csdlEntityType.getRelAliases();
-        Iterator<EntityTypeRelAlias> it = relAliases.iterator();
-        try {
-            while (it.hasNext()) { // 轮询EntityType中所有的RelAlias
-                EntityTypeRelAlias relAlias = it.next();
-                if (!aliasPropertiesChanged(draftGenericValue, entityUpdated, csdlEntityType, relAlias)) {
-                    continue;
-                }
-                removeRelAliasProperty(entityUpdated, relAlias, dispatcher, userLogin);
-                List<String> relations = relAlias.getRelations();
-                createRelAliasFields(draftGenericValue, entityUpdated, csdlEntityType, relAlias, dispatcher, userLogin);
-            }
-        } catch (GenericEntityException | GenericServiceException e) {
-            throw new OfbizODataException(e.getMessage());
-        }
-    }
+//    public static void updateSemanticFields(LocalDispatcher dispatcher, OfbizCsdlEntityType csdlEntityType,
+//                                            GenericValue draftGenericValue, OdataOfbizEntity entityUpdated,
+//                                            Locale locale, GenericValue userLogin) throws OfbizODataException {
+//        List<EntityTypeRelAlias> relAliases = csdlEntityType.getRelAliases();
+//        Iterator<EntityTypeRelAlias> it = relAliases.iterator();
+//        try {
+//            while (it.hasNext()) { // 轮询EntityType中所有的RelAlias
+//                EntityTypeRelAlias relAlias = it.next();
+//                if (!aliasPropertiesChanged(draftGenericValue, entityUpdated, csdlEntityType, relAlias)) {
+//                    continue;
+//                }
+//                removeRelAliasProperty(entityUpdated, relAlias, dispatcher, userLogin);
+//                List<String> relations = relAlias.getRelations();
+//                createRelAliasFields(draftGenericValue, entityUpdated, csdlEntityType, relAlias, dispatcher, userLogin);
+//            }
+//        } catch (GenericEntityException | GenericServiceException e) {
+//            throw new OfbizODataException(e.getMessage());
+//        }
+//    }
 
     private static void removeRelAliasProperty(OdataOfbizEntity entityUpdated,
                                                EntityTypeRelAlias relAlias,
@@ -1517,6 +1517,19 @@ public class OdataProcessorHelper {
                 destGenericValue = createdGenericValue;
             }
             nextModelRelation = modelRelation;
+        }
+        //如果主genericValue有外键指向destGenericValue，则还需要更新genericValue的外键字段，这个通常发生在relationSize=1的时候
+        if (relationSize == 1 && UtilValidate.isNotEmpty(destGenericValue)) {
+            Map<String, Object> mainEntityFk = new HashMap<>();
+            ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getRelations().get(0));
+            if (modelRelation.getType().contains("one")) { //relationOne 应该都会有外键
+                for (ModelKeyMap keyMap : modelRelation.getKeyMaps()) {
+                    mainEntityFk.put(keyMap.getFieldName(), destGenericValue.get(keyMap.getRelFieldName()));
+                }
+            }
+            if (mainEntityFk.size() > 0) {
+                updateGenericValue(dispatcher, dispatcher.getDelegator(), genericValue.getEntityName(), entityCreated.getKeyMap(), mainEntityFk, null, userLogin);
+            }
         }
         return destGenericValue;
     }
