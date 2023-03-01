@@ -2447,9 +2447,12 @@ public class Util {
             String newDraftId = Util.generateDraftUUID();
             ProcessorServices.createDraftAdminData(delegator, newDraftId, parentDraftId, currCsdlEntityType,
                     primaryKey, navigationName, userLogin);
-
             //创建Draft
-            fields.putAll(UtilMisc.toMap("isActiveEntity", "N", "hasActiveEntity", "N", "hasDraftEntity", "Y", "draftUUID", newDraftId));
+            Map<String, Object> draftFields = UtilMisc.toMap("isActiveEntity", "N", "hasActiveEntity", "N", "hasDraftEntity", "Y", "draftUUID", newDraftId);
+            draftFields.putAll(primaryKey);
+            if (UtilValidate.isNotEmpty(fields)) {
+                draftFields.putAll(fields);
+            }
             return delegator.create(currCsdlEntityType.getDraftEntityName(), fields);
         } catch (GenericEntityException e) {
             e.printStackTrace();

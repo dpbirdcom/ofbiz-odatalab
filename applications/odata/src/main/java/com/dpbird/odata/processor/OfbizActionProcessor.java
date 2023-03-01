@@ -301,8 +301,8 @@ public class OfbizActionProcessor
             if (UtilValidate.isNotEmpty(oDataRequest.getHeader("SAP-ContextId")) && sapContextId != null) {
                 DataModifyActions.setResponseSessionContext(oDataResponse, sapContextId);
             }
-            if (e instanceof ODataApplicationException) throw (ODataApplicationException) e;
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
+            String exceptionMeg = e instanceof GenericServiceException ? e.getCause().getMessage() : e.getMessage();
+            throw new ODataApplicationException(exceptionMeg, HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
         }
     }
 
