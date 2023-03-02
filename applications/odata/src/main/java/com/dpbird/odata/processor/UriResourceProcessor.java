@@ -124,11 +124,12 @@ public class UriResourceProcessor {
         OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
         OdataOfbizEntity entity = (OdataOfbizEntity) odataParts.getEntityData();
         EdmEntityType edmEntityType = odataParts.getEdmEntityType();
+        EdmBindingTarget edmBindingTarget = odataParts.getEdmBindingTarget();
         OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) ofbizCsdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
         EdmEntitySet navigationTargetEntitySet = null;
-        if (odataParts.getEdmBindingTarget() != null) {
-            navigationTargetEntitySet = Util.getNavigationTargetEntitySet(odataParts.getEdmBindingTarget(), edmNavigationProperty);
+        if (edmBindingTarget != null) {
+            navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
         }
         OdataParts currentUriResourceData = new OdataParts(navigationTargetEntitySet, navigationEntityType, uriResource, null);
         boolean isCollection = resourceIsCollection(odataParts.getUriResource(), uriResource, edmProvider);
@@ -144,7 +145,7 @@ public class UriResourceProcessor {
             }
         } else {
             //real
-            OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmEntityType", edmEntityType));
+            OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmBindingTarget", edmBindingTarget, "edmEntityType", edmEntityType));
             if (isCollection) {
                 EntityCollection relatedEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, queryOptions, navigationPrimaryKey);
                 if (UtilValidate.isNotEmpty(relatedEntityCollection) && UtilValidate.isNotEmpty(relatedEntityCollection.getEntities())) {

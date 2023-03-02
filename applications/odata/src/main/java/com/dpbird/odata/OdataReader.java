@@ -105,7 +105,7 @@ public class OdataReader extends OfbizOdataProcessor {
         entity.addOdataParts(new OdataParts(edmEntitySet, edmEntityType, null, entity));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), UtilMisc.toList(entity), this.edmEntityType);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), UtilMisc.toList(entity), edmEntitySet, this.edmEntityType);
         }
         entity.setKeyMap(keyMap);
         return entity;
@@ -142,7 +142,7 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 queryOptions, entities, locale, userLogin);
         if (queryOptions != null && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entities, this.edmEntityType);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entities, edmEntitySet, this.edmEntityType);
         }
         return entityCollection;
     }
@@ -245,7 +245,7 @@ public class OdataReader extends OfbizOdataProcessor {
                 if (property == null && csdlEntityType.getBaseType() != null) {
                     property = csdlEntityType.getBaseTypeProperty(propertyName, edmProvider);
                 }
-                if (property!= null) {
+                if (property != null) {
                     selectProperty.add(property);
                 }
             }
@@ -288,7 +288,7 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 queryOptions, UtilMisc.toList(entity), locale, userLogin);
         if (withExpand && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), UtilMisc.toList(entity), edmEntityType);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), UtilMisc.toList(entity), edmSingleton, edmEntityType);
         }
         return entity;
     }
@@ -327,7 +327,7 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptionMap.get("selectOption")), UtilMisc.toList(relEntity), locale, userLogin);
         if (UtilValidate.isNotEmpty(queryOptionMap) && queryOptionMap.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptionMap.get("expandOption"), UtilMisc.toList(relEntity), edmNavigationProperty.getType());
+            addExpandOption((ExpandOption) queryOptionMap.get("expandOption"), UtilMisc.toList(relEntity), navBindingTarget, edmNavigationProperty.getType());
         }
         return relEntity;
     }
@@ -354,12 +354,12 @@ public class OdataReader extends OfbizOdataProcessor {
             return entityCollection;
         }
         OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
+        EdmBindingTarget navBindingTarget = null;
+        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
+        if (edmBindingTarget != null) {
+            navBindingTarget = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
+        }
         for (Map<String, Object> navigationDatum : results.getResultData()) {
-            EdmBindingTarget navBindingTarget = null;
-            if (edmParams.get("edmBindingTarget") != null) {
-                EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
-                navBindingTarget = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
-            }
             OdataOfbizEntity navigationEntity = (OdataOfbizEntity) findResultToEntity(navBindingTarget, edmNavigationProperty.getType(), navigationDatum);
             List<OdataParts> odataParts = new ArrayList<>(ofbizEntity.getOdataParts());
             odataParts.add(new OdataParts(navBindingTarget, edmNavigationProperty.getType(), null, navigationEntity));
@@ -384,7 +384,7 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         Util.pageEntityCollection(entityCollection, skipValue, topValue);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entityCollection.getEntities(), edmNavigationProperty.getType());
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), entityCollection.getEntities(), navBindingTarget, edmNavigationProperty.getType());
         }
         return entityCollection;
     }
@@ -408,6 +408,11 @@ public class OdataReader extends OfbizOdataProcessor {
                 throw new OfbizODataException(e.getMessage());
             }
         }
+        EdmBindingTarget navBindingTarget = null;
+        EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
+        if (edmBindingTarget != null) {
+            navBindingTarget = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
+        }
         EdmEntityType edmNavigationPropertyType = edmNavigationProperty.getType();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
@@ -421,7 +426,7 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         List<Entity> relatedEntityList = new ArrayList<>();
         for (GenericValue genericValue : relatedGenericList) {
-            relatedEntityList.add(findResultToEntity(null, edmNavigationPropertyType, genericValue));
+            relatedEntityList.add(findResultToEntity(navBindingTarget, edmNavigationPropertyType, genericValue));
         }
         //获取relation关联字段
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
@@ -446,7 +451,7 @@ public class OdataReader extends OfbizOdataProcessor {
             expandDataMap.put(relatedGenericList.get(i), relatedEntityList.get(i));
         }
         //处理下一层expand
-        recursionExpand(entityList, expandDataMap, edmNavigationProperty, relAlias, fieldNames, relFieldNames);
+        recursionExpand(entityList, expandDataMap, navBindingTarget, edmNavigationProperty, relAlias, fieldNames, relFieldNames);
         //将查询出来的数据根据主外键进行匹配
         if (edmNavigationProperty.isCollection()) {
             Map<String, Entity> mainEntityMap = new HashMap<>();
@@ -482,7 +487,7 @@ public class OdataReader extends OfbizOdataProcessor {
     }
 
     //处理当前所有子实体的expand
-    private void recursionExpand(Collection<Entity> mainEntityList, Map<GenericValue, Entity> expandEntityMap,
+    private void recursionExpand(Collection<Entity> mainEntityList, Map<GenericValue, Entity> expandEntityMap, EdmBindingTarget navBindingTarget,
                                  EdmNavigationProperty edmNavigationProperty, EntityTypeRelAlias relAlias,
                                  List<String> fieldNames, List<String> relFieldNames) throws OfbizODataException {
         Map<String, Entity> mainEntityMap = new HashMap<>();
@@ -503,7 +508,7 @@ public class OdataReader extends OfbizOdataProcessor {
             }
         }
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), expandEntityMap.values(), edmNavigationProperty.getType());
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), expandEntityMap.values(), navBindingTarget, edmNavigationProperty.getType());
         }
     }
 

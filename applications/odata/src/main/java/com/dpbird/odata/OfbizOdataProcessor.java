@@ -1031,7 +1031,7 @@ public class OfbizOdataProcessor {
     /**
      * 批量处理，如果Navigation是单纯的relation，所有实体只做一次查询
      */
-    protected void addExpandOption(ExpandOption expandOption, Collection<Entity> entityList, EdmEntityType edmEntityType)
+    protected void addExpandOption(ExpandOption expandOption, Collection<Entity> entityList,EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType)
             throws OfbizODataException {
         if (expandOption == null) {
             return;
@@ -1051,13 +1051,13 @@ public class OfbizOdataProcessor {
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
-                addAllExpandItem(entityList, expandItem, edmEntityType);
+                addAllExpandItem(entityList, expandItem, edmBindingTarget, edmEntityType);
             }
         }
     }
 
 
-    private void addAllExpandItem(Collection<Entity> entityList, ExpandItem expandItem, EdmEntityType edmEntityType) throws OfbizODataException {
+    private void addAllExpandItem(Collection<Entity> entityList, ExpandItem expandItem, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType) throws OfbizODataException {
         EdmNavigationProperty edmNavigationProperty = null;
         LevelsExpandOption levelsExpandOption = expandItem.getLevelsOption();
         int expandLevel = 1;
@@ -1073,7 +1073,7 @@ public class OfbizOdataProcessor {
         }
         //如果当前expand是缺省的ofbizRelation，直接向数据库做一次查询，否者通过Handler处理
         if (isDefaultQuery(edmEntityType, edmNavigationProperty, edmProvider)) {
-            Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
+            Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget, "edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
             Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", expandItem.getExpandOption(),
                     "orderByOption", expandItem.getOrderByOption(), "selectOption", expandItem.getSelectOption(), "filterOption", expandItem.getFilterOption(),
                     "skipOption", expandItem.getSkipOption(), "topOption", expandItem.getTopOption());
