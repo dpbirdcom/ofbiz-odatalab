@@ -2453,7 +2453,7 @@ public class Util {
             if (UtilValidate.isNotEmpty(fields)) {
                 draftFields.putAll(fields);
             }
-            return delegator.create(currCsdlEntityType.getDraftEntityName(), fields);
+            return delegator.create(currCsdlEntityType.getDraftEntityName(), draftFields);
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
