@@ -596,6 +596,7 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         //获取第一段Relation
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
+        boolean filterByDate = csdlNavigationProperty.isFilterByDate();
         List<String> relations = relAlias.getRelations();
         ModelRelation modelRelation = relAlias.getRelationsEntity().get(relations.get(0));
         Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relations.get(0));
@@ -652,7 +653,11 @@ public class OdataReader extends OfbizOdataProcessor {
                     dynamicViewEntity.addViewLink(modelViewLink);
                 }
                 Util.printDynamicView(dynamicViewEntity, null, module);
-                return EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).orderBy(orderByList).queryList();
+                EntityQuery entityQuery = EntityQuery.use(delegator).from(dynamicViewEntity).where(entityCondition).orderBy(orderByList);
+                if (filterByDate) {
+                    entityQuery = entityQuery.filterByDate();
+                }
+                return entityQuery.queryList();
             } else {
                 //添加第一段Relation的条件
                 if (UtilValidate.isNotEmpty(relFieldMap)) {
@@ -660,7 +665,7 @@ public class OdataReader extends OfbizOdataProcessor {
                 }
                 //使用in一次性将所有主实体的所有子对象都查询出来
                 EntityQuery entityQuery = EntityQuery.use(delegator).from(modelRelation.getRelEntityName()).orderBy(orderByList).where(entityCondition);
-                if (filterByDate) {
+                if (csdlNavigationProperty.isFilterByDate()) {
                     entityQuery = entityQuery.filterByDate();
                 }
                 return entityQuery.queryList();
