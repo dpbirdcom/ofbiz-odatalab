@@ -183,7 +183,7 @@ public class OdataProcessorHelper {
         Delegator delegator = dispatcher.getDelegator();
         String entityName = genericValue.getEntityName();
         boolean needI18n = entityName.endsWith("Type") || entityName.endsWith("Purpose") || "StatusItem".equals(entityName) || "Enumeration".equals(entityName)
-                || "Geo".equals(entityName) || "Uom".equals(entityName);
+                || "Geo".equals(entityName) || "Uom".equals(entityName) || "CustRequestResolution".equals(entityName);
         try {
             OdataOfbizEntity e1 = new OdataOfbizEntity(csdlEntityType, genericValue);
             e1.setType(csdlEntityType.getFullQualifiedNameString());
