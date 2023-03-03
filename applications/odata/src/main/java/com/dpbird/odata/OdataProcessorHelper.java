@@ -181,17 +181,16 @@ public class OdataProcessorHelper {
                                                         OfbizCsdlEntityType csdlEntityType, GenericValue genericValue,
                                                         Locale locale) {
         Delegator delegator = dispatcher.getDelegator();
-        String entityName = genericValue.getEntityName();
+        String entityName = csdlEntityType.getOfbizEntity();
         boolean needI18n = entityName.endsWith("Type") || entityName.endsWith("Purpose") || "StatusItem".equals(entityName) || "Enumeration".equals(entityName)
                 || "Geo".equals(entityName) || "Uom".equals(entityName) || "CustRequestResolution".equals(entityName);
         try {
             OdataOfbizEntity e1 = new OdataOfbizEntity(csdlEntityType, genericValue);
             e1.setType(csdlEntityType.getFullQualifiedNameString());
             e1.setRequestEntityTypeFQN(csdlEntityType.getFullQualifiedNameString());
-            ModelEntity modelEntity;
             String pkFieldName = null;
             Object pkFieldValue = null;
-            modelEntity = genericValue.getModelEntity();
+            ModelEntity modelEntity = delegator.getModelEntity(entityName);
             if (needI18n) {
                 pkFieldName = modelEntity.getPkFieldNames().get(0);
             }
