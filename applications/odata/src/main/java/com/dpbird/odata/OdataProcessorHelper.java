@@ -190,7 +190,11 @@ public class OdataProcessorHelper {
             e1.setRequestEntityTypeFQN(csdlEntityType.getFullQualifiedNameString());
             String pkFieldName = null;
             Object pkFieldValue = null;
-            ModelEntity modelEntity = delegator.getModelEntity(entityName);
+            ModelEntity modelEntity = genericValue.getModelEntity();
+            if ("DynamicViewEntity".equals(genericValue.getEntityName())) {
+                //expand的结果或许是View 不能使用ViewModelEntity
+                modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+            }
             if (needI18n) {
                 pkFieldName = modelEntity.getPkFieldNames().get(0);
             }
