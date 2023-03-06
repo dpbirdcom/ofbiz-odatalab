@@ -704,9 +704,9 @@ public class OdataReader extends OfbizOdataProcessor {
                     }
                     currentConditions.add(EntityCondition.makeCondition(relFieldName, EntityOperator.EQUALS, genericValue.get(keyMap.getFieldName())));
                 }
-                conditionList.add(EntityCondition.makeCondition(currentConditions, EntityOperator.OR));
+                conditionList.add(EntityCondition.makeCondition(currentConditions, EntityOperator.AND));
             }
-            return EntityCondition.makeCondition(conditionList, EntityOperator.AND);
+            return EntityCondition.makeCondition(conditionList, EntityOperator.OR);
         }
     }
 
