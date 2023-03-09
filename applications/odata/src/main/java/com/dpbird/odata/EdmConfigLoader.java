@@ -2271,6 +2271,7 @@ public class EdmConfigLoader {
             modelEntity.setEntityName(draftEntityName);
             modelEntity.setTableName(draftEntityName);
             modelEntity.setPackageName("com.dpbird.draft");
+            modelEntity.setNoAutoStamp(true);
             //Draft固定字段
             modelEntity.addField(ModelField.create(modelEntity, "draftUUID", "id", true));
             modelEntity.addField(ModelField.create(modelEntity, "isActiveEntity", "id", false));

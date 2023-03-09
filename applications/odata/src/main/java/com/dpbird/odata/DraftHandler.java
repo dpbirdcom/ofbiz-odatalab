@@ -34,6 +34,9 @@ import org.apache.olingo.server.core.uri.queryoption.LevelsOptionImpl;
 
 import java.util.*;
 
+/**
+ * 弃用的Class，要删掉
+ */
 public class DraftHandler {
     public static final String module = DraftHandler.class.getName();
     protected Delegator delegator;

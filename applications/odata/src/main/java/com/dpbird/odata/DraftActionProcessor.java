@@ -32,14 +32,15 @@ import java.util.Map;
 /**
  * 只有StickySession模式下的Action会使用
  */
-public class DraftActionProcessor extends DraftHandler {
+public class DraftActionProcessor extends DraftReaderAndWriter {
     private final Map<String, Object> odataContext;
     private final Map<String, QueryOption> queryOptions;
     private final HttpServletRequest httpServletRequest;
-    public DraftActionProcessor(Map<String, QueryOption> queryOptions, Map<String, Object> odataContext, OfbizCsdlEntityType csdlEntityType,EdmEntityType edmEntityType) {
-        super((Delegator) odataContext.get("delegator"), (LocalDispatcher) odataContext.get("dispatcher"),
-                (OfbizAppEdmProvider) odataContext.get("edmProvider"), csdlEntityType, (String) odataContext.get("sapContextId"),
-                (GenericValue) odataContext.get("userLogin"), (Locale) odataContext.get("locale"), edmEntityType);
+    public DraftActionProcessor(Map<String, QueryOption> queryOptions, Map<String, Object> odataContext, String sapContextId ,EdmEntityType edmEntityType) throws OfbizODataException {
+        super(odataContext, sapContextId, edmEntityType);
+//        super((Delegator) odataContext.get("delegator"), (LocalDispatcher) odataContext.get("dispatcher"),
+//                (OfbizAppEdmProvider) odataContext.get("edmProvider"), csdlEntityType, (String) odataContext.get("sapContextId"),
+//                (GenericValue) odataContext.get("userLogin"), (Locale) odataContext.get("locale"), edmEntityType);
         this.httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         this.queryOptions = queryOptions;
         this.odataContext = odataContext;

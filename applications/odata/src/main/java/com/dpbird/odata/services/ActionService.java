@@ -100,9 +100,8 @@ public class ActionService {
         OFbizEntityActionResult entityResult;
         if (UtilValidate.isNotEmpty(sapContextId)) {
             //draft
-            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             odataContext.put("sapContextId", sapContextId);
-            DraftActionProcessor draftActionProcessor = new DraftActionProcessor(queryOptions, odataContext, csdlEntityType, edmEntityType);
+            DraftActionProcessor draftActionProcessor = new DraftActionProcessor(queryOptions, odataContext, sapContextId, edmEntityType);
             entityResult = draftActionProcessor.processActionEntity(uriResourceAction, parameters, edmBindingTarget);
         } else {
             ActionProcessor actionProcessor = new ActionProcessor(odataContext, queryOptions, edmParams);

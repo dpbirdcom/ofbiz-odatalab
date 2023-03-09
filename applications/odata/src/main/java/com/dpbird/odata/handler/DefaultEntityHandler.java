@@ -244,17 +244,4 @@ public class DefaultEntityHandler implements EntityHandler {
         }
     }
 
-    @Override
-    public GenericValue createToDraft(Delegator delegator, String entityName, String draftEntityName, Map<String, Object> primaryKey, Map<String, Object> fieldMap) throws OfbizODataException {
-        try {
-            GenericValue draftGenericValue = delegator.makeValue(draftEntityName, primaryKey);
-            draftGenericValue.putAll(fieldMap);
-            draftGenericValue.create();
-            return draftGenericValue;
-        } catch (GenericEntityException e) {
-            e.printStackTrace();
-            throw new OfbizODataException(e.getMessage());
-        }
-    }
-
 }
