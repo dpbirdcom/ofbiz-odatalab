@@ -2053,7 +2053,7 @@ public class Util {
         return new EntityConditionList<>(entityConditionList, operator);
     }
 
-    private static String parseVariable(String valueStr, GenericValue object) {
+    public static String parseVariable(String valueStr, GenericValue object) {
         if (valueStr.contains("${")) {
             if (object == null) {
                 return valueStr;
