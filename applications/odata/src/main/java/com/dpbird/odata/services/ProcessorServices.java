@@ -540,6 +540,7 @@ public class ProcessorServices {
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) oDataContext.get("httpServletRequest");
         OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntityContainer().getEntitySet(edmBindingTarget.getName());
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         Map<String, Object> entitySetConditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), userLogin);
@@ -591,8 +592,11 @@ public class ProcessorServices {
                 "edmEntityType", edmBindingTarget.getEntityType(), "userLogin", userLogin);
         Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createEntityToDraft", serviceParams);
         GenericValue draftGenericValue = (GenericValue) serviceResult.get("draftGenericValue");
-        return OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, null,
+        OdataOfbizEntity ofbizEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmBindingTarget, null,
                 draftGenericValue, (Locale) oDataContext.get("locale"));
+        OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
+        return ofbizEntity;
     }
 
     public static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
@@ -601,6 +605,7 @@ public class ProcessorServices {
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) oDataContext.get("httpServletRequest");
         //bound entity
         OdataOfbizEntity ofbizEntity = null;
         for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
@@ -650,6 +655,8 @@ public class ProcessorServices {
                         UtilMisc.toMap("draftUUID", draftAdminData.get("draftUUID")), false);
                 draftEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmEntitySet, null,
                         draftGenericValue, (Locale) oDataContext.get("locale"));
+                OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
+                        null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
             }
         } catch (GenericEntityException e) {
             throw new OfbizODataException(e.getMessage());
