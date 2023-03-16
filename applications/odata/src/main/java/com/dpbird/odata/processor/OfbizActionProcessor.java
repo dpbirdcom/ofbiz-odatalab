@@ -109,7 +109,11 @@ public class OfbizActionProcessor
             if (sapContextId != null) {
                 DataModifyActions.setResponseSessionContext(response, sapContextId);
             }
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes, HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
     }
 
@@ -167,7 +171,11 @@ public class OfbizActionProcessor
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, contentType.toContentTypeString());
         } catch (OfbizODataException | GenericServiceException e) {
             e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(),
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes,
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
     }
@@ -351,7 +359,11 @@ public class OfbizActionProcessor
                     UtilMisc.toMap("odataContext", odataContext, "requestFormat", requestFormat, "resourcePaths", resourcePaths, "userLogin", userLogin));
             property = (Property) processResult.get("property");
         } catch (GenericServiceException | OfbizODataException e) {
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes, HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
         }
         if (property == null) {
             throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
@@ -386,7 +398,11 @@ public class OfbizActionProcessor
                     UtilMisc.toMap("odataContext", odataContext, "requestFormat", requestFormat, "resourcePaths", resourcePaths, "userLogin", userLogin));
             property = (Property) processResult.get("property");
         } catch (GenericServiceException | OfbizODataException e) {
-            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes, HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
         }
         if (UtilValidate.isEmpty(property)) {
             throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
@@ -424,7 +440,11 @@ public class OfbizActionProcessor
                     UtilMisc.toMap("odataContext", odataContext, "requestFormat", requestFormat, "resourcePaths", resourcePaths, "userLogin", userLogin));
             property = (Property) processResult.get("property");
         } catch (GenericServiceException | OfbizODataException e) {
-            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes, HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
         }
         if (UtilValidate.isEmpty(property)) {
             throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
@@ -461,7 +481,11 @@ public class OfbizActionProcessor
                     UtilMisc.toMap("odataContext", odataContext, "requestFormat", requestFormat, "resourcePaths", resourcePaths, "userLogin", userLogin));
             property = (Property) processResult.get("property");
         } catch (GenericServiceException | OfbizODataException e) {
-            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
+            String errMes = e.getMessage();
+            if (e instanceof GenericServiceException) {
+                errMes = e.getCause().getMessage();
+            }
+            throw new ODataApplicationException(errMes, HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
         }
         if (UtilValidate.isEmpty(property)) {
             throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
