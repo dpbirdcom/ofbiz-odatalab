@@ -2020,7 +2020,16 @@ public class Util {
         for (String expression : expressions) {
             expression = expression.trim();
             EntityCondition entityCondition = null;
-            if (expression.contains("=")) {
+            if (expression.contains("!=")) {
+                String[] keyValue = expression.split("!=");
+                if (UtilValidate.isNotEmpty(keyValue)) {
+                    String key = keyValue[0].trim();
+                    String valueStr = keyValue[1].trim();
+                    String realValue = "null".equals(valueStr) ?
+                            null : parseVariable(valueStr, userLogin);
+                    entityCondition = EntityCondition.makeCondition(key, EntityOperator.NOT_EQUAL, realValue);
+                }
+            } else if (expression.contains("=")) {
                 String[] keyValue = expression.split("=");
                 if (UtilValidate.isNotEmpty(keyValue)) {
                     String key = keyValue[0].trim();
@@ -2210,7 +2219,8 @@ public class Util {
     /**
      * 判断是否是语义化实体
      */
-    public static boolean isSemanticEntity(Delegator delegator, EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider) {
+    public static boolean isSemanticEntity(Delegator delegator, EdmEntityType edmEntityType, OfbizAppEdmProvider
+            edmProvider) {
         try {
             OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             ModelEntity modelEntity = delegator.getModelReader().getModelEntity(entityType.getOfbizEntity());
@@ -2241,7 +2251,8 @@ public class Util {
     /**
      * 对现有的数据集进行filter、orderby
      */
-    public static void filterEntityCollection(EntityCollection entityCollection, FilterOption filterOption, OrderByOption orderByOption,
+    public static void filterEntityCollection(EntityCollection entityCollection, FilterOption
+            filterOption, OrderByOption orderByOption,
                                               OfbizCsdlEntityType csdlEntityType, OfbizAppEdmProvider edmProvider,
                                               Delegator delegator, LocalDispatcher dispatcher, GenericValue userLogin,
                                               Locale locale, boolean filterByDate) throws OfbizODataException {
@@ -2351,7 +2362,8 @@ public class Util {
     /**
      * Log打印DynamicView
      */
-    public static void printDynamicView(DynamicViewEntity dynamicViewEntity, EntityCondition entityCondition, String module) {
+    public static void printDynamicView(DynamicViewEntity dynamicViewEntity, EntityCondition
+            entityCondition, String module) {
         try {
             String dynamicViewXml = dynamicViewEntity.getViewXml(dynamicViewEntity.getEntityName());
             Debug.logInfo(dynamicViewXml, module);
@@ -2385,7 +2397,8 @@ public class Util {
      * @param csdlEntityType
      * @return
      */
-    public static boolean isExtraOrderby(OrderByOption orderByOption, OfbizCsdlEntityType csdlEntityType, Delegator delegator) {
+    public static boolean isExtraOrderby(OrderByOption orderByOption, OfbizCsdlEntityType csdlEntityType, Delegator
+            delegator) {
         if (UtilValidate.isEmpty(orderByOption)) {
             return false;
         }
@@ -2461,7 +2474,8 @@ public class Util {
     }
 
     //将orderBy转换成对应的ofbizField
-    public static List<String> convertOrderbyToField(OfbizCsdlEntityType csdlEntityType, OrderByOption orderByOption) throws OfbizODataException {
+    public static List<String> convertOrderbyToField(OfbizCsdlEntityType csdlEntityType, OrderByOption
+            orderByOption) throws OfbizODataException {
         List<String> orderByList = new ArrayList<>();
         if (orderByOption == null) {
             return orderByList;
@@ -2487,7 +2501,8 @@ public class Util {
     }
 
     //ofbiz字段转property
-    public static Map<String, Object> fieldToProperty(Map<String, Object> fieldMap, OfbizCsdlEntityType csdlEntityType) throws OfbizODataException {
+    public static Map<String, Object> fieldToProperty(Map<String, Object> fieldMap, OfbizCsdlEntityType
+            csdlEntityType) throws OfbizODataException {
         Map<String, Object> resultMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
             OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getPropertyFromField(entry.getKey());
@@ -2501,7 +2516,8 @@ public class Util {
     }
 
     //property转ofbiz字段
-    public static Map<String, Object> propertyToField(Map<String, Object> fieldMap, OfbizCsdlEntityType ofbizCsdlEntityType) {
+    public static Map<String, Object> propertyToField(Map<String, Object> fieldMap, OfbizCsdlEntityType
+            ofbizCsdlEntityType) {
         Map<String, Object> resultMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : fieldMap.entrySet()) {
             OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) ofbizCsdlEntityType.getProperty(entry.getKey());
@@ -2518,12 +2534,13 @@ public class Util {
     /**
      * 将BaseType的主键传递给DerivedEntity
      *
-     * @param csdlEntityType BaseType CsdlEntityType
+     * @param csdlEntityType   BaseType CsdlEntityType
      * @param baseGenericValue BaseType GenericValue
-     * @param derivedEntity DerivedType Entity
+     * @param derivedEntity    DerivedType Entity
      */
     public static void addBasePrimaryKey(LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
-                                                OfbizCsdlEntityType csdlEntityType, GenericValue baseGenericValue, Entity derivedEntity) throws OfbizODataException {
+                                         OfbizCsdlEntityType csdlEntityType, GenericValue baseGenericValue, Entity derivedEntity) throws
+            OfbizODataException {
         OdataOfbizEntity baseEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, baseGenericValue, null);
         if (UtilValidate.isEmpty(baseEntity)) {
             return;
@@ -2543,8 +2560,9 @@ public class Util {
     /**
      * 获取一个实体relation外键对应的RelFieldName条件
      */
-    public static EntityCondition getEntityRelationCondition(Delegator delegator, Entity entity, OfbizCsdlEntityType csdlEntityType,
-                                                               OfbizCsdlNavigationProperty navigationProperty) {
+    public static EntityCondition getEntityRelationCondition(Delegator delegator, Entity
+            entity, OfbizCsdlEntityType csdlEntityType,
+                                                             OfbizCsdlNavigationProperty navigationProperty) {
         OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
         EntityTypeRelAlias relAlias = navigationProperty.getRelAlias();
         if (relAlias.getRelations().size() == 1) {

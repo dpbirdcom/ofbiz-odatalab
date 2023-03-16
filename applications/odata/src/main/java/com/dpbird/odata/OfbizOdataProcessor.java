@@ -164,11 +164,17 @@ public class OfbizOdataProcessor {
                             if (fieldCondition.contains("!=")) {
                                 condition = fieldCondition.split("!=");
                                 String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                                if ("null".equals(conValue)) {
+                                    conValue = null;
+                                }
                                 String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
                                 entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
                             } else if (fieldCondition.contains("=")) {
                                 condition = fieldCondition.split("=");
                                 String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                                if ("null".equals(conValue)) {
+                                    conValue = null;
+                                }
                                 String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
                                 entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.EQUALS, conValue));
                             } else if (fieldCondition.contains(" in ")) {
