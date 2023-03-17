@@ -426,7 +426,11 @@ public class OdataReader extends OfbizOdataProcessor {
         }
         List<Entity> relatedEntityList = new ArrayList<>();
         for (GenericValue genericValue : relatedGenericList) {
-            relatedEntityList.add(findResultToEntity(navBindingTarget, edmNavigationPropertyType, genericValue));
+            Entity resultToEntity = findResultToEntity(navBindingTarget, edmNavigationPropertyType, genericValue);
+            if (navCsdlEntityType.hasStream()) {
+                resultToEntity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+            }
+            relatedEntityList.add(resultToEntity);
         }
         //获取relation关联字段
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
