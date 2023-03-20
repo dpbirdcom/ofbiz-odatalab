@@ -13,6 +13,7 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
@@ -22,6 +23,7 @@ import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlAction;
+import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -40,10 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class OfbizActionProcessor
         implements ActionVoidProcessor, ActionEntityCollectionProcessor, ActionEntityProcessor,
@@ -503,5 +502,37 @@ public class OfbizActionProcessor
         oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, requestFormat.toContentTypeString());
     }
 
+    /**
+     * odata创建媒体数据的通用Action
+     *
+     * @return dataResourceId
+     */
+    public static Object createMediaDataResource(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
+            throws GenericServiceException, GenericEntityException, ODataException {
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        String mimeTypeId = (String) actionParameters.get("mimeTypeId");
+        String contentTypeId = (String) actionParameters.get("contentTypeId");
+        //创建dataResource
+        Map<String, Object> createResult = dispatcher.runSync("createDataResource", UtilMisc.toMap("userLogin", userLogin, "mimeTypeId", mimeTypeId));
+        String dataResourceId = (String) createResult.get("dataResourceId");
+        //创建Content
+        createResult = dispatcher.runSync("createContent", UtilMisc.toMap("userLogin", userLogin, "dataResourceId", dataResourceId));
+        String contentId = (String) createResult.get("contentId");
+        //创建主对象与Content的关联实体，实体命名规则为主实体+Content
+        OdataOfbizEntity boundEntity = (OdataOfbizEntity) new ArrayList<>(actionParameters.values()).get(0);
+        GenericValue boundGenericValue = boundEntity.getGenericValue();
+        String relContentEntity = boundGenericValue.getEntityName() + "Content";
+        ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(relContentEntity);
+        String createService = Util.getEntityActionService(null, relContentEntity, "create", delegator);
+        Map<String, Object> serviceMap = UtilMisc.toMap("userLogin", userLogin, "contentId", contentId);
+        serviceMap.putAll(boundGenericValue.getPrimaryKey());
+        String contentTypeField = modelEntity.getAllFieldNames().stream().filter(fd -> fd.endsWith("ContentTypeId")).findFirst().orElse(null);
+        if (UtilValidate.isNotEmpty(contentTypeId) && UtilValidate.isNotEmpty(contentTypeField)) {
+            serviceMap.put(contentTypeField, contentTypeId);
+        }
+        dispatcher.runSync(createService, serviceMap);
+        return dataResourceId;
+    }
 
 }

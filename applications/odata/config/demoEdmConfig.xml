@@ -901,6 +901,14 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false" />
 		<ReturnType Type="Product"/>
 	</Action>
+	<!-- 使用odata上传文件到数据库通用Action -->
+	<Action Name="customerUpload" IsBound="true"
+			OfbizService="com.dpbird.odata.processor.OfbizActionProcessor.createMediaDataResource">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="mimeTypeId" Type="String" Nullable="true" IsCollection="false"/>
+		<Parameter Name="contentTypeId" Type="String" Nullable="true" IsCollection="false"/>
+		<ReturnType Name="dateResourceId" Type="String" />
+	</Action>
 	<Function Name="testImportFunctionPrimitive" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionPrimitive">
 		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
