@@ -520,7 +520,10 @@ public class OfbizActionProcessor
         createResult = dispatcher.runSync("createContent", UtilMisc.toMap("userLogin", userLogin, "dataResourceId", dataResourceId));
         String contentId = (String) createResult.get("contentId");
         //创建主对象与Content的关联实体，实体命名规则为主实体+Content
-        OdataOfbizEntity boundEntity = (OdataOfbizEntity) new ArrayList<>(actionParameters.values()).get(0);
+        OdataOfbizEntity boundEntity = (OdataOfbizEntity) actionParameters.values().stream().filter(param -> param instanceof Entity).findFirst().orElse(null);
+        if (UtilValidate.isEmpty(boundEntity)) {
+            throw new OfbizODataException("The binding parameter cannot be empty.");
+        }
         GenericValue boundGenericValue = boundEntity.getGenericValue();
         String relContentEntity = boundGenericValue.getEntityName() + "Content";
         ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(relContentEntity);
