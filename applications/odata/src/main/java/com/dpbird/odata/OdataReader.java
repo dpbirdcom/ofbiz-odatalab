@@ -157,7 +157,7 @@ public class OdataReader extends OfbizOdataProcessor {
             entityCondition = Util.appendCondition(entityCondition, otherCondition);
             if (dynamicViewHolder == null) {
                 OdataEntityQuery odataEntityQuery = (OdataEntityQuery) OdataEntityQuery.use(delegator).from(modelEntity.getEntityName())
-                        .where(entityCondition).orderBy(orderBy).cache(true).cursorScrollInsensitive();
+                        .where(entityCondition).select(getValidSelect()).orderBy(orderBy).cache(true).cursorScrollInsensitive();
                 if (this.filterByDate) {
                     odataEntityQuery = (OdataEntityQuery) odataEntityQuery.filterByDate();
                 }

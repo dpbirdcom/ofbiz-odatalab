@@ -17,10 +17,7 @@ import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.*;
@@ -39,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProcessorServices {
 
@@ -677,7 +675,8 @@ public class ProcessorServices {
         if (sapContextId == null) {
             throw new OfbizODataException("We need session contextId while calling saveAction!");
         }
-
+        //save the entity created by the foreign key
+        saveNewFkEntity(oDataContext, csdlEntityType, sapContextId);
         // save main entity first
         GenericValue mainGenericValue = DataModifyActions.persistentMainEntity(oDataContext, sapContextId);
         // save NavigationProperty，两层子级
@@ -725,6 +724,59 @@ public class ProcessorServices {
         }
 
     }
+
+
+    /**
+     * 在创建主实体之前 创建在真实数据库不存在的并且是通过外键关联的实体
+     */
+    private static void saveNewFkEntity(Map<String, Object> oDataContext, OfbizCsdlEntityType csdlEntityType, String sapContextId) throws OfbizODataException {
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        try {
+            ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+            ModelEntity draftModelEntity = delegator.getModelEntity(csdlEntityType.getDraftEntityName());
+            for (CsdlNavigationProperty csdlNavigationProperty : csdlEntityType.getNavigationProperties()) {
+                OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlNavigationProperty;
+                List<String> relations = ofbizCsdlNavigationProperty.getRelAlias().getRelations();
+                ModelRelation relation = draftModelEntity.getRelation(relations.get(0));
+                //只创建通过外键直接关联的
+                if (relations.size() > 1 || "many".equals(relation.getType())) {
+                    continue;
+                }
+                List<String> fkList = relation.getKeyMaps().stream().map(ModelKeyMap::getFieldName).collect(Collectors.toList());
+                List<String> pkFieldNames = modelEntity.getPkFieldNames();
+                if (pkFieldNames.containsAll(fkList)) {
+                    //是主键在做关联
+                    continue;
+                }
+                GenericValue draftGenericValue = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", sapContextId), true);
+                GenericPK relatedDummyPk = draftGenericValue.getRelatedDummyPK(relations.get(0));
+                //外键有值但不存在的数据，去创建
+                if (!relatedDummyPk.containsValue(null) && delegator.getFromPrimaryKeyCache(relatedDummyPk) == null) {
+                    OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+                    String navDraftEntityName = navCsdlEntityType.getDraftEntityName();
+                    GenericValue navDraftAdmin = EntityQuery.use(delegator).from("DraftAdministrativeData").where(UtilMisc.toMap("parentDraftUUID", sapContextId,
+                            "draftEntityName", navDraftEntityName, "navigationProperty", csdlNavigationProperty.getName())).select("draftUUID").queryFirst();
+                    if (UtilValidate.isNotEmpty(navDraftAdmin)) {
+                        Map<String, Object> draftPrimaryKey = UtilMisc.toMap("draftUUID", navDraftAdmin.getString("draftUUID"));
+                        GenericValue navDraftGenericValue = delegator.findOne(navDraftEntityName, draftPrimaryKey, true);
+                        Map<String, Object> serviceParam = Util.propertyToField(navDraftGenericValue, navCsdlEntityType);
+                        serviceParam.put("userLogin", userLogin);
+                        String serviceName = Util.getEntityActionService(navCsdlEntityType, navCsdlEntityType.getOfbizEntity(), "create", delegator);
+                        OdataProcessorHelper.createGenericValue(dispatcher, serviceName, csdlEntityType.getOfbizEntity(), serviceParam);
+                        delegator.removeByAnd(navDraftEntityName, draftPrimaryKey);
+                        delegator.removeByAnd("DraftAdministrativeData", draftPrimaryKey);
+                    }
+                }
+            }
+        } catch (GenericEntityException | GenericServiceException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(String.valueOf(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode()), e.getMessage());
+        }
+    }
+
 
     public static Map<String, Object> saveViewEntityData(DispatchContext dctx, Map<String, Object> context)
             throws OfbizODataException, ODataApplicationException, GenericEntityException, GenericServiceException {
