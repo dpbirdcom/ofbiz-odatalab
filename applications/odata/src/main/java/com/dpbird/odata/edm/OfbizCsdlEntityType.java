@@ -1,5 +1,6 @@
 package com.dpbird.odata.edm;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -298,8 +299,12 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     public CsdlEntityType setProperties(final List<CsdlProperty> properties) {
         this.properties = properties;
         for (CsdlProperty property : properties) {
+            Object defaultValue = property.getDefaultValue();
             if (UtilValidate.isNotEmpty(property.getDefaultValue())) {
-                defaultValueProperties.put(property.getName(), property.getDefaultValue());
+                if (property.getType().contains("Decimal")) {
+                    defaultValue = new BigDecimal((String) defaultValue);
+                }
+                defaultValueProperties.put(property.getName(), defaultValue);
             }
         }
         return this;
