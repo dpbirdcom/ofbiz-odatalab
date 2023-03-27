@@ -107,6 +107,7 @@
             <xs:attribute name="RemoveService" type="xs:NCName"/>
             <xs:attribute name="Type" type="xs:NCName"/>
             <xs:attribute name="ReadOnly" type="xs:boolean"/>
+            <xs:attribute name="HandlerNode" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="EnumType">
