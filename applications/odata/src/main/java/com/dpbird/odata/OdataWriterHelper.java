@@ -11,6 +11,7 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Property;
@@ -253,13 +254,13 @@ public class OdataWriterHelper {
         if (UtilValidate.isNotEmpty(navKeyMap)) { // navigation为非collection的时候，navKeyMap为null
             nestedGenericValue = OdataProcessorHelper.readEntityData(odataContext, nestedCsdlEntityType, navKeyMap);
         }
-        deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, csdlEntityType,
+        deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider, csdlEntityType,
                 navigationPropertyName, genericValue, nestedGenericValue, userLogin, locale);
     }
 
 
     public static void deleteEntitySetRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,
-                                                        HttpServletRequest httpServletRequest,
+                                                        HttpServletRequest httpServletRequest, OfbizAppEdmProvider edmProvider,
                                                         OfbizCsdlEntityType csdlEntityType,
                                                         String navigationPropertyName,
                                                         GenericValue genericValue,
@@ -282,6 +283,10 @@ public class OdataWriterHelper {
                 }
             }
         } else {
+            if (UtilValidate.isNotEmpty(csdlNavigationProperty.getHandlerNode())) {
+                deleteRelatedEntityFromNode(delegator, dispatcher, edmProvider, genericValue, nestedGenericValue, csdlNavigationProperty, userLogin);
+                return;
+            }
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
             List<String> relations = relAlias.getRelations();
             if (nestedGenericValue == null) { // navigation为非collection时
@@ -289,6 +294,42 @@ public class OdataWriterHelper {
             } else {
                 OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin);
             }
+        }
+    }
+
+
+    public static void deleteRelatedEntityFromNode(Delegator delegator, LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
+                                                   GenericValue genericValue, GenericValue nestedGenericValue,
+                                                   OfbizCsdlNavigationProperty csdlNavigationProperty, GenericValue userLogin) throws OfbizODataException {
+        //根据指定的操作节点删除关联实体
+        String handlerNode = csdlNavigationProperty.getHandlerNode();
+        List<String> relations = csdlNavigationProperty.getRelAlias().getRelations();
+        EntityTypeRelAlias nodeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), genericValue.getModelEntity(), null, handlerNode);
+        try {
+            if (relations.size() == handlerNode.split("/").length) {
+                //如果操作节点已经到了Relation的最后一段 可以直接删除
+                OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+                String serviceName = Util.getEntityActionService(navCsdlEntityType, navCsdlEntityType.getOfbizEntity(), "delete", delegator);
+                Map<String, Object> serviceParam = new HashMap<>(nestedGenericValue.getPrimaryKey());
+                serviceParam.put("userLogin", userLogin);
+                dispatcher.runSync(serviceName, serviceParam);
+                return;
+            }
+            //查询到指定节点的数据
+            List<GenericValue> relatedGenericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, nodeRelAlias, csdlNavigationProperty.isFilterByDate());
+            if (UtilValidate.isEmpty(relatedGenericValues)) {
+                return;
+            }
+            //调用service执行删除操作
+            String serviceName = Util.getEntityActionService(null, relatedGenericValues.get(0).getEntityName(), "delete", delegator);
+            for (GenericValue relatedGenericValue : relatedGenericValues) {
+                Map<String, Object> serviceParam = new HashMap<>(relatedGenericValue.getPrimaryKey());
+                serviceParam.put("userLogin", userLogin);
+                dispatcher.runSync(serviceName, serviceParam);
+            }
+        } catch (GenericServiceException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
     }
 

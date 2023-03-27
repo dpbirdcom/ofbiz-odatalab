@@ -855,7 +855,7 @@ public class EdmConfigLoader {
         String type = navigationPropertyElement.getAttribute("Type");
         String autoBindingAttr = navigationPropertyElement.getAttribute("AutoBinding");
         String stickyReadOnlyAttr = navigationPropertyElement.getAttribute("ReadOnly");
-
+        String handlerNode = navigationPropertyElement.getAttribute("HandlerNode");
         boolean autoBinding = true;
         if (UtilValidate.isNotEmpty(autoBindingAttr)) {
             autoBinding = Boolean.valueOf(autoBindingAttr);
@@ -923,6 +923,7 @@ public class EdmConfigLoader {
         navigationProperty.setContainsTarget(containsTarget);
         navigationProperty.setRelAlias(relAlias);
         navigationProperty.setReadOnly(stickyReadOnly);
+        navigationProperty.setHandlerNode(handlerNode);
         if (UtilValidate.isNotEmpty(midEntity)) {
             navigationProperty.setMidEntity(midEntity);
         }
