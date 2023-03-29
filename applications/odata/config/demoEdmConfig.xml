@@ -691,6 +691,10 @@
 		<NavigationProperty Name="Party" Type="Party"/>
 		<NavigationProperty Name="UserPreference" Type="UserPreference" FilterByDate="false"/>
 	</EntityType>
+	<EntityType Name="PartyUserLogin" AutoProperties="true" >
+		<NavigationProperty Name="Party" Type="Party"/>
+		<NavigationProperty Name="UserPreference" Type="UserPreference" FilterByDate="false"/>
+	</EntityType>
 	<EntityType Name="RoleType" AutoProperties="true"/>
 	<EntityType Name="OrderAttribute" AutoProperties="true"/>
 	<EntityType Name="UserPreference" AutoProperties="true"/>
@@ -1487,7 +1491,7 @@
 		<FunctionImport Name="testImportFunctionEntityCollectionFilter" Function="testImportFunctionEntityCollectionFilter"/>
 		<FunctionImport Name="testImportFunctionEntityCollectionFilterManyKey" Function="testImportFunctionEntityCollectionFilterManyKey"/>
 
-		<Singleton Name="Me" Type="UserLogin" Handler="com.dpbird.odata.SingletonHandler.getMe">
+		<Singleton Name="Me" Type="PartyUserLogin" Handler="com.dpbird.odata.SingletonHandler.getMe">
 			<NavigationPropertyBinding Path="Party" Target="Parties"/>
 			<NavigationPropertyBinding Path="UserPreference" Target="UserPreferences"/>
 		</Singleton>

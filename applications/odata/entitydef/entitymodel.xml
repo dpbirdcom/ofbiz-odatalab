@@ -58,12 +58,12 @@ under the License.
     <view-entity entity-name="PartyUserLogin"
                  package-name="com.banfftech"
                  title="Party and UserLogin View Entity">
-        <member-entity entity-alias="PTY" entity-name="Party"/>
         <member-entity entity-alias="ULN" entity-name="UserLogin"/>
-        <alias-all entity-alias="PTY"/>
+        <member-entity entity-alias="PTY" entity-name="Party"/>
         <alias-all entity-alias="ULN"/>
+        <alias-all entity-alias="PTY"/>
 
-        <view-link entity-alias="PTY" rel-entity-alias="ULN">
+        <view-link entity-alias="ULN" rel-entity-alias="PTY" rel-optional="true">
             <key-map field-name="partyId"/>
         </view-link>
         <relation type="one-nofk" rel-entity-name="Party">
