@@ -856,6 +856,7 @@ public class EdmConfigLoader {
         String autoBindingAttr = navigationPropertyElement.getAttribute("AutoBinding");
         String stickyReadOnlyAttr = navigationPropertyElement.getAttribute("ReadOnly");
         String handlerNode = navigationPropertyElement.getAttribute("HandlerNode");
+        String preCreateAttr = navigationPropertyElement.getAttribute("PreCreate");
         boolean autoBinding = true;
         if (UtilValidate.isNotEmpty(autoBindingAttr)) {
             autoBinding = Boolean.valueOf(autoBindingAttr);
@@ -864,7 +865,10 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(stickyReadOnlyAttr)) {
             stickyReadOnly = Boolean.valueOf(stickyReadOnlyAttr);
         }
-
+        boolean preCreate = false;
+        if (UtilValidate.isNotEmpty(preCreateAttr)) {
+            preCreate = Boolean.valueOf(preCreateAttr);
+        }
         boolean filterByDate = false;
         String filterByDateAttr = navigationPropertyElement.getAttribute("FilterByDate");
         if (UtilValidate.isNotEmpty(filterByDateAttr)) {
@@ -923,6 +927,7 @@ public class EdmConfigLoader {
         navigationProperty.setContainsTarget(containsTarget);
         navigationProperty.setRelAlias(relAlias);
         navigationProperty.setReadOnly(stickyReadOnly);
+        navigationProperty.setPreCreate(preCreate);
         navigationProperty.setHandlerNode(handlerNode);
         if (UtilValidate.isNotEmpty(midEntity)) {
             navigationProperty.setMidEntity(midEntity);

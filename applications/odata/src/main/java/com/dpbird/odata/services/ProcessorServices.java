@@ -735,22 +735,13 @@ public class ProcessorServices {
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         try {
-            ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
-            ModelEntity draftModelEntity = delegator.getModelEntity(csdlEntityType.getDraftEntityName());
             for (CsdlNavigationProperty csdlNavigationProperty : csdlEntityType.getNavigationProperties()) {
                 OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlNavigationProperty;
+                //需要提前创建的实体
+                if (!ofbizCsdlNavigationProperty.preCreate()) {
+                    continue;
+                }
                 List<String> relations = ofbizCsdlNavigationProperty.getRelAlias().getRelations();
-                ModelRelation relation = draftModelEntity.getRelation(relations.get(0));
-                //只创建通过外键直接关联的
-                if (relations.size() > 1 || "many".equals(relation.getType())) {
-                    continue;
-                }
-                List<String> fkList = relation.getKeyMaps().stream().map(ModelKeyMap::getFieldName).collect(Collectors.toList());
-                List<String> pkFieldNames = modelEntity.getPkFieldNames();
-                if (pkFieldNames.containsAll(fkList)) {
-                    //是主键在做关联
-                    continue;
-                }
                 GenericValue draftGenericValue = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", sapContextId), true);
                 GenericPK relatedDummyPk = draftGenericValue.getRelatedDummyPK(relations.get(0));
                 //外键有值但不存在的数据，去创建
