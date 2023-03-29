@@ -12,10 +12,7 @@ import java.util.Map;
 public class SingletonHandler {
     public static Object getMe(HttpSession httpSession, Map<String, Object> singletonContext)
             throws ODataException {
-
-        GenericValue userLogin = (GenericValue) singletonContext.get("userLogin");
-
-        return userLogin;
+        return singletonContext.get("userLogin");
 
     }
     public static Object productSingleton(HttpSession httpSession, Map<String, Object> singletonContext)
