@@ -12,6 +12,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edmx.EdmxReference;
 import org.apache.olingo.commons.api.edmx.EdmxReferenceInclude;
@@ -24,12 +25,9 @@ import org.apache.olingo.server.api.etag.ServiceMetadataETagSupport;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class AppOdataEvents {
     public static final String module = AppOdataEvents.class.getName();
@@ -367,5 +365,26 @@ public class AppOdataEvents {
         }
         return "success";
     }
+
+    public static String uploadFile(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
+            Delegator delegator = (Delegator) request.getAttribute("delegator");
+            GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
+            //获取文件表单全部内容
+            Map<String, Object> multiPartMap = UtilHttp.getMultiPartParameterMap(request);
+            //关联实体
+            List<String> relations =  Arrays.asList(request.getParameter("relation").split("/"));
+            Map<String, Object> keyMap = Util.odataIdToMap(delegator, relations.get(0), request.getParameter("key"));
+            //中间表的ContentType 可以为空
+            String contentTypeId = request.getParameter("relContentTypeId");
+            dispatcher.runSync("dpbird.uploadFile", UtilMisc.toMap("multiFrom", multiPartMap, "key", keyMap,
+                    "relContentType", contentTypeId, "relation", relations, "userLogin", userLogin));
+        } catch (GenericServiceException e) {
+            e.printStackTrace();
+        }
+        return "success";
+    }
+
 
 }

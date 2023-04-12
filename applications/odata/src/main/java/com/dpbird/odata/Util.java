@@ -2582,4 +2582,33 @@ public class Util {
         return null;
     }
 
+
+    /**
+     * 解析 @odata.id
+     */
+    public static Map<String, Object> odataIdToMap(Delegator delegator, String entityName, String key) {
+        ModelEntity modelEntity = delegator.getModelEntity(entityName);
+        key = key.substring(key.indexOf("(") + 1, key.lastIndexOf(")"));
+        Map<String, Object> map = new HashMap<>();
+        if (!key.contains("=")) {
+            //单主键 从modelEntity中取出来
+            ModelField onlyPk = modelEntity.getOnlyPk();
+            map.put(onlyPk.getName(), key.replaceAll("'", ""));
+        } else {
+            //多主键
+            String[] split = key.split(",");
+            for (String currKey : split) {
+                String[] kv = currKey.split("=");
+                String k = kv[0];
+                String v = kv[1].replaceAll("'", "").trim();
+                if ("fromDate".equals(k)) {
+                    map.put(k, Timestamp.valueOf(kv[1]));
+                    continue;
+                }
+                map.put(k, v);
+            }
+        }
+        return map;
+    }
+
 }
