@@ -23,6 +23,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -559,17 +560,10 @@ public class ProcessorServices {
             }
             internalKeyMap.put(csdlPropertyRef.getName(), pkFieldValue);
         }
-
-//        for (String pkFieldName : csdlEntityType.getPropertyRefNames()) {
-//            Object pkFieldValue = actionParameters.get(pkFieldName);
-//            if (UtilValidate.isEmpty(pkFieldValue) && pkFieldNames.size() == 1) { // i.e. productId
-//                ModelField modelField = modelEntity.getField(pkFieldName);
-//                if ("id".equals(modelField.getType())) {
-//                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
-//                }
-//            }
-//            internalKeyMap.put(pkFieldName, pkFieldValue);
-//        }
+        //检查主键约束
+        if (checkPrimaryKeyConflict(delegator, csdlEntityType, actionParameters)) {
+            throw new OfbizODataException("Duplicate data cannot be entered, which violates the primary key unique constraint.");
+        }
         String sapContextId = (String) oDataContext.get("sapContextId");
         // 对于有draft table的EntityType，如果直接新建，应该建在内存数据库，并且生成sapContextId返回给客户端
         ProcessorServices.createDraftAdminData(delegator, sapContextId, null, csdlEntityType, internalKeyMap, null, userLogin);
@@ -1125,6 +1119,27 @@ public class ProcessorServices {
             }
         }
         return null;
+    }
+
+    /**
+     * 检查主键是否冲突
+     */
+    private static boolean checkPrimaryKeyConflict(Delegator delegator, OfbizCsdlEntityType csdlEntityType, Map<String, Object> propertyMap) {
+        Map<String, Object> primaryKey = new HashMap<>();
+        for (String keyPropertyName : csdlEntityType.getKeyPropertyNames()) {
+            Object pkValue = propertyMap.get(keyPropertyName);
+            if (UtilValidate.isEmpty(pkValue)) {
+                return false;
+            }
+            OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(keyPropertyName);
+            primaryKey.put(csdlProperty.getOfbizFieldName(), pkValue);
+        }
+        ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+        if (primaryKey.size() != modelEntity.getPkFieldNames().size()) {
+            return false;
+        }
+        GenericPK genericPK = GenericPK.create(delegator, modelEntity, primaryKey);
+        return UtilValidate.isNotEmpty(delegator.getFromPrimaryKeyCache(genericPK));
     }
 
 }
