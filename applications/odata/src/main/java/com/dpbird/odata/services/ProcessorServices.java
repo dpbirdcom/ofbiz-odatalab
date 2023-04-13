@@ -570,6 +570,10 @@ public class ProcessorServices {
         if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
             fieldMap.putAll(entityTypeConditionMap);
         }
+        //添加AutoValue
+        for (Map.Entry<String, Object> entry : csdlEntityType.getAutoValueProperties().entrySet()) {
+            fieldMap.put(entry.getKey(), Util.parseVariable((String) entry.getValue(), userLogin));
+        }
         //添加DefaultValue
         Map<String, Object> defaultValues = csdlEntityType.getDefaultValueProperties();
         for (Map.Entry<String, Object> entry : defaultValues.entrySet()) {
