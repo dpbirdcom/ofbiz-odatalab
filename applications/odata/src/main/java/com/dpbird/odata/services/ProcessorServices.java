@@ -560,10 +560,6 @@ public class ProcessorServices {
             }
             internalKeyMap.put(csdlPropertyRef.getName(), pkFieldValue);
         }
-        //检查主键约束
-        if (checkPrimaryKeyConflict(delegator, csdlEntityType, actionParameters)) {
-            throw new OfbizODataException("Duplicate data cannot be entered, which violates the primary key unique constraint.");
-        }
         String sapContextId = (String) oDataContext.get("sapContextId");
         // 对于有draft table的EntityType，如果直接新建，应该建在内存数据库，并且生成sapContextId返回给客户端
         ProcessorServices.createDraftAdminData(delegator, sapContextId, null, csdlEntityType, internalKeyMap, null, userLogin);
@@ -574,7 +570,16 @@ public class ProcessorServices {
         if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
             fieldMap.putAll(entityTypeConditionMap);
         }
+        //添加DefaultValue
+        Map<String, Object> defaultValues = csdlEntityType.getDefaultValueProperties();
+        for (Map.Entry<String, Object> entry : defaultValues.entrySet()) {
+            fieldMap.put(entry.getKey(), Util.parseVariable((String) entry.getValue(), userLogin));
+        }
         fieldMap.putAll(internalKeyMap);
+        //检查主键约束
+        if (checkPrimaryKeyConflict(delegator, csdlEntityType, fieldMap)) {
+            throw new OfbizODataException("Duplicate data cannot be entered, which violates the primary key unique constraint.");
+        }
         Map<String, Object> serviceParams = UtilMisc.toMap("originEntityName", entityName,
                 "draftEntityName", draftEntityName, "entityType", csdlEntityType.getName(),
                 "fieldMap", fieldMap, "sapContextId", sapContextId, "edmProvider", edmProvider,
