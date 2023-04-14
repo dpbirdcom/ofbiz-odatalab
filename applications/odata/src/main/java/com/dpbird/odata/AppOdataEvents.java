@@ -382,7 +382,10 @@ public class AppOdataEvents {
                     "relContentType", contentTypeId, "relation", relations, "userLogin", userLogin));
         } catch (GenericServiceException e) {
             e.printStackTrace();
+            response.setStatus(500);
+            return "error";
         }
+        response.setStatus(200);
         return "success";
     }
 

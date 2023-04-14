@@ -1069,6 +1069,10 @@ public class ProcessorServices {
                 //存在文件 更新文件内容
                 String updateMedia = Util.getEntityActionService(null, media.getEntityName(), "update", delegator);
                 dispatcher.runSync(updateMedia, UtilMisc.toMap("userLogin", userLogin, "dataResourceId", media.getString("dataResourceId"), "imageData", fileBuff.array()));
+                //更新文件名称、类型
+                String updateResource = Util.getEntityActionService(null, "DataResource", "update", delegator);
+                dispatcher.runSync(updateResource, UtilMisc.toMap("userLogin", userLogin, "dataResourceId", media.getString("dataResourceId"),
+                        "dataResourceName", fileName, "mimeTypeId", fileType));
                 return ServiceUtil.returnSuccess();
             }
             // 创建文件
