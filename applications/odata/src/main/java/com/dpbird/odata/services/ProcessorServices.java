@@ -1133,7 +1133,7 @@ public class ProcessorServices {
     /**
      * 检查主键是否冲突
      */
-    private static boolean checkPrimaryKeyConflict(Delegator delegator, OfbizCsdlEntityType csdlEntityType, Map<String, Object> propertyMap) {
+    private static boolean checkPrimaryKeyConflict(Delegator delegator, OfbizCsdlEntityType csdlEntityType, Map<String, Object> propertyMap) throws OfbizODataException {
         Map<String, Object> primaryKey = new HashMap<>();
         for (String keyPropertyName : csdlEntityType.getKeyPropertyNames()) {
             Object pkValue = propertyMap.get(keyPropertyName);
@@ -1147,8 +1147,12 @@ public class ProcessorServices {
         if (primaryKey.size() != modelEntity.getPkFieldNames().size()) {
             return false;
         }
-        GenericPK genericPK = GenericPK.create(delegator, modelEntity, primaryKey);
-        return UtilValidate.isNotEmpty(delegator.getFromPrimaryKeyCache(genericPK));
+        try {
+            List<GenericValue> findResult = delegator.findByAnd(modelEntity.getEntityName(), primaryKey, null, true);
+            return UtilValidate.isNotEmpty(findResult);
+        } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
     }
 
 }
