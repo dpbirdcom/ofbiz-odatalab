@@ -45,12 +45,13 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private List<EntityTypeRelAlias> relAliases = null;
     private String searchOption;
     private boolean groupBy;
+    private final boolean autoLabel;
     private final Map<String, Object> defaultValueProperties = new HashMap<>();;
     private final Map<String, Object> autoValueProperties = new HashMap<>();;
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
-                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
+                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream, boolean autoLabel) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
@@ -71,6 +72,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         this.terms = null;
         this.searchOption = searchOption;
         this.groupBy = groupBy;
+        this.autoLabel = autoLabel;
         setHasStream(hasStream);
     }
 
@@ -320,5 +322,9 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     }
     public Map<String, Object> getAutoValueProperties() {
         return autoValueProperties;
+    }
+
+    public boolean isAutoLabel() {
+        return autoLabel;
     }
 }

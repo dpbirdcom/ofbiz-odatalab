@@ -76,6 +76,7 @@
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="SearchOption"/>
             <xs:attribute name="hasDerivedEntity" type="xs:boolean"/>
+            <xs:attribute name="AutoLabel" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
