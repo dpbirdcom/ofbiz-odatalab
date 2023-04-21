@@ -646,7 +646,7 @@ public class OdataReader extends OfbizOdataProcessor {
                             String fieldName = entry.getKey();
                             String fieldCondName = entry.getKey();
                             if (currPrefix != null) {
-                                fieldCondName = currPrefix + Util.firstUpperCase(fieldName);
+//                                fieldCondName = currPrefix + Util.firstUpperCase(fieldName);
                             }
                             linkConditions.add(EntityCondition.makeCondition(fieldCondName, entry.getValue()));
                         }
