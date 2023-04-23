@@ -34,16 +34,16 @@ import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
 import org.apache.olingo.server.api.uri.queryoption.*;
-import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
-import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
-import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
-import org.apache.olingo.server.api.uri.queryoption.apply.GroupByItem;
+import org.apache.olingo.server.api.uri.queryoption.apply.*;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
 import org.apache.olingo.server.core.uri.queryoption.ExpandItemImpl;
 import org.apache.olingo.server.core.uri.queryoption.ExpandOptionImpl;
+import org.apache.olingo.server.core.uri.queryoption.FilterOptionImpl;
 import org.apache.olingo.server.core.uri.queryoption.LevelsOptionImpl;
+import org.apache.olingo.server.core.uri.queryoption.apply.FilterImpl;
+import org.apache.olingo.server.core.uri.queryoption.apply.GroupByImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Constructor;
@@ -424,7 +424,7 @@ public class OfbizOdataProcessor {
         }
     }
 
-    protected void retrieveApply() throws OfbizODataException {
+    protected void retrieveApply() throws ODataException {
         if (UtilValidate.isNotEmpty(queryOptions) && UtilValidate.isNotEmpty(queryOptions.get("applyOption"))) {
             retrieveGroupBy();
             retrieveAggregate();
@@ -432,7 +432,7 @@ public class OfbizOdataProcessor {
     }
 
     //groupBy 使用dynamicView实现group查询
-    protected void retrieveGroupBy() throws OfbizODataException {
+    protected void retrieveGroupBy() throws ODataException {
         ApplyOption applyOption = (ApplyOption) queryOptions.get("applyOption");
         if (UtilValidate.isNotEmpty(applyOption) && Util.isGroupBy(applyOption)) {
             EdmStructuredType edmStructuredType = applyOption.getEdmStructuredType();
@@ -444,42 +444,52 @@ public class OfbizOdataProcessor {
 
             DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
             for (ApplyItem applyItem : applyOption.getApplyItems()) {
-                GroupBy groupBy = (GroupBy) applyItem;
-                List<GroupByItem> groupByItems = groupBy.getGroupByItems();
-                for (GroupByItem groupByItem : groupByItems) {
-                    List<UriResource> path = groupByItem.getPath();
-                    if (path.size() == 1) {
-                        String segmentValue = path.get(0).getSegmentValue();
-                        //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
-                        if (UtilValidate.isEmpty(applySelect)) {
-                            applySelect = new HashSet<>();
-                        }
-                        applySelect.add(segmentValue);
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getOfbizEntity(), segmentValue, segmentValue, null, false, true, null);
-                    } else if (path.size() == 2) {
-                        //子对象字段
-                        //add MemberEntity
-                        UriResourceNavigation resourceNavigation = (UriResourceNavigation) path.get(0);
-                        EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-                        String navigationName = edmNavigationProperty.getName();
-                        String navigationEntityName = navCsdlEntityType.getOfbizEntity();
-                        if (!dynamicViewHolder.hasMemberEntity(navigationName, navigationEntityName)) {
-                            dynamicViewEntity.addMemberEntity(navigationName, navigationEntityName);
-                        }
-                        //add Alias
-                        UriResourcePrimitiveProperty resourcePrimitiveProperty = (UriResourcePrimitiveProperty) path.get(1);
-                        String segmentValue = resourcePrimitiveProperty.getSegmentValue();
-                        dynamicViewEntity.addAlias(navigationName, navigationName + segmentValue, segmentValue, null, false, true, null);
-                        //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
-                        if (UtilValidate.isEmpty(applySelect)) {
-                            applySelect = new HashSet<>();
-                        }
-                        applySelect.add(navigationName + segmentValue);
-                        //add ViewLink
-                        if (!dynamicViewHolder.hasViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName)) {
-                            ModelRelation relation = currModelEntity.getRelation(resourceNavigation.getSegmentValue());
-                            dynamicViewEntity.addViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName, false, relation.getKeyMaps());
+                if(applyItem instanceof FilterImpl) {
+                    //filter
+                    FilterOption filterOption = ((Filter) applyItem).getFilterOption();
+                    OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(ofbizCsdlEntityType, delegator, dispatcher, userLogin, edmProvider);
+                    EntityCondition applyCondition = (EntityCondition) filterOption.getExpression().accept(expressionVisitor);
+                    entityCondition = Util.appendCondition(entityCondition, applyCondition);
+                }
+                if (applyItem instanceof GroupByImpl) {
+                    //groupBy
+                    GroupBy groupBy = (GroupBy) applyItem;
+                    List<GroupByItem> groupByItems = groupBy.getGroupByItems();
+                    for (GroupByItem groupByItem : groupByItems) {
+                        List<UriResource> path = groupByItem.getPath();
+                        if (path.size() == 1) {
+                            String segmentValue = path.get(0).getSegmentValue();
+                            //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
+                            if (UtilValidate.isEmpty(applySelect)) {
+                                applySelect = new HashSet<>();
+                            }
+                            applySelect.add(segmentValue);
+                            dynamicViewEntity.addAlias(ofbizCsdlEntityType.getOfbizEntity(), segmentValue, segmentValue, null, false, true, null);
+                        } else if (path.size() == 2) {
+                            //子对象字段
+                            //add MemberEntity
+                            UriResourceNavigation resourceNavigation = (UriResourceNavigation) path.get(0);
+                            EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
+                            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
+                            String navigationName = edmNavigationProperty.getName();
+                            String navigationEntityName = navCsdlEntityType.getOfbizEntity();
+                            if (!dynamicViewHolder.hasMemberEntity(navigationName, navigationEntityName)) {
+                                dynamicViewEntity.addMemberEntity(navigationName, navigationEntityName);
+                            }
+                            //add Alias
+                            UriResourcePrimitiveProperty resourcePrimitiveProperty = (UriResourcePrimitiveProperty) path.get(1);
+                            String segmentValue = resourcePrimitiveProperty.getSegmentValue();
+                            dynamicViewEntity.addAlias(navigationName, navigationName + segmentValue, segmentValue, null, false, true, null);
+                            //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
+                            if (UtilValidate.isEmpty(applySelect)) {
+                                applySelect = new HashSet<>();
+                            }
+                            applySelect.add(navigationName + segmentValue);
+                            //add ViewLink
+                            if (!dynamicViewHolder.hasViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName)) {
+                                ModelRelation relation = currModelEntity.getRelation(resourceNavigation.getSegmentValue());
+                                dynamicViewEntity.addViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName, false, relation.getKeyMaps());
+                            }
                         }
                     }
                 }

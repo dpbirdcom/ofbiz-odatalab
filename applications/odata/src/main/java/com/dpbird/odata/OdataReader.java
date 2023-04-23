@@ -71,13 +71,13 @@ public class OdataReader extends OfbizOdataProcessor {
     /**
      * odata-Apply查询
      */
-    public EntityCollection findApply(EntityCondition applyCondition, Map<String, QueryOption> queryOptionMap) throws OfbizODataException {
+    public EntityCollection findApply(EntityCondition rangeCondition, Map<String, QueryOption> queryOptionMap) throws OfbizODataException {
         //从接口实例中读取数据
         EntityCollection entityCollection = new EntityCollection();
         List<Entity> entities = entityCollection.getEntities();
         EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
-        HandlerResults handlerResults = entityHandler.findApply(odataContext, edmEntitySet, queryOptionMap, applyCondition);
+        HandlerResults handlerResults = entityHandler.findApply(odataContext, edmEntitySet, queryOptionMap, rangeCondition);
         for (Map<String, Object> genericValue : handlerResults.getResultData()) {
             OdataOfbizEntity ofbizEntity = new OdataOfbizEntity();
             genericValue.forEach(ofbizEntity::addProperty);
@@ -175,15 +175,15 @@ public class OdataReader extends OfbizOdataProcessor {
     /**
      * 使用dynamicView的自带的function进行apply查询
      *
-     * @param applyCondition 多段式查询时的范围
+     * @param rangeCondition 多段式查询时的范围
      * @return 返回Apply数据组装的Entity
      */
-    public HandlerResults ofbizFindApply(EntityCondition applyCondition) throws OfbizODataException {
+    public HandlerResults ofbizFindApply(EntityCondition rangeCondition) throws OfbizODataException {
         DynamicViewEntity dynamicViewEntity = dynamicViewHolder.getDynamicViewEntity();
         //print
         Util.printDynamicView(dynamicViewEntity, entityCondition, module);
-        if (applyCondition != null) {
-            entityCondition = Util.appendCondition(entityCondition, applyCondition);
+        if (rangeCondition != null) {
+            entityCondition = Util.appendCondition(entityCondition, rangeCondition);
         }
         EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity)
                 .select(applySelect).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();

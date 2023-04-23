@@ -46,11 +46,11 @@ public interface EntityHandler {
      * @param odataContext odataContext
      * @param edmBindingTarget EdmBindingTarget
      * @param queryOptions queryOptions
-     * @param applyCondition 查询范围
+     * @param rangeCondition 查询范围
      * @return 返回apply数据
      */
     HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
-                             Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException;
+                             Map<String, QueryOption> queryOptions, EntityCondition rangeCondition) throws OfbizODataException;
 
     /**
      * 创建实体数据

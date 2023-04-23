@@ -79,9 +79,9 @@ public class DefaultEntityHandler implements EntityHandler {
     }
 
     @Override
-    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException {
+    public HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions, EntityCondition rangeCondition) throws OfbizODataException {
         OdataReader reader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmBindingTarget));
-        return reader.ofbizFindApply(applyCondition);
+        return reader.ofbizFindApply(rangeCondition);
     }
 
 
