@@ -1,8 +1,8 @@
 package com.dpbird.odata.annotation;
 
 public class DataFieldForActionAbstract extends DataFieldAbstract{
+    private String hidden = "false";
     private boolean inline = false;
-    private boolean hidden = false;
     private boolean determining = false;
 
     public boolean isInline() {
@@ -13,11 +13,11 @@ public class DataFieldForActionAbstract extends DataFieldAbstract{
         this.inline = inline;
     }
 
-    public boolean isHidden() {
+    public String getHidden() {
         return hidden;
     }
 
-    public void setHidden(boolean hidden) {
+    public void setHidden(String hidden) {
         this.hidden = hidden;
     }
 

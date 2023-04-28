@@ -263,7 +263,7 @@
             <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
-            <xs:attribute name="Hidden" type="xs:boolean"/>
+            <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
