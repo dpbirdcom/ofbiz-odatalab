@@ -30,6 +30,7 @@ public class OfbizCsdlProperty extends CsdlProperty {
     private String ofbizFieldType;
     private String ofbizFieldName;
     private EntityTypeRelAlias relAlias;
+    private String autoValue;
 
     public List<Term> getTerms() {
         return terms;
@@ -181,6 +182,14 @@ public class OfbizCsdlProperty extends CsdlProperty {
 
     public void setRelAlias(EntityTypeRelAlias relAlias) {
         this.relAlias = relAlias;
+    }
+
+    public String getAutoValue() {
+        return autoValue;
+    }
+
+    public void setAutoValue(String autoValue) {
+        this.autoValue = autoValue;
     }
 
     public boolean equals(Object o) {

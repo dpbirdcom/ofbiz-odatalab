@@ -3,6 +3,7 @@ package com.dpbird.odata;
 import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
+import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -414,10 +415,11 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(edmProperty.getName());
             //relAlias字段
             if (ofbizCsdlProperty.getRelAlias() != null) {
-                dynamicViewHolder.addPropertyRelAlias(edmProperty.getName());
-                List<String> relations = ofbizCsdlProperty.getRelAlias().getRelations();
+                String memberAliasName = dynamicViewHolder.addPropertyRelAlias(edmProperty.getName());
+//                List<String> relations = ofbizCsdlProperty.getRelAlias().getRelations();
+//                String relAlias = ListUtil.getLast(relations);
                 //在dynamicView中 这个字段属于relations中最后一个对象
-                String relPropertyName = dynamicViewHolder.addFilterProperty(relations.get(relations.size() - 1), ofbizCsdlProperty.getOfbizFieldName());
+                String relPropertyName = dynamicViewHolder.addFilterProperty(memberAliasName, ofbizCsdlProperty.getOfbizFieldName());
                 dynamicViewHolder.edmPropertyMap.put(relPropertyName, edmProperty);
                 return relPropertyName;
             } else if (ofbizCsdlProperty.isAttribute() || ofbizCsdlProperty.isNumericAttribute() || ofbizCsdlProperty.isDateAttribute()) {
@@ -468,7 +470,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
         OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(ofbizCsdlEntityType.getOfbizEntity(), ofbizCsdlEntityType.getHandlerClass(), ofbizCsdlEntityType.isAutoProperties(),
                 false, ofbizCsdlEntityType.isFilterByDate(), ofbizCsdlEntityType.getDraftEntityName(), ofbizCsdlEntityType.getAttrEntityName(), ofbizCsdlEntityType.getAttrNumericEntityName(),
                 ofbizCsdlEntityType.getAttrDateEntityName(), false, ofbizCsdlEntityType.getEntityCondition(), ofbizCsdlEntityType.getEntityConditionStr(), ofbizCsdlEntityType.getLabelPrefix(), null, ofbizCsdlEntityType.isGroupBy(),
-                ofbizCsdlEntityType.hasStream());
+                ofbizCsdlEntityType.hasStream(), ofbizCsdlEntityType.isAutoLabel());
         newCsdlEntity.setName(lastAlias);
         newCsdlEntity.setProperties(ofbizCsdlEntityType.getProperties());
         return newCsdlEntity;

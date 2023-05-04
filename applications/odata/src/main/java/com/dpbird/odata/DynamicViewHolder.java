@@ -65,12 +65,16 @@ public class DynamicViewHolder {
         addRelAlias(null, relAlias);
     }
 
-    public void addPropertyRelAlias(String propertyName) {
+    /**
+     * 返回最后一个Rel实体的AliasName
+     */
+    public String addPropertyRelAlias(String propertyName) {
         OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
         EntityTypeRelAlias relAlias = csdlProperty.getRelAlias();
         if (relAlias != null) {
-            addRelAlias(null, relAlias);
+            return addRelAlias(null, relAlias);
         }
+        return null;
     }
 
     /**
