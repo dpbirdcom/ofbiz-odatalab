@@ -202,7 +202,15 @@ public class EdmConfigLoader {
                     if (csdlProperty != null) {
                         label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(csdlProperty.getName()));
                     } else {
-                        label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase((String) dataField.getValue()));
+                        String fieldValue = (String) dataField.getValue();
+                        if (fieldValue.contains("/")) {
+                            //多段式字段
+                            String uiLabelKey = Arrays.stream(fieldValue.split("/")).map(s -> s.substring(0, 1).toUpperCase() + s.substring(1))
+                                    .reduce("", String::concat);
+                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + uiLabelKey);
+                        } else {
+                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(fieldValue));
+                        }
                     }
                 }
                 if (label != null) {
