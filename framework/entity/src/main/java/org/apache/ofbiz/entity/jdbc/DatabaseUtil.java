@@ -983,7 +983,7 @@ public class DatabaseUtil {
                     // NOTE: this may need a toUpperCase in some cases, keep an eye on it, okay for now just do a compare with equalsIgnoreCase
                     String tableType = tableSet.getString("TABLE_TYPE");
                     // only allow certain table types
-                    if (tableType != null && !"TABLE".equalsIgnoreCase(tableType) && !"VIEW".equalsIgnoreCase(tableType)
+                    if (tableType != null && !"TABLE".equalsIgnoreCase(tableType) && !"VIEW".equalsIgnoreCase(tableType) && !"SCHOBJ".equalsIgnoreCase(tableType)
                             && !"ALIAS".equalsIgnoreCase(tableType) && !"SYNONYM".equalsIgnoreCase(tableType) && !"BASE TABLE".equalsIgnoreCase(tableType)) {
                         continue;
                     }
