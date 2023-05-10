@@ -29,6 +29,9 @@ import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceAction;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -168,9 +171,13 @@ public class ActionService {
             throws ODataApplicationException {
         try {
             final ODataDeserializer deserializer = oData.createDeserializer(requestFormat);
-            Map<String, Parameter> actionParameters = deserializer.actionParameters(oDataRequest.getBody(), uriResourceAction.getAction()).getActionParameters();
+            InputStream body = oDataRequest.getBody();
+            if (oDataRequest.getBody().available() == 0) {
+                body = new ByteArrayInputStream("{}".getBytes());
+            }
+            Map<String, Parameter> actionParameters = deserializer.actionParameters(body, uriResourceAction.getAction()).getActionParameters();
             return Util.parametersToMap(actionParameters);
-        } catch (DeserializerException e) {
+        } catch (DeserializerException | IOException e) {
             e.printStackTrace();
             throw new ODataApplicationException("Cannot parse action parameters",
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
