@@ -17,10 +17,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntity;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityConditionList;
-import org.apache.ofbiz.entity.condition.EntityJoinOperator;
-import org.apache.ofbiz.entity.condition.EntityOperator;
+import org.apache.ofbiz.entity.condition.*;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
 import org.apache.ofbiz.entity.util.EntityQuery;
@@ -46,10 +43,12 @@ import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.*;
+import org.apache.olingo.server.api.uri.queryoption.OrderByItem;
 import org.apache.olingo.server.api.uri.queryoption.apply.Aggregate;
 import org.apache.olingo.server.api.uri.queryoption.apply.AggregateExpression;
 import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
+import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
 
 import javax.servlet.ServletContext;
@@ -63,6 +62,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Util {
 
@@ -2251,16 +2251,21 @@ public class Util {
     /**
      * 对现有的数据集进行filter、orderby
      */
-    public static void filterEntityCollection(EntityCollection entityCollection, FilterOption
-            filterOption, OrderByOption orderByOption,
-                                              OfbizCsdlEntityType csdlEntityType, OfbizAppEdmProvider edmProvider,
+    public static void filterEntityCollection(EntityCollection entityCollection, FilterOption filterOption, OrderByOption orderByOption,
+                                              EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider,
                                               Delegator delegator, LocalDispatcher dispatcher, GenericValue userLogin,
                                               Locale locale, boolean filterByDate) throws OfbizODataException {
         if (UtilValidate.isEmpty(entityCollection) || entityCollection.getEntities().size() == 0) {
             return;
         }
         try {
+            if (filterOption != null && filterOption.getExpression().toString().contains("$count")) {
+                Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                        "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale);
+                extraOdataFilter(entityCollection, edmEntityType, filterOption, odataContext);
+            }
             //获取现有数据集的主键 只在这个范围之内做查询
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
             EntityCondition primaryKeyCond = getEntityCollectionQueryCond(entityCollection);
             //解析FilterOption表达式
@@ -2358,6 +2363,77 @@ public class Util {
             return 0;
         });
     }
+
+    /**
+     * 处理filter
+     */
+    public static void extraOdataFilter(EntityCollection entityCollection, EdmEntityType edmEntityType, FilterOption filterOption, Map<String, Object> odataContext) throws OfbizODataException {
+        if (filterOption == null) {
+            return;
+        }
+        try {
+            List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraOdataReader.ExtraExpressionVisitor());
+            //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
+            Debug.logInfo("extraCondition: " + extraConditionList.toString(), module);
+            for (EntityExpr extraCondition : extraConditionList) {
+                if (extraCondition.getLhs() instanceof UriResourceNavigation) {
+                    UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
+                    EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
+                    Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
+                    EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
+                    Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmEntityType, edmNavigationProperty, odataContext);
+                    entityCollection.getEntities().clear();
+                    //不同的运算符比较
+                    Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
+                    if (operator.equals(EntityOperator.EQUALS)) {
+                        mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
+                        mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.LESS_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() < condValue);
+                    } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() <= condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() > condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+                    }
+                    mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
+                }
+            }
+
+        } catch (ExpressionVisitException |ODataApplicationException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取实体的某个关联实体数量
+     *
+     * @return relationCountMap key是entity, value是关联实体的数量
+     */
+    public static Map<Entity, Integer> readEntityRelationCount(EntityCollection entityCollection, EdmEntityType edmEntityType,
+                                                         EdmNavigationProperty edmNavigationProperty, Map<String, Object> odataContext) throws OfbizODataException {
+        Map<Entity, Integer> relationCountMap = new HashMap<>();
+        for (Entity entity : entityCollection.getEntities()) {
+            Link navigationLink = entity.getNavigationLink(edmNavigationProperty.getName());
+            int relCount;
+            if (navigationLink != null) {
+                //如果存在Link里, 就不用再查询
+                relCount = navigationLink.getInlineEntitySet().getEntities().size();
+            } else {
+                //查询子对象
+                Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
+                OdataReader reader = new OdataReader(odataContext, new HashMap<>(), embeddedEdmParams);
+                EntityCollection relEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), null);
+                relCount = relEntityCollection.getEntities().size();
+            }
+            relationCountMap.put(entity, relCount);
+        }
+        return relationCountMap;
+    }
+
 
     /**
      * Log打印DynamicView

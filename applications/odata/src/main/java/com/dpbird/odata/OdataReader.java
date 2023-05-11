@@ -373,7 +373,7 @@ public class OdataReader extends OfbizOdataProcessor {
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
         if (filterOption != null || orderbyOption != null) {
-            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, navCsdlEntityType,
+            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, edmNavigationProperty.getType(),
                     edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
         }
         entityCollection.setCount(entityCollection.getEntities().size());

@@ -66,7 +66,7 @@ public class FunctionProcessor extends OdataReader {
         OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(returnEdmEntityType.getFullQualifiedName());
         if (filterOption != null) {
-            Util.filterEntityCollection(entityCollection, filterOption, orderByOption, csdlEntityType, edmProvider, delegator, dispatcher, userLogin, locale, false);
+            Util.filterEntityCollection(entityCollection, filterOption, orderByOption, edmEntityType, edmProvider, delegator, dispatcher, userLogin, locale, false);
         }
         if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
             Util.orderbyEntityCollection(entityCollection, orderByOption, edmEntityType, edmProvider);
