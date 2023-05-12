@@ -229,14 +229,6 @@ public class EdmConfigLoader {
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueBool("Inline", dataFieldForAction.isInline());
                 propertyValues.add(propertyValue);
-                String hidden = dataFieldForAction.getHidden();
-                if ("true".equals(hidden) || "false".equals(hidden)) {
-                    propertyValue = createPropertyValueBool("Hidden", Boolean.valueOf(hidden));
-                    propertyValues.add(propertyValue);
-                } else {
-                    propertyValue = createPropertyValuePath("Hidden", hidden);
-                    propertyValues.add(propertyValue);
-                }
                 String recordType = "UI.DataFieldForAction";
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldForAnnotation) {
@@ -253,10 +245,18 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             }
             csdlRecord.setPropertyValues(propertyValues);
+            List<CsdlAnnotation> annotationList = new ArrayList<>();
             if (dataFieldAbstract.getImportance() != null) {
                 CsdlAnnotation importanceAnnotation = createAnnotationEnum("UI.Importance", dataFieldAbstract.getImportance(), null);
-                csdlRecord.setAnnotations(UtilMisc.toList(importanceAnnotation));
+                annotationList.add(importanceAnnotation);
             }
+            String hidden = dataFieldAbstract.getHidden();
+            if (hidden != null) {
+                CsdlAnnotation hiddenAnnotation = "true".equals(hidden) || "false".equals(hidden) ?
+                        createAnnotationBool("UI.Hidden", hidden, null) : createAnnotationPath("UI.Hidden", hidden, null);
+                annotationList.add(hiddenAnnotation);
+            }
+            csdlRecord.setAnnotations(annotationList);
             collectionItems.add(csdlRecord);
         }
         csdlCollection.setItems(collectionItems);
