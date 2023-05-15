@@ -467,10 +467,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
 
     //只是new一个新的csdlEntity
     private OfbizCsdlEntityType cloneCsdlEntityType(OfbizCsdlEntityType ofbizCsdlEntityType) {
-        OfbizCsdlEntityType newCsdlEntity = new OfbizCsdlEntityType(ofbizCsdlEntityType.getOfbizEntity(), ofbizCsdlEntityType.getHandlerClass(), ofbizCsdlEntityType.isAutoProperties(),
-                false, ofbizCsdlEntityType.isFilterByDate(), ofbizCsdlEntityType.getDraftEntityName(), ofbizCsdlEntityType.getAttrEntityName(), ofbizCsdlEntityType.getAttrNumericEntityName(),
-                ofbizCsdlEntityType.getAttrDateEntityName(), false, ofbizCsdlEntityType.getEntityCondition(), ofbizCsdlEntityType.getEntityConditionStr(), ofbizCsdlEntityType.getLabelPrefix(), null, ofbizCsdlEntityType.isGroupBy(),
-                ofbizCsdlEntityType.hasStream(), ofbizCsdlEntityType.isAutoLabel());
+        OfbizCsdlEntityType newCsdlEntity = ofbizCsdlEntityType.clone();
         newCsdlEntity.setName(lastAlias);
         newCsdlEntity.setProperties(ofbizCsdlEntityType.getProperties());
         return newCsdlEntity;
