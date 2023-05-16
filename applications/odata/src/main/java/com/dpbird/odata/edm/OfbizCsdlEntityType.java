@@ -47,12 +47,16 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private boolean groupBy;
     private final boolean autoLabel;
     private final boolean autoDraft;
+    private final boolean autoValueList;
+    private List<OfbizCsdlAction> actionList;
+    private List<OfbizCsdlFunction> functionList;
     private final Map<String, Object> defaultValueProperties = new HashMap<>();;
     private final Map<String, Object> autoValueProperties = new HashMap<>();;
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
-                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft) {
+                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
+                               boolean autoLabel, boolean autoDraft, boolean autoValueList) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
@@ -75,6 +79,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.groupBy = groupBy;
         this.autoLabel = autoLabel;
         this.autoDraft = autoDraft;
+        this.autoValueList = autoValueList;
         setHasStream(hasStream);
     }
 
@@ -332,6 +337,26 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public boolean isAutoDraft() {
         return autoDraft;
+    }
+
+    public List<OfbizCsdlAction> getActionList() {
+        return actionList;
+    }
+
+    public void setActionList(List<OfbizCsdlAction> actionList) {
+        this.actionList = actionList;
+    }
+
+    public List<OfbizCsdlFunction> getFunctionList() {
+        return functionList;
+    }
+
+    public void setFunctionList(List<OfbizCsdlFunction> functionList) {
+        this.functionList = functionList;
+    }
+
+    public boolean isAutoValueList() {
+        return autoValueList;
     }
 
     @Override

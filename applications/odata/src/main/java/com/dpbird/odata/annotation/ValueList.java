@@ -11,6 +11,7 @@ public class ValueList extends Term {
     private boolean withFixedValues = false;
 
     private List<String> parameterDisplayOnly = new ArrayList<>();
+    private List<Parameter> parameters = new ArrayList<>();
 
     public ValueList(String label, String collectionPath, String qualifier) {
         super(qualifier);
@@ -67,4 +68,50 @@ public class ValueList extends Term {
     public void setWithFixedValues(boolean withFixedValues) {
         this.withFixedValues = withFixedValues;
     }
+
+    public List<Parameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<Parameter> parameters) {
+        this.parameters = parameters;
+    }
+
+    public static class Parameter {
+
+        public Parameter(String parameterType, String valueListProperty, String localDataProperty) {
+            this.parameterType = parameterType;
+            this.valueListProperty = valueListProperty;
+            this.localDataProperty = localDataProperty;
+        }
+
+        private String parameterType;
+        private String valueListProperty;
+        private String localDataProperty;
+
+        public String getParameterType() {
+            return parameterType;
+        }
+
+        public void setParameterType(String parameterType) {
+            this.parameterType = parameterType;
+        }
+
+        public String getValueListProperty() {
+            return valueListProperty;
+        }
+
+        public void setValueListProperty(String valueListProperty) {
+            this.valueListProperty = valueListProperty;
+        }
+
+        public String getLocalDataProperty() {
+            return localDataProperty;
+        }
+
+        public void setLocalDataProperty(String localDataProperty) {
+            this.localDataProperty = localDataProperty;
+        }
+    }
+
 }
