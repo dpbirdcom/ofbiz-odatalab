@@ -193,6 +193,11 @@ public class AppOdataEvents {
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
 
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Session.xml"));
+            referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Session.v1", "Session");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
             ServiceMetadataETagSupport eTagSupport = new ETagSupportImpl(edmProvider.getETag());
             ServiceMetadata edm = odata.createServiceMetadata(edmProvider, edmxReferences, eTagSupport);
 

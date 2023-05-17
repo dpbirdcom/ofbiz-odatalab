@@ -46,6 +46,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             put("Common", "/vocabularies/Common.xml");
             put("UI", "/vocabularies/UI.xml");
             put("Aggregation", "/vocabularies/Aggregation.xml");
+            put("Session", "/vocabularies/Session.xml");
         }
     };
 

@@ -141,6 +141,11 @@ public class EdmConfigLoader {
                     csdlAnnotationsList.add(csdlAnnotations);
                 }
             }
+            if (ofbizCsdlEntityType.isAutoDraft()) {
+                //StickySessionSupported
+                CsdlAnnotations stickySessionAnnotations = generateStickySessionAnnotations(ofbizCsdlEntityType, (OfbizCsdlSchema) csdlSchema, locale);
+                csdlAnnotationsList.add(stickySessionAnnotations);
+            }
         }
 
         //generate AutoValueList
@@ -498,15 +503,33 @@ public class EdmConfigLoader {
         returnType.setType(csdlEntityType.getFullQualifiedNameString());
 
         //new Action
-        CsdlParameter newParam = new CsdlParameter();
-        newParam.setName(Util.firstLowerCase(csdlEntityType.getName()));
-        newParam.setType(csdlEntityType.getFullQualifiedNameString());
-        newParam.setCollection(true);
-        newParam.setNullable(false);
+        List<CsdlParameter> parameters = new ArrayList<>();
+        CsdlParameter boundParam = new CsdlParameter();
+        boundParam.setName(Util.firstLowerCase(csdlEntityType.getName()));
+        boundParam.setType(csdlEntityType.getFullQualifiedNameString());
+        boundParam.setCollection(true);
+        boundParam.setNullable(false);
+        parameters.add(boundParam);
+        List<String> insertProperties = csdlEntityType.getInsertRequireProperties();
+        csdlEntityType.getProperties().forEach(pro -> {
+            OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) pro;
+            if (csdlProperty.isImmutable() || insertProperties.contains(csdlProperty.getName())) {
+                CsdlParameter parameter = new CsdlParameter();
+                parameter.setName(csdlProperty.getName());
+                parameter.setType(csdlProperty.getTypeAsFQNObject());
+                parameter.setCollection(false);
+                parameter.setNullable(!csdlProperty.isImmutable());
+                //Label
+                String labelKey = "${uiLabelMap." + csdlEntityType.getLabelPrefix() + Util.firstUpperCase(csdlProperty.getName()) + "}";
+                CsdlAnnotation annotationString = createAnnotationString("Common.Label", parseValue(labelKey, locale), null);
+                parameter.setAnnotations(UtilMisc.toList(annotationString));
+                parameters.add(parameter);
+            }
+        });
         String newActionPath = "com.dpbird.odata.services.ProcessorServices.stickySessionNewAction";
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, csdlEntityType.getName() + "NewAction");
-        OfbizCsdlAction newAction = createAction(fullQualifiedName, UtilMisc.toList(newParam), returnType,
-                true, newActionPath, true, true, newParam.getName());
+        OfbizCsdlAction newAction = createAction(fullQualifiedName, parameters, returnType,
+                true, newActionPath, true, true, Util.firstLowerCase(csdlEntityType.getName()));
         actionList.add(newAction);
 
         //edit Action
@@ -587,6 +610,35 @@ public class EdmConfigLoader {
             return null;
         }
         csdlAnnotations.setAnnotations(csdlAnnotationList);
+        return csdlAnnotations;
+    }
+
+
+    private static CsdlAnnotations generateStickySessionAnnotations(OfbizCsdlEntityType csdlEntityType,
+                                                               OfbizCsdlSchema csdlSchema, Locale locale) {
+        CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
+        String entityTypeFQN = csdlEntityType.getFullQualifiedNameString();
+        String annotationsTarget = csdlSchema.getNamespace() + "." + csdlSchema.getEntityContainer().getName() + "/" + csdlEntityType.getName() + "s";
+        csdlAnnotations.setTarget(annotationsTarget);
+        List<CsdlAnnotation> csdlAnnotationList = new ArrayList<CsdlAnnotation>();
+        CsdlAnnotation annotation = createAnnotation("Session.StickySessionSupported", null);
+        CsdlRecord record = new CsdlRecord();
+        CsdlPropertyValue newAction = createPropertyValueString("NewAction", entityTypeFQN + "NewAction");
+        CsdlPropertyValue editAction = createPropertyValueString("EditAction", entityTypeFQN + "EditAction");
+        CsdlPropertyValue saveAction = createPropertyValueString("SaveAction", entityTypeFQN + "SaveAction");
+        CsdlPropertyValue discardAction = createPropertyValueString("DiscardAction", "DiscardAction");
+        record.setPropertyValues(UtilMisc.toList(newAction, editAction, saveAction, discardAction));
+        List<CsdlExpression> csdlExpressions = new ArrayList<>();
+        csdlExpressions.add(record);
+        CsdlCollection csdlCollection = new CsdlCollection();
+        csdlCollection.setItems(csdlExpressions);
+        CsdlPropertyValue csdlPropertyValue = new CsdlPropertyValue();
+        csdlPropertyValue.setValue(csdlCollection);
+
+        annotation.setExpression(record);
+        annotation.setTerm("Session.StickySessionSupported");
+        csdlAnnotations.setAnnotations(UtilMisc.toList(annotation));
+
         return csdlAnnotations;
     }
 
@@ -832,6 +884,11 @@ public class EdmConfigLoader {
             List<OfbizCsdlProperty> propertyList = generatePropertiesFromAttribute(dispatcher, modelEntity, null, entityTypeElement.getAttribute("Properties"), locale, labelPrefix, autoLabel);
             csdlProperties.addAll(propertyList);
         }
+        List<String> insertRequireProperties = new ArrayList<>();
+        String insertRequireAttr = entityTypeElement.getAttribute("InsertRequireProperties");
+        if (UtilValidate.isNotEmpty(insertRequireAttr)) {
+            insertRequireProperties.addAll(Arrays.asList(insertRequireAttr.split(",")));
+        }
         List<String> excludeProperties = new ArrayList<>();
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, name);
         List<? extends Element> entityTypeChildren = UtilXml.childElementList(entityTypeElement);
@@ -915,6 +972,7 @@ public class EdmConfigLoader {
         csdlEntityType.setOpenType(openType);
         csdlEntityType.setActionList(actionList);
         csdlEntityType.setFunctionList(functionList);
+        csdlEntityType.setInsertRequireProperties(insertRequireProperties);
         return csdlEntityType;
     }
 

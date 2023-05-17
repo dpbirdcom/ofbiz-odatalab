@@ -50,8 +50,9 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private final boolean autoValueList;
     private List<OfbizCsdlAction> actionList;
     private List<OfbizCsdlFunction> functionList;
-    private final Map<String, Object> defaultValueProperties = new HashMap<>();;
-    private final Map<String, Object> autoValueProperties = new HashMap<>();;
+    private final Map<String, Object> defaultValueProperties = new HashMap<>();
+    private final Map<String, Object> autoValueProperties = new HashMap<>();
+    private List<String> insertRequireProperties = new ArrayList<>();
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
@@ -357,6 +358,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public boolean isAutoValueList() {
         return autoValueList;
+    }
+
+    public List<String> getInsertRequireProperties() {
+        return insertRequireProperties;
+    }
+
+    public void setInsertRequireProperties(List<String> insertRequireProperties) {
+        this.insertRequireProperties = insertRequireProperties;
     }
 
     @Override

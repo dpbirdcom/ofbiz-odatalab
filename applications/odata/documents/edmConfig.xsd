@@ -88,6 +88,7 @@
             <xs:attribute name="AutoLabel" type="xs:boolean"/>
             <xs:attribute name="AutoDraft" type="xs:boolean"/>
             <xs:attribute name="AutoValueList" type="xs:boolean"/>
+            <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
@@ -246,9 +247,11 @@
     </xs:element>
     <xs:element name="ValueList">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ParameterInOut"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="ParameterIn"/>
+                <xs:element minOccurs="0" ref="ParameterOut"/>
+                <xs:element minOccurs="0" ref="ParameterInOut"/>
+            </xs:choice>
             <xs:attribute name="CollectionPath" type="xs:NCName"/>
             <xs:attribute name="WithFixedValues" type="xs:boolean"/>
             <xs:attribute name="ParameterDisplayOnly"/>
@@ -256,6 +259,18 @@
         </xs:complexType>
     </xs:element>
     <xs:element name="ParameterInOut">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
+            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterIn">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
+            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterOut">
         <xs:complexType>
             <xs:attribute name="ValueListProperty" type="xs:NCName"/>
             <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
