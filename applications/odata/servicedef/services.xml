@@ -211,15 +211,6 @@ under the License.
         <attribute name="bindPrimaryKey" type="Map" mode="IN"/>
     </service>
 
-    <service name="dpbird.uploadFile" engine="java"
-             location="com.dpbird.odata.services.ProcessorServices" invoke="uploadFile" auth="true">
-        <description>upload file</description>
-        <attribute name="multiFrom" mode="IN" type="Map"/>
-        <attribute name="key" type="Map" mode="IN"/>
-        <attribute name="relation" type="List" mode="IN"/>
-        <attribute name="relContentType" type="String" mode="IN" optional="true"/>
-    </service>
-
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->
