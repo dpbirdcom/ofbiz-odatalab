@@ -2600,7 +2600,7 @@ public class EdmConfigLoader {
         ModelReader modelReader = delegator.getModelReader();
         Map<String, ModelEntity> entityCache = modelReader.getEntityCache();
         for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
-            String draftEntityName = entityType.getDraftEntityName();
+            String draftEntityName = entityType.getDraftEntityName(); //TODO: remove
             //没有定义Draft或者已经创建过了 跳过
             if (UtilValidate.isEmpty(draftEntityName) || UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
                 continue;
