@@ -130,27 +130,6 @@ under the License.
         </relation>
     </view-entity>
 
-    <!-- DataResouceElectornicOther is for Person and PartyGroup which has Party as Base Type -->
-    <view-entity entity-name="DataResouceElectornicOther" package-name="com.dpbird.odata">
-        <member-entity entity-alias="D" entity-name="DataResource"/>
-        <member-entity entity-alias="E" entity-name="ElectronicText"/>
-        <member-entity entity-alias="O" entity-name="OtherDataResource"/>
-        <alias-all entity-alias="D"/>
-        <alias-all entity-alias="E"/>
-        <alias-all entity-alias="O"/>
-        <view-link rel-entity-alias="E" entity-alias="D" rel-optional="true">
-            <key-map field-name="dataResourceId"/>
-        </view-link>
-        <view-link rel-entity-alias="O" entity-alias="D" rel-optional="true">
-            <key-map field-name="dataResourceId"/>
-        </view-link>
-        <relation type="one-nofk" rel-entity-name="ElectronicText">
-            <key-map field-name="dataResourceId"/>
-        </relation>
-        <relation type="one-nofk" rel-entity-name="OtherDataResource">
-            <key-map field-name="dataResourceId"/>
-        </relation>
-    </view-entity>
     <!-- end shortcut view -->
 
     <!-- 数据库动态view，及odata的metadata数据库化 -->
