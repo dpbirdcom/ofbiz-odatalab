@@ -12,7 +12,6 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityFieldMap;
 import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
@@ -58,6 +57,17 @@ public class DraftHandler {
         this.sapContextId = sapContextId;
     }
 
+    public DraftHandler(Map<String, Object> odataContext, String sapContextId, EdmEntityType edmEntityType) throws OfbizODataException {
+        this.delegator = (Delegator) odataContext.get("delegator");
+        this.dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
+        this.userLogin = (GenericValue) odataContext.get("userLogin");
+        this.locale = (Locale) odataContext.get("locale");
+        this.edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        this.edmEntityType = edmEntityType;
+        this.sapContextId = sapContextId;
+        this.csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+    }
+
     public OdataOfbizEntity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite)
             throws OfbizODataException {
         GenericValue draftGenericValue = null;
@@ -65,8 +75,7 @@ public class DraftHandler {
         if (csdlEntityType.isAutoId()) {
             fieldMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
         } else {
-            fieldMap = new HashMap<>();
-            fieldMap.putAll(keyMap);
+            fieldMap = new HashMap<>(keyMap);
         }
         fieldMap.putAll(Util.entityToMap(entityToWrite));
 
@@ -84,7 +93,7 @@ public class DraftHandler {
             }
             draftGenericValue = (GenericValue) result.get("draftGenericValue");
         }
-        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,
+        OdataOfbizEntity updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider,
                 csdlEntityType, draftGenericValue, locale);
         return updatedEntity;
     }
@@ -107,7 +116,7 @@ public class DraftHandler {
             throw new OfbizODataException(e.getMessage());
         }
         GenericValue draftGenericValue = (GenericValue) result.get("draftGenericValue");
-        OdataOfbizEntity createdEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider,
+        OdataOfbizEntity createdEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider,
                 csdlEntityType, draftGenericValue, locale);
         return createdEntity;
     }
@@ -160,7 +169,7 @@ public class DraftHandler {
             throw new OfbizODataException(e.getMessage());
         }
         GenericValue nestedGenericValue = (GenericValue) result.get("draftGenericValue");
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
         if (nestedCsdlEntityType.isAutoId()) {
             try {
                 entity = (OdataOfbizEntity) OdataProcessorHelper.procEntityWithAutoId(true, delegator, nestedCsdlEntityType, entity);
@@ -258,7 +267,7 @@ public class DraftHandler {
         List<Entity> entityList = entityCollection.getEntities();
         if (navDraftGenericValues != null) {
             for (GenericValue elementGV : navDraftGenericValues) {
-                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, elementGV, locale);
+                OdataOfbizEntity rowEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, elementGV, locale);
                 if (navCsdlEntityType.isAutoId()) {
                     rowEntity = procEntityWithAutoId(elementGV, rowEntity);
                 }
@@ -339,7 +348,7 @@ public class DraftHandler {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, navCsdlEntityType, draftGenericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, navCsdlEntityType, draftGenericValue, locale);
         if (navCsdlEntityType.isAutoId()) {
             entity = procEntityWithAutoId(draftGenericValue, entity);
         }
@@ -474,9 +483,9 @@ public class DraftHandler {
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", null, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, queryOptions, edmParams);
-                OdataOfbizEntity ofbizEntity = ofbizOdataReader.makeEntityFromGv(mainGenericValue);
-                return ofbizOdataReader.findRelatedEntityCollection(ofbizEntity, edmNavigationProperty, queryOptions);
+                OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
+                OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
+                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
             } catch (GenericEntityException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR), e.getMessage());
             }
@@ -597,6 +606,12 @@ public class DraftHandler {
         }
         return result;
     }
+    
+    public OdataOfbizEntity readEntityData(EdmEntityType edmEntityType, Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)
+            throws OfbizODataException {
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        return readEntityData(csdlEntityType, keyMap, queryOptions);
+    }
 
     public OdataOfbizEntity readEntityData(OfbizCsdlEntityType csdlEntityType, Map<String, Object> keyMap, Map<String, QueryOption> queryOptions)
             throws OfbizODataException {
@@ -616,7 +631,7 @@ public class DraftHandler {
         if (genericValue == null) {
             throw new OfbizODataException(HttpStatus.SC_NOT_FOUND + "", "Entity not found: " + draftEntityName);
         }
-        entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         if (csdlEntityType.isAutoId()) {
             entity = procEntityWithAutoId(genericValue, entity);
         }

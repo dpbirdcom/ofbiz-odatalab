@@ -10,7 +10,6 @@ import java.io.IOException;
 /**
  * ControlServlet.java - Master servlet for the web application.
  *
- * @author dpbird
  * @date 2022-09-09
  */
 public class OdataControlServlet extends ControlServlet {

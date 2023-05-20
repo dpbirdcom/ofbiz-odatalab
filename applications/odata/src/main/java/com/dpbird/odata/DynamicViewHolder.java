@@ -4,22 +4,17 @@ import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
 import org.apache.ofbiz.entity.condition.EntityExpr;
-import org.apache.ofbiz.entity.model.DynamicViewEntity;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelRelation;
-import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.service.LocalDispatcher;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DynamicViewHolder {
     private OfbizCsdlEntityType csdlEntityType;
@@ -44,6 +39,10 @@ public class DynamicViewHolder {
         //mainEntity、groupBy
         dynamicViewEntity.addMemberEntity(csdlEntityType.getName(), csdlEntityType.getOfbizEntity());
         dynamicViewEntity.addAliasAll(csdlEntityType.getName(), null, null, csdlEntityType.isGroupBy());
+        //需要添加BaseType
+        if (UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
+            addBaseTypeMember(csdlEntityType);
+        }
     }
 
     /**
@@ -311,5 +310,17 @@ public class DynamicViewHolder {
             e.printStackTrace();
         }
         return null;
+    }
+
+    //添加BaseType
+    private void addBaseTypeMember(OfbizCsdlEntityType ofbizCsdlEntityType) {
+        String baseType = ofbizCsdlEntityType.getBaseTypeFQN().getName();
+        dynamicViewEntity.addMemberEntity(baseType, baseType);
+        dynamicViewEntity.addAliasAll(baseType, null, null, true);
+        ModelEntity modelEntity = delegator.getModelEntity(ofbizCsdlEntityType.getOfbizEntity());
+        ModelRelation modelRelation = modelEntity.getRelation(baseType);
+        ModelViewEntity.ModelViewLink modelViewLink = new ModelViewEntity.ModelViewLink(ofbizCsdlEntityType.getName(),
+                baseType, true, null, modelRelation.getKeyMaps());
+        dynamicViewEntity.addViewLink(modelViewLink);
     }
 }

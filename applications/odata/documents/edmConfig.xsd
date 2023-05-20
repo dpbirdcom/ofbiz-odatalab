@@ -67,6 +67,7 @@
             <xs:attribute name="AutoNavigations" type="xs:boolean"/>
             <xs:attribute name="HasStream" type="xs:boolean"/>
             <xs:attribute name="BaseType" type="xs:NCName"/>
+            <xs:attribute name="OpenType" type="xs:boolean"/>
             <xs:attribute name="EntityCondition"/>
             <xs:attribute name="GroupBy" type="xs:boolean"/>
             <xs:attribute name="Handler" type="xs:anyURI"/>
@@ -130,6 +131,7 @@
                 <xs:element ref="ReturnType"/>
             </xs:sequence>
             <xs:attribute name="IsBound" type="xs:boolean"/>
+            <xs:attribute name="IsComposable" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="OfbizService"/>
         </xs:complexType>
@@ -215,7 +217,7 @@
     </xs:element>
     <xs:element name="Key">
         <xs:complexType>
-            <xs:sequence>
+            <xs:sequence maxOccurs="unbounded">
                 <xs:element ref="PropertyRef"/>
             </xs:sequence>
         </xs:complexType>
@@ -350,6 +352,7 @@
         <xs:complexType>
             <xs:attribute name="Type" use="required" type="xs:NCName"/>
             <xs:attribute name="IsCollection" type="xs:boolean"/>
+            <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Name" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>

@@ -15,6 +15,7 @@ import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlAction;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
@@ -44,108 +45,30 @@ public class DraftActionProcessor extends DraftHandler {
         this.odataContext = odataContext;
     }
 
-
-    public OFbizEntityActionResult processBoundActionEntity(UriResourceAction action, Map<String, Parameter> parameters,
-                                                            UriResourcePartTyped boundEntity, UriResourceNavigation uriResourceNavigation)
-            throws OfbizODataException {
-        EdmAction edmAction = action.getAction();
+    public OFbizEntityActionResult processActionEntity(UriResourceAction uriResourceAction, Map<String, Object> parameters,
+                                                       EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+        EdmAction edmAction = uriResourceAction.getAction();
+        EdmEntityType edmReturnType = (EdmEntityType) edmAction.getReturnType().getType();
         OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
-        Map<String, Object> paramMap = Util.parametersToMap(parameters);
-        OFbizEntityActionResult result = null;
-        if (boundEntity instanceof UriResourceEntitySet) {
-            result = entitySetBoundActionEntity(edmAction, csdlAction, paramMap,
-                    (UriResourceEntitySet) boundEntity, uriResourceNavigation);
-        } else if (boundEntity instanceof UriResourceSingleton) {
-            result = singletonBoundActionEntity(edmAction, csdlAction, paramMap,
-                    (UriResourceSingleton) boundEntity, uriResourceNavigation);
-        }
-        if (result != null) {
-            List<CsdlAction> actions = edmProvider.getActions(action.getAction().getFullQualifiedName());
+        Object actionReturn = OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlAction.getOfbizMethod(), parameters, edmBindingTarget);
+        Entity entity = resultToEntity(actionReturn, delegator, edmProvider, edmReturnType, locale);
+        OFbizEntityActionResult result = new OFbizEntityActionResult();
+        result.setEntity(entity);
+        if (result.getEntity() != null) {
+            List<CsdlAction> actions = edmProvider.getActions(uriResourceAction.getAction().getFullQualifiedName());
             OfbizCsdlAction ofbizCsdlAction = (OfbizCsdlAction) actions.get(0);
             if (ofbizCsdlAction.isStickySessionEdit()) {
                 OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) result.getEntity();
                 sapContextId = (String) odataOfbizEntity.getKeyMap().get("draftUUID");
             }
         }
-        if (UtilValidate.isNotEmpty(queryOptions) && UtilValidate.isNotEmpty(queryOptions.get("expandOption")) && result != null) {
-            OdataOfbizEntity entity = (OdataOfbizEntity) result.getEntity();
-            OfbizCsdlEntityType ofbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(boundEntity.getType().getFullQualifiedName());
-            this.addExpandOption((ExpandOption) queryOptions.get("expandOption"), entity, ofbizCsdlEntityType, edmEntityType);
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmReturnType.getFullQualifiedName());
+        if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
+            OdataOfbizEntity resultEntity = (OdataOfbizEntity) result.getEntity();
+            this.addExpandOption((ExpandOption) queryOptions.get("expandOption"), resultEntity, csdlEntityType, edmReturnType);
         }
         return result;
     }
-
-    private OFbizEntityActionResult entitySetBoundActionEntity(EdmAction edmAction, OfbizCsdlAction csdlAction,
-                                                               Map<String, Object> paramMap,
-                                                               UriResourceEntitySet boundEntity,
-                                                               UriResourceNavigation uriResourceNavigation)
-            throws OfbizODataException {
-        Entity entity;
-        OFbizEntityActionResult result = new OFbizEntityActionResult();
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(boundEntity.getEntityType().getFullQualifiedName());
-
-        List<UriParameter> keyParams = boundEntity.getKeyPredicates();
-        Map<String, Object> keyMap = Util.uriParametersToMap(keyParams, edmEntityType);
-        Map<String, Object> navKeyMap = null;
-        EdmNavigationProperty edmNavigationProperty = null;
-        if (uriResourceNavigation != null) {
-            edmNavigationProperty = uriResourceNavigation.getProperty();
-            List<UriParameter> navKeyParams = uriResourceNavigation.getKeyPredicates();
-            navKeyMap = Util.uriParametersToMap(navKeyParams, edmNavigationProperty.getType());
-        }
-        boolean needSemanticFields = true;
-        paramMap.put("sapContextId", odataContext.get("sapContextId")); //TODO: 最好让paramMap保持干净，sapContextId要从另外渠道传入
-        Object actionMethodResult;
-        EdmBindingTarget edmBindingTarget = boundEntity.getEntitySet();
-        actionMethodResult = OdataProcessorHelper.callFunctionActionMethod(odataContext,
-                csdlAction.getOfbizMethod(), paramMap, edmBindingTarget, edmNavigationProperty, keyMap, navKeyMap);
-        if (actionMethodResult instanceof GenericValue) {
-            entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
-                    (EdmEntityType) edmAction.getReturnType().getType(), (GenericValue) actionMethodResult, locale);
-        } else if (actionMethodResult instanceof Entity) {
-            entity = (Entity) actionMethodResult;
-            needSemanticFields = false;
-        } else {
-            entity = this.objectToEntity(csdlAction.getReturnType().getTypeFQN(), actionMethodResult);
-        }
-        if (entity != null && needSemanticFields) {
-            appendSemanticFields(csdlAction.getReturnType().getTypeFQN(), UtilMisc.toList(entity));
-        }
-        result.setEntity(entity);
-        return result;
-    }
-
-    private OFbizEntityActionResult singletonBoundActionEntity(EdmAction edmAction, OfbizCsdlAction csdlAction,
-                                                               Map<String, Object> paramMap,
-                                                               UriResourceSingleton boundEntity, UriResourceNavigation uriResourceNavigation)
-            throws OfbizODataException {
-        OFbizEntityActionResult result = new OFbizEntityActionResult();
-        EdmSingleton edmSingleton = boundEntity.getSingleton();
-        Entity entity;
-        Object actionMethodResult;
-        Map<String, Object> navKeyMap = null;
-        EdmNavigationProperty edmNavigationProperty = null;
-        if (uriResourceNavigation != null) {
-            edmNavigationProperty = uriResourceNavigation.getProperty();
-            List<UriParameter> navKeyParams = uriResourceNavigation.getKeyPredicates();
-            navKeyMap = Util.uriParametersToMap(navKeyParams, edmNavigationProperty.getType());
-        }
-        actionMethodResult = OdataProcessorHelper.callFunctionActionMethod(odataContext,
-                csdlAction.getOfbizMethod(), paramMap, edmSingleton, edmNavigationProperty, null, navKeyMap);
-        if (actionMethodResult instanceof GenericValue) {
-            entity = OdataProcessorHelper.genericValueToEntity(delegator, this.edmProvider,
-                    (EdmEntityType) edmAction.getReturnType().getType(), (GenericValue) actionMethodResult, locale);
-        } else {
-            entity = this.objectToEntity(csdlAction.getReturnType().getTypeFQN(), actionMethodResult);
-        }
-        if (entity != null) {
-            appendSemanticFields(csdlAction.getReturnType().getTypeFQN(), UtilMisc.toList(entity));
-        }
-        result.setEntity(entity);
-        return result;
-
-    }
-
 
     private List<Entity> appendSemanticFields(FullQualifiedName fqn, List<Entity> entityList) throws OfbizODataException {
         Entity entity = entityList.get(0);
@@ -189,4 +112,26 @@ public class DraftActionProcessor extends DraftHandler {
         }
         return e1;
     }
+
+
+    private Entity resultToEntity(Object result, Delegator delegator, OfbizAppEdmProvider edmProvider,
+                                  EdmEntityType edmReturnType, Locale locale) throws OfbizODataException {
+        Entity entity = null;
+        boolean needSemanticFields = true;
+        if (result instanceof GenericValue) {
+            entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, edmReturnType, (GenericValue) result, locale);
+        } else if (result instanceof Entity) {
+            entity = (Entity) result;
+            needSemanticFields = false;
+        } else if (result instanceof Map) {
+            OfbizCsdlEntityType returnEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmReturnType.getFullQualifiedName());
+            entity = Util.mapToEntity(returnEntityType, (Map<String, Object>) result);
+            needSemanticFields = false;
+        }
+        if (entity != null && needSemanticFields) {
+            appendSemanticFields(edmReturnType.getFullQualifiedName(), UtilMisc.toList(entity));
+        }
+        return entity;
+    }
+
 }

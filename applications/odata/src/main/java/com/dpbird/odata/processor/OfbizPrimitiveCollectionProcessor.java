@@ -1,19 +1,19 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
+import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
-import org.apache.olingo.commons.api.edm.EdmEntitySet;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmFunction;
-import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
-import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -21,139 +21,92 @@ import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.processor.PrimitiveCollectionProcessor;
 import org.apache.olingo.server.api.serializer.ODataSerializer;
 import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
-import org.apache.olingo.server.api.serializer.SerializerException;
 import org.apache.olingo.server.api.serializer.SerializerResult;
-import org.apache.olingo.server.api.uri.*;
-import org.apache.olingo.server.api.uri.queryoption.QueryOption;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.UriResourceFunction;
+import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionProcessor {
 
-    public static final String module = OfbizPrimitiveCollectionProcessor.class.getName();
+    public static final String MODULE = OfbizPrimitiveCollectionProcessor.class.getName();
     private OData odata;
     private ServiceMetadata serviceMetadata;
-    private LocalDispatcher dispatcher;
-    private Delegator delegator;
-    // private OfbizOdataReader ofbizOdataReader;
-    private OfbizAppEdmProvider edmProvider;
-    private HttpServletRequest httpServletRequest = null;
-    private Locale locale = Locale.ROOT;
-    private GenericValue userLogin;
+    private final LocalDispatcher dispatcher;
+    private final Delegator delegator;
+    private final OfbizAppEdmProvider edmProvider;
+    private final HttpServletRequest httpServletRequest;
+    private final Locale locale;
+    private final GenericValue userLogin;
 
     public OfbizPrimitiveCollectionProcessor(HttpServletRequest request, Delegator delegator, LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider, GenericValue userLogin, Locale locale) {
         super();
         this.delegator = delegator;
         this.dispatcher = dispatcher;
         this.httpServletRequest = request;
-        // this.ofbizOdataReader = ofbizOdataReader;
         this.edmProvider = edmProvider;
         this.locale = locale;
         this.userLogin = userLogin;
     }
 
+    private Map<String, Object> getOdataContext() {
+        return UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
+                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
+    }
+
     @Override
     public void readPrimitiveCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo, ContentType responseFormat) throws ODataApplicationException, ODataLibraryException {
-
-        Debug.logInfo("readPrimitiveCollection =>", module);
+        Debug.logInfo("readPrimitiveCollection =>", MODULE);
         List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
-        Property property = null;
-        EdmPrimitiveType edmPrimitiveType = null;
-        EdmFunction edmFunction;
-        if (resourcePaths.size() == 1) {
-            UriResource uriResource = resourcePaths.get(0);
-            if (uriResource instanceof UriResourceFunction) {
-                edmFunction = ((UriResourceFunction) uriResource).getFunction();
+        Property property;
+        EdmPrimitiveType edmPrimitiveType;
+        try {
+            UriResource lastUriResource = ListUtil.getLast(resourcePaths);
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
+            if (lastUriResource instanceof UriResourceFunction) {
+                //Function
+                UriResourceFunction resourceFunction = (UriResourceFunction) lastUriResource;
+                EdmFunction edmFunction = resourceFunction.getFunction();
                 edmPrimitiveType = (EdmPrimitiveType) edmFunction.getReturnType().getType();
-                property = processImportFunctionPrimitiveCollection(uriInfo);
+                Map<String, Object> parameters = Util.uriParametersToMap(resourceFunction.getParameters(), edmFunction, uriInfo.getAliases());
+                EdmBindingTarget edmBindingTarget = null;
+                if (edmFunction.isBound()) {
+                    //添加Bound参数
+                    List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
+                    List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, uriInfo.getAliases());
+                    OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+                    String boundParamName = edmFunction.getParameterNames().get(0);
+                    Object entityData = odataParts.getEntityData();
+                    edmBindingTarget = odataParts.getEdmBindingTarget();
+                    Object boundParam = null;
+                    if (entityData != null) {
+                        boolean boundCollection = edmFunction.getParameter(boundParamName).isCollection();
+                        boundParam = boundCollection ? ((EntityCollection) entityData).getEntities() : entityData;
+                    }
+                    parameters.put(boundParamName, boundParam);
+                }
+                FunctionProcessor functionProcessor = new FunctionProcessor(getOdataContext(), new HashMap<>(), null);
+                property = functionProcessor.processFunctionPrimitive(resourceFunction, parameters, edmBindingTarget);
             } else {
-                throw new ODataApplicationException("Only ImportFunction is supported",
-                        HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ENGLISH);
+                //Entity Property
+                UriResourcePrimitiveProperty resourceProperty = (UriResourcePrimitiveProperty) lastUriResource;
+                edmPrimitiveType = (EdmPrimitiveType) resourceProperty.getType();
+                List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
+                List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, uriInfo.getAliases());
+                OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+                Entity entity = (Entity) odataParts.getEntityData();
+                property = entity.getProperty(lastUriResource.getSegmentValue());
             }
-        } else if (resourcePaths.size() >= 2) {
-            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
-            UriResourcePartTyped boundEntity = (UriResourcePartTyped) resourcePaths.get(0);
-            if (resourcePaths.get(resourcePaths.size() - 1) instanceof UriResourceFunction) {
-                //第一个是bound的对象 最后一个是Action,如果长度 > 2就是有navigation对象
-                UriResourceNavigation uriResourceNavigation = null;
-                // 先只支持2段
-                if (resourcePaths.size() > 2) {
-                    uriResourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
-                }
-                UriResourceFunction uriResourceFunction = (UriResourceFunction) resourcePaths.get(resourcePaths.size() - 1);
-                edmFunction = uriResourceFunction.getFunction();
-                edmPrimitiveType = (EdmPrimitiveType) edmFunction.getReturnType().getType();
-                List<UriParameter> parameters = uriResourceFunction.getParameters();
-                try {
-                    FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-                    property = ofbizOdataReader.processBoundFunctionPrimitive(uriResourceFunction, parameters,
-                            boundEntity, uriResourceNavigation, uriInfo.getAliases());
-                } catch (OfbizODataException e) {
-                    throw new ODataApplicationException(e.getMessage(),
-                            Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH, e.getODataErrorCode());
-                }
-            } else if (resourcePaths.get(1) instanceof UriResourcePrimitiveProperty) {
-                UriResourcePrimitiveProperty uriResourcePrimitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(1);
-                edmPrimitiveType = (EdmPrimitiveType) uriResourcePrimitiveProperty.getType();
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, null);
-                try {
-                    property = ofbizOdataReader.readPrimitiveProperty(uriResourcePrimitiveProperty, boundEntity);
-                } catch (ODataException e) {
-                    throw new ODataApplicationException(e.getMessage(),
-                            HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
-                }
-            } else if (resourcePaths.get(1) instanceof UriResourceNavigation) {
-                //查询子对象的单个字段 最多支持三段
-                try {
-                    //property
-                    UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) resourcePaths.get(resourcePaths.size() - 1);
-                    edmPrimitiveType = (EdmPrimitiveType) primitiveProperty.getType();
-                    //startEntity
-                    UriResourceEntitySet startEntitySet = (UriResourceEntitySet) boundEntity;
-                    EdmEntitySet startEdmEntitySet = startEntitySet.getEntitySet();
-                    List<UriParameter> startKeyPredicates = startEntitySet.getKeyPredicates();
-                    Map<String, Object> keyMap = Util.uriParametersToMap(startKeyPredicates, startEdmEntitySet.getEntityType());
-                    //nextNavigation
-                    UriResourceNavigation resourceNavigation = (UriResourceNavigation) resourcePaths.get(1);
-                    EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                    Map<String, Object> navKeyMap = null;
-                    if (UtilValidate.isNotEmpty(resourceNavigation.getKeyPredicates())) {
-                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, resourceNavigation.getKeyPredicates());
-                    }
-                    //如果是三段式查询property，startEdmEntitySet调整为第二段，edmNavigationProperty调整为第三段
-                    if (resourcePaths.size() == 4) {
-                        startEdmEntitySet = Util.getNavigationTargetEntitySet(startEdmEntitySet, edmNavigationProperty);
-                        keyMap = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), startEdmEntitySet.getEntityType());
-                        //第二段不含主键，需要获取主键
-                        if (UtilValidate.isEmpty(keyMap)) {
-                            keyMap = Util.getNavigationKey(startEntitySet.getEntityType(), startKeyPredicates, resourceNavigation.getSegmentValue(), edmProvider, delegator);
-                        }
-                        UriResourceNavigation nextResourceNavigation = (UriResourceNavigation) resourcePaths.get(2);
-                        edmNavigationProperty = nextResourceNavigation.getProperty();
-                        navKeyMap = Util.getNavigationTargetKeyMap(startEdmEntitySet, edmNavigationProperty, nextResourceNavigation.getKeyPredicates());
-                    }
-                    Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", startEdmEntitySet,
-                            "edmNavigationProperty", edmNavigationProperty);
-                    OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(odataContext, null, edmParams);
-                    property = ofbizOdataReader.readRelatedEntityProperty(keyMap, edmNavigationProperty, navKeyMap, primitiveProperty.getSegmentValue());
-                } catch (OfbizODataException e) {
-                    throw new ODataApplicationException(e.getMessage(),
-                            HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), locale);
-                }
-            }
-        } else {
-            throw new ODataApplicationException("Doesn't support resource has more than 2 parts",
-                    HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ENGLISH);
+        } catch (OfbizODataException e) {
+            throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()) , Locale.ENGLISH);
         }
-
         // serialize property
         if (property != null) {
-            final ContextURL contextURL = ContextURL.with().type(edmPrimitiveType).build();
-            final PrimitiveSerializerOptions opts = PrimitiveSerializerOptions.with().contextURL(contextURL).build();
+            final ContextURL contextUrl = ContextURL.with().type(edmPrimitiveType).build();
+            final PrimitiveSerializerOptions opts = PrimitiveSerializerOptions.with().contextURL(contextUrl).build();
             final ODataSerializer serializer = odata.createSerializer(responseFormat);
             final SerializerResult serializerResult = serializer.primitiveCollection(serviceMetadata, edmPrimitiveType, property, opts);
 
@@ -167,37 +120,15 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
 
     }
 
-    private Property processImportFunctionPrimitiveCollection(UriInfo uriInfo)
-            throws ODataApplicationException {
-        List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
-        UriResourceFunction uriResourceFunction = (UriResourceFunction) resourcePaths.get(0);
-        List<UriParameter> uriParameters = uriResourceFunction.getParameters();
-        FunctionProcessor functionProcessor = getFunctionProcessor();
-        try {
-            return functionProcessor.processImportFunctionPrimitive(uriResourceFunction, uriParameters, uriInfo.getAliases());
-        } catch (ODataException e) {
-            e.printStackTrace();
-            throw new ODataApplicationException("Cannot execute bound action void",
-                    HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
-        }
-    }
-
-    private FunctionProcessor getFunctionProcessor() {
-        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                "locale", locale);
-        return new FunctionProcessor(odataContext, null, null);
-    }
-
     @Override
     public void updatePrimitiveCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo, ContentType contentType, ContentType contentType1) throws ODataApplicationException, ODataLibraryException {
-        Debug.logInfo("updatePrimitiveCollection =>", module);
+        Debug.logInfo("updatePrimitiveCollection =>", MODULE);
 
     }
 
     @Override
     public void deletePrimitiveCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo) throws ODataApplicationException, ODataLibraryException {
-        Debug.logInfo("deletePrimitiveCollection =>", module);
+        Debug.logInfo("deletePrimitiveCollection =>", MODULE);
 
     }
 
@@ -207,50 +138,4 @@ public class OfbizPrimitiveCollectionProcessor implements PrimitiveCollectionPro
         this.serviceMetadata = serviceMetadata;
     }
 
-    private void readFunctionImportInternal(final ODataRequest request, final ODataResponse response,
-                                            final UriInfo uriInfo, final ContentType responseFormat)
-            throws ODataApplicationException, SerializerException {
-        Debug.logInfo("------------------------------------------------------------ in readFunctionImportInternal", module);
-
-        // 1st step: Analyze the URI and fetch the entity returned by the function
-        // import
-        // Function Imports are always the first segment of the resource path
-        final UriResource firstSegment = uriInfo.getUriResourceParts().get(0);
-
-        if (!(firstSegment instanceof UriResourceFunction)) {
-            throw new ODataApplicationException("Not implemented", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(),
-                    Locale.ENGLISH);
-        }
-
-        final UriResourceFunction uriResourceFunction = (UriResourceFunction) firstSegment;
-        Property property = null;
-        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-                "locale", locale);
-        FunctionProcessor ofbizOdataReader = new FunctionProcessor(odataContext, null, null);
-        try {
-            property = ofbizOdataReader.readFunctionImportPrimitiveCollection(uriResourceFunction);
-        } catch (ODataException e) {
-            e.printStackTrace();
-        }
-
-        if (property == null) {
-            throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(),
-                    Locale.ROOT);
-        }
-
-        // 2nd step: Serialize the response entity
-        EdmPrimitiveType edmPrimitiveType = (EdmPrimitiveType) uriResourceFunction.getFunction().getReturnType().getType();
-        ContextURL contextURL = ContextURL.with().type(edmPrimitiveType).build();
-        PrimitiveSerializerOptions opts = PrimitiveSerializerOptions.with().contextURL(contextURL).build();
-        //todo fix me
-//         ODataSerializer serializer = odata.createSerializer(responseFormat);
-        SerializerResult serializerResult = odata.createSerializer(responseFormat).primitiveCollection(serviceMetadata,
-                edmPrimitiveType, property, opts);
-
-        // 3rd configure the response object
-        response.setContent(serializerResult.getContent());
-        response.setStatusCode(HttpStatusCode.OK.getStatusCode());
-        response.setHeader(HttpHeader.CONTENT_TYPE, responseFormat.toContentTypeString());
-    }
 }

@@ -39,6 +39,14 @@ def generateFields(Map<String, Object> context){
 
         GenericValue party = EntityQuery.use(delegator).from("Party").queryFirst()
         entity.addProperty(new Property(null, "semanticPartyId1", ValueType.PRIMITIVE, party.getString("partyId")))
+
+        //添加一个复杂类型字段
+        ComplexValue complexValue = new ComplexValue();
+        List<Property> value = complexValue.getValue();
+        value.add(new Property(null, "testProperty1", ValueType.PRIMITIVE, "test_String"));
+        value.add(new Property(null, "testProperty2", ValueType.PRIMITIVE, new BigDecimal("11.22")));
+        entity.addProperty(new Property("com.dpbird.TestComplexProperty", "testComplex", ValueType.COMPLEX, complexValue))
+
     }
     return entityList;
 }

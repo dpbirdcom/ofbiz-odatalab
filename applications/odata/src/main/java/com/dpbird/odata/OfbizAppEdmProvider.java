@@ -60,7 +60,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     private final GenericValue userLogin;
     private final Locale locale;
     private static String eTag = null;
-    private static String componentName = null;
+    private String componentName = null;
     CsdlSchema cachedSchema;
     Map<String, CsdlSchema> referenceSchemaMap = new HashMap<String, CsdlSchema>();
 
@@ -73,7 +73,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         this.webapp = appName;
         this.userLogin = userLogin;
         this.locale = locale;
-        OfbizAppEdmProvider.componentName = componentName;
+        this.componentName = componentName;
 //		this.edmConfigInputStream = edmConfigInputStream;
         CsdlSchemaCache csdlSchemaCache;
         csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
@@ -104,9 +104,12 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         }
     }
 
-
     public String getWebapp() {
         return webapp;
+    }
+
+    public String getComponentName() {
+        return componentName;
     }
 
     private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache) throws ODataException {

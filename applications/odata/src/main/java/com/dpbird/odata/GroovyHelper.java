@@ -59,35 +59,6 @@ public class GroovyHelper {
         }
     }
 
-    public List<GenericValue> getNavigationData(String location, Entity entity, EdmNavigationProperty edmNavigationProperty,
-                                                Map<String, QueryOption> queryOptions, boolean filterByDate,
-                                                List<String> orderBy) throws OfbizODataException, MissingMethodExceptionNoStack {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("entity", entity);
-        params.put("filterByDate", filterByDate);
-        params.put("orderBy", orderBy);
-        params.put("queryOptions", queryOptions);
-        params.put("edmNavigationProperty", edmNavigationProperty);
-        return (List<GenericValue>) runScript(location, "getNavigationData");
-    }
-
-    public List<Entity> getSemanticNavigationData(String location, Entity entity, EdmNavigationProperty edmNavigationProperty,
-                                                Map<String, QueryOption> queryOptions, List<String> orderBy) throws OfbizODataException, MissingMethodExceptionNoStack {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("entity", entity);
-        params.put("orderBy", orderBy);
-        params.put("queryOptions", queryOptions);
-        params.put("edmNavigationProperty", edmNavigationProperty);
-        return (List<Entity>) runScript(location, "getSemanticNavigationData");
-    }
-
-    public void bindNavigationLink(String location, OdataOfbizEntity entity,
-                                   OdataOfbizEntity nestedEntity) throws OfbizODataException {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("entity", entity);
-        params.put("nestedEntity", nestedEntity);
-        runScript(location, "bindNavigationLink");
-    }
 
     public GenericValue createNestedGenericValue(String handler, Entity nestedEntityToCreate,
                                                  OdataOfbizEntity entityCreated,
@@ -112,12 +83,6 @@ public class GroovyHelper {
         params.put("entityList", entityList);
         params.put("selectOption", selectOption);
         return (List<Entity>) runScript(handler, "generateFields");
-    }
-
-    public GenericValue inValidateCreateGenericValue(String handler, Entity entityToWrite) throws OfbizODataException, GenericServiceException {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("entity", entityToWrite);
-        return (GenericValue) runScript(handler, "inValidateCreateGenericValue");
     }
 
     public GenericValue createGenericValue(String handler, Entity entityToWrite) throws OfbizODataException, GenericServiceException {
@@ -152,25 +117,4 @@ public class GroovyHelper {
         return (List<GenericValue>) runScript(handler, "findGenericValues");
     }
 
-    //EntitySet的Handler 用来读取语义化实体列表
-    public List<Entity> findSemanticEntities(OfbizAppEdmProvider edmProvider,
-                                                 OfbizCsdlEntitySet csdlEntitySet,
-                                                 Map<String, QueryOption> queryOptions) throws OfbizODataException {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("queryOptions", queryOptions);
-        params.put("edmProvider", edmProvider);
-        params.put("csdlEntitySet", csdlEntitySet);
-        return (List<Entity>) runScript(csdlEntitySet.getHandler(), "findSemanticEntities");
-    }
-
-    //EntitySet的Handler 用来读取单个语义化实体
-    public Entity findSemanticEntity(OfbizAppEdmProvider edmProvider,
-                                     OfbizCsdlEntitySet csdlEntitySet,
-                                     Map<String, Object> keyMap) throws OfbizODataException {
-        Map<String, Object> params = (Map<String, Object>) gContext.get(ScriptUtil.PARAMETERS_KEY);
-        params.put("keyMap", keyMap);
-        params.put("edmProvider", edmProvider);
-        params.put("csdlEntitySet", csdlEntitySet);
-        return (Entity) runScript(csdlEntitySet.getHandler(), "findSemanticEntity");
-    }
 }

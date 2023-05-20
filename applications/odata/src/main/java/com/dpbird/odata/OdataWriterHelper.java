@@ -82,7 +82,7 @@ public class OdataWriterHelper {
                                                                        Map<String, QueryOption> queryOptions,
                                                                        GenericValue userLogin,
                                                                        Locale locale) throws OfbizODataException {
-        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
+        OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
         try {
@@ -99,15 +99,15 @@ public class OdataWriterHelper {
             }
             if (nestedGenericValue == null) {
                 nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, dispatcher, delegator, userLogin);
-                if (nestedGenericValue == null){
+                if (nestedGenericValue == null) {
                     return null;
                 }
             }
             OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
+            OdataOfbizEntity entityCreated = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, nestedCsdlEntityType, nestedGenericValue, locale);
 
             // 创建语义话字段对应的数据库表的字段
-            OdataProcessorHelper.createSemanticFields(delegator, dispatcher, edmProvider,
+            OdataProcessorHelper.createSemanticFields(httpServletRequest, delegator, dispatcher, edmProvider,
                     entityToWrite, entityCreated, locale, userLogin);
 
             // 因为要返回所创建的Entity，所以，某些语义话字段可能是计算字段，也需要返回
@@ -115,7 +115,7 @@ public class OdataWriterHelper {
                     queryOptions, Collections.singletonList(entityCreated), locale, userLogin);
 
             return entityCreated;
-        } catch (GenericEntityException | GenericServiceException e) {
+        } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());
         }
@@ -131,72 +131,66 @@ public class OdataWriterHelper {
                                                     Locale locale) throws OfbizODataException {
         String entityName = csdlEntityType.getOfbizEntity();
         OdataOfbizEntity updatedEntity;
-        OdataOfbizEntity originEntity;
         Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                 "edmProvider", edmProvider, "httpServletRequest", httpServletRequest);
         GenericValue genericValue = OdataProcessorHelper.readEntityData(odataContext, csdlEntityType, keyMap);
         Map<String, Object> fieldMapToWrite = Util.entityToMap(entityToWrite);
-        try {
-            Map<String, Object> entityMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
-            boolean updateMainEntity = true; // 更新entity，有可能更新entity本身，也有可能只需要更新该entity的navigation的其它entity
-            if (UtilValidate.isEmpty(entityMap)) {
-                updateMainEntity = false;
-            }
-            if (updateMainEntity) {
-                GenericValue updatedGenericValue = null;
-                if (csdlEntityType.getHandlerClass() != null) {
-                    //自定义Groovy更新
-                    GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
-                    try {
-                        updatedGenericValue = groovyHelper.updateGenericValue(csdlEntityType.getHandlerClass(), entityToWrite);
-                    } catch (MissingMethodExceptionNoStack e) {
-                        Debug.logInfo(e.getMessage(), module);
-                    }
+        Map<String, Object> entityMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+        boolean updateMainEntity = true; // 更新entity，有可能更新entity本身，也有可能只需要更新该entity的navigation的其它entity
+        if (UtilValidate.isEmpty(entityMap)) {
+            updateMainEntity = false;
+        }
+        if (updateMainEntity) {
+            GenericValue updatedGenericValue = null;
+            if (csdlEntityType.getHandlerClass() != null) {
+                //自定义Groovy更新
+                GroovyHelper groovyHelper = new GroovyHelper(delegator, dispatcher, userLogin, locale, httpServletRequest);
+                try {
+                    updatedGenericValue = groovyHelper.updateGenericValue(csdlEntityType.getHandlerClass(), entityToWrite);
+                } catch (MissingMethodExceptionNoStack e) {
+                    Debug.logInfo(e.getMessage(), module);
                 }
-                if (updatedGenericValue == null) {
-                    Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
-                    //如果draft提交保存数据，保留值为null的字段
-                    if (entityToWrite instanceof OdataOfbizEntity && ((OdataOfbizEntity) entityToWrite).isDraft()) {
-                        OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entityToWrite;
-                        GenericValue draftGenericValue = odataOfbizEntity.getGenericValue();
-                        for (Map.Entry<String, Object> entry : draftGenericValue.getAllFields().entrySet()) {
-                            if (entry.getValue() == null && !fieldMap.containsKey(entry.getKey())) {
-                                fieldMap.put(entry.getKey(), null);
-                            }
+            }
+            if (updatedGenericValue == null) {
+                Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+                //如果draft提交保存数据，保留值为null的字段
+                if (entityToWrite instanceof OdataOfbizEntity && ((OdataOfbizEntity) entityToWrite).isDraft()) {
+                    OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entityToWrite;
+                    GenericValue draftGenericValue = odataOfbizEntity.getGenericValue();
+                    for (Map.Entry<String, Object> entry : draftGenericValue.getAllFields().entrySet()) {
+                        if (entry.getValue() == null && !fieldMap.containsKey(entry.getKey())) {
+                            fieldMap.put(entry.getKey(), null);
                         }
                     }
-                    //更新 lastModifiedDate
-                    if (delegator.getModelEntity(entityName).isField("lastModifiedDate")) {
-                        fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
-                    }
-                    updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), keyMap, fieldMap, userLogin);
-                    if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
-                            UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||
-                            UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {
-                        //成功主对象更新之后 去处理Attribute
-                        OdataProcessorHelper.updateAttrGenericValue(csdlEntityType, fieldMapToWrite, userLogin, keyMap, dispatcher, delegator);
-                    }
                 }
-                genericValue = updatedGenericValue;
+                //更新 lastModifiedDate
+                if (delegator.getModelEntity(entityName).isField("lastModifiedDate")) {
+                    fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
+                }
+                updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), keyMap, fieldMap, userLogin);
+                if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
+                        UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||
+                        UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {
+                    //成功主对象更新之后 去处理Attribute
+                    OdataProcessorHelper.updateAttrGenericValue(csdlEntityType, fieldMapToWrite, userLogin, keyMap, dispatcher, delegator);
+                }
             }
-            updatedEntity = OdataProcessorHelper.genericValueToEntity(delegator, edmProvider, csdlEntityType, genericValue, locale);
-            List<Entity> updatedEntities = OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher,
-                    edmProvider, null, UtilMisc.toList(updatedEntity), locale, userLogin);
-            updatedEntity = (OdataOfbizEntity) updatedEntities.get(0);
+            genericValue = updatedGenericValue;
+        }
+        updatedEntity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
+        List<Entity> updatedEntities = OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher,
+                edmProvider, null, UtilMisc.toList(updatedEntity), locale, userLogin);
+        updatedEntity = (OdataOfbizEntity) updatedEntities.get(0);
 
-            // update semantic fields
-            OdataProcessorHelper.updateSemanticFields(dispatcher, edmProvider, entityToWrite, updatedEntity, locale, userLogin);
+        // update semantic fields
+        OdataProcessorHelper.updateSemanticFields(dispatcher, edmProvider, entityToWrite, updatedEntity, locale, userLogin);
 
-            // 补齐entityToWrite的主键
-            for (String key : keyMap.keySet()) {
-                Property property = new Property();
-                property.setName(key);
-                property.setValue(ValueType.PRIMITIVE, keyMap.get(key));
-                entityToWrite.addProperty(property);
-            }
-        } catch (GenericEntityException | GenericServiceException e) {
-            e.printStackTrace();
-            throw new OfbizODataException(e.getMessage());
+        // 补齐entityToWrite的主键
+        for (String key : keyMap.keySet()) {
+            Property property = new Property();
+            property.setName(key);
+            property.setValue(ValueType.PRIMITIVE, keyMap.get(key));
+            entityToWrite.addProperty(property);
         }
         return updatedEntity;
     }

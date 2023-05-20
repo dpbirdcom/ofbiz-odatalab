@@ -1,8 +1,10 @@
 package com.dpbird.odata;
 
+import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.condition.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
@@ -10,6 +12,7 @@ import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfoResource;
@@ -26,21 +29,24 @@ import java.util.stream.Stream;
 /**
  * 为OfbizOdataReader做扩展，主要处理一些ofbiz无法直接支持的odata查询
  */
-public class ExtraOdataReader extends OfbizOdataReader {
-    public static final String MODULE = OfbizOdataReader.class.getName();
+public class ExtraOdataReader extends OdataReader {
+    public static final String MODULE = OdataReader.class.getName();
 
     public ExtraOdataReader(Map<String, Object> odataContext, Map<String, QueryOption> queryOptions, Map<String, Object> edmParams) {
         super(odataContext, queryOptions, edmParams);
     }
 
     @Override
-    public EntityCollection findList() throws ODataException {
+    public EntityCollection findList() throws OfbizODataException {
         //如果父类支持就直接处理
-        if (useOfbizReader(queryOptions)) {
+        if (useOdataReader(queryOptions)) {
             return super.findList();
         }
-        //ofbizReader不能处理就用java实现，不支持太大的数据量
-        initPageValue();
+        //OdataReader不能处理的QueryOption就用java实现，不支持太大的数据量
+        int top = getTopOption(queryOptions);
+        int skip = getSkipOption(queryOptions);
+        queryOptions.remove("topOption");
+        queryOptions.remove("skipOption");
         EntityCollection entityCollection = super.findList();
         if (entityCollection.getEntities().size() > EXTRA_QUERY_MAX_RAW) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_IMPLEMENTED), "Current ODATA statements do not support querying entities with large amounts of data.");
@@ -48,7 +54,7 @@ public class ExtraOdataReader extends OfbizOdataReader {
         extraOdataFilter(entityCollection);
         extraOdataOrderBy(entityCollection);
         entityCollectionCount(entityCollection);
-        entityCollectionPage(entityCollection);
+        entityCollectionPage(entityCollection, top, skip);
         return entityCollection;
     }
 
@@ -60,6 +66,7 @@ public class ExtraOdataReader extends OfbizOdataReader {
         if (orderByOption == null) {
             return;
         }
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OrderByItem orderByItem = orderByOption.getOrders().stream()
                 .filter(item -> item.getExpression().toString().contains("$count")).findFirst().orElse(null);
         if (orderByItem != null) {
@@ -77,45 +84,53 @@ public class ExtraOdataReader extends OfbizOdataReader {
                 relationCountMap.entrySet().stream().sorted(Map.Entry.comparingByValue())
                         .forEachOrdered(entry -> entityCollection.getEntities().add(entry.getKey()));
             }
+        } else if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)){
+            Util.orderbyEntityCollection(entityCollection, orderByOption, edmEntityType, edmProvider);
         }
     }
 
     /**
      * 处理filter
      */
-    private void extraOdataFilter(EntityCollection entityCollection) throws OfbizODataException, ExpressionVisitException, ODataApplicationException {
+    private void extraOdataFilter(EntityCollection entityCollection) throws OfbizODataException {
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
         if (filterOption == null) {
             return;
         }
-        //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
-        List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraExpressionVisitor());
-        Debug.logInfo("extraCondition: " + extraConditionList.toString(), MODULE);
-        for (EntityExpr extraCondition : extraConditionList) {
-            if (extraCondition.getLhs() instanceof UriResourceNavigation) {
-                UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
-                EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
-                Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
-                EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
-                Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
-                entityCollection.getEntities().clear();
-                //不同的运算符比较
-                Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
-                if (operator.equals(EntityOperator.EQUALS)) {
-                    mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
-                } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
-                    mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
-                } else if (operator.equals(EntityOperator.LESS_THAN)) {
-                    mapStream = mapStream.filter(en -> en.getValue() < condValue);
-                } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
-                    mapStream = mapStream.filter(en -> en.getValue() <= condValue);
-                } else if (operator.equals(EntityOperator.GREATER_THAN)) {
-                    mapStream = mapStream.filter(en -> en.getValue() > condValue);
-                } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
-                    mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+        try {
+            List<EntityExpr> extraConditionList = (List<EntityExpr>) filterOption.getExpression().accept(new ExtraExpressionVisitor());
+            //根据子对象数量做筛选: http://.../Products?$filter=Navigation/$count eq 100
+            Debug.logInfo("extraCondition: " + extraConditionList.toString(), MODULE);
+            for (EntityExpr extraCondition : extraConditionList) {
+                if (extraCondition.getLhs() instanceof UriResourceNavigation) {
+                    UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) extraCondition.getLhs();
+                    EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
+                    Integer condValue = Integer.valueOf(extraCondition.getRhs().toString());
+                    EntityOperator<?, ?, ?> operator = extraCondition.getOperator();
+                    Map<Entity, Integer> relationCountMap = readEntityRelationCount(entityCollection, edmNavigationProperty);
+                    entityCollection.getEntities().clear();
+                    //不同的运算符比较
+                    Stream<Map.Entry<Entity, Integer>> mapStream = relationCountMap.entrySet().stream();
+                    if (operator.equals(EntityOperator.EQUALS)) {
+                        mapStream = mapStream.filter(en -> en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.NOT_EQUAL)) {
+                        mapStream = mapStream.filter(en -> !en.getValue().equals(condValue));
+                    } else if (operator.equals(EntityOperator.LESS_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() < condValue);
+                    } else if (operator.equals(EntityOperator.LESS_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() <= condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN)) {
+                        mapStream = mapStream.filter(en -> en.getValue() > condValue);
+                    } else if (operator.equals(EntityOperator.GREATER_THAN_EQUAL_TO)) {
+                        mapStream = mapStream.filter(en -> en.getValue() >= condValue);
+                    }
+                    mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
                 }
-                mapStream.forEachOrdered(forE -> entityCollection.getEntities().add(forE.getKey()));
             }
+
+        } catch (ExpressionVisitException |ODataApplicationException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
@@ -137,8 +152,8 @@ public class ExtraOdataReader extends OfbizOdataReader {
                 Map<String, Object> embeddedOdataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
                         "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
                 Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
-                OfbizOdataReader ofbizOdataReader = new OfbizOdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
-                EntityCollection relEntityCollection = ofbizOdataReader.findRelatedEntityCollection(entity, edmNavigationProperty, null, false);
+                OdataReader reader = new OdataReader(embeddedOdataContext, new HashMap<>(), embeddedEdmParams);
+                EntityCollection relEntityCollection = reader.findRelatedList(entity, edmNavigationProperty, new HashMap<>(), null);
                 relCount = relEntityCollection.getEntities().size();
             }
             relationCountMap.put(entity, relCount);
@@ -150,21 +165,22 @@ public class ExtraOdataReader extends OfbizOdataReader {
      * count
      */
     private void entityCollectionCount(EntityCollection entityCollection) {
-        entityCollection.setCount(entityCollection.getEntities().size());
+        if (UtilValidate.isEmpty(entityCollection.getCount())) {
+            entityCollection.setCount(entityCollection.getEntities().size());
+        }
     }
 
     /**
      * 分页
      */
-    private void entityCollectionPage(EntityCollection entityCollection) {
-        retrieveFindOption();
-        Util.pageEntityCollection(entityCollection, skipValue, topValue);
+    private void entityCollectionPage(EntityCollection entityCollection, int top, int skip) {
+        Util.pageEntityCollection(entityCollection, skip, top);
     }
 
     /**
      * 判断父类是否可以支持这些OdataOptions
      */
-    private boolean useOfbizReader(Map<String, QueryOption> queryOptions) {
+    private boolean useOdataReader(Map<String, QueryOption> queryOptions) throws OfbizODataException {
         OrderByOption orderByOption = (OrderByOption) queryOptions.get("orderByOption");
         FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
 
@@ -176,13 +192,12 @@ public class ExtraOdataReader extends OfbizOdataReader {
         if (filterOption != null && filterOption.getExpression().toString().contains("$count")) {
             return false;
         }
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+        if (Util.isExtraOrderby(orderByOption, csdlEntityType, delegator)) {
+            return false;
+        }
         return true;
 
-    }
-
-    private void initPageValue() {
-        skipValue = 0;
-        topValue = MAX_ROWS;
     }
 
     @SuppressWarnings("unchecked")

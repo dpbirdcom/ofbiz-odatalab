@@ -615,6 +615,11 @@ public class EdmConfigLoader {
         if ("true".equals(hasDerivedEntityAttr)) {
             hasDerivedEntity = true;
         }
+        boolean openType = false;
+        String openTypeString = entityTypeElement.getAttribute("OpenType");
+        if ("true".equals(openTypeString)) {
+            openType = true;
+        }
         boolean isAbstract = false;
         String isAbstractAttr = entityTypeElement.getAttribute("Abstract");
         if ("true".equals(isAbstractAttr)) {
@@ -694,6 +699,7 @@ public class EdmConfigLoader {
         csdlEntityType.setTerms(terms);
         csdlEntityType.setHasRelField(hasRelField);
         csdlEntityType.setRelAliases(relAliases);
+        csdlEntityType.setOpenType(openType);
         return csdlEntityType;
     }
 
@@ -1194,13 +1200,12 @@ public class EdmConfigLoader {
         String isCollection = propertyElement.getAttribute("IsCollection");
         String maxLength = propertyElement.getAttribute("MaxLength");
         // attribute for annotation
-        // TODO: load label from i18
-        String labelAttr = propertyElement.getAttribute("Label");
-        String label;
-        if (UtilValidate.isEmpty(labelAttr) && modelEntity != null) {
-            labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(name) + "}";
-        }
-        label = parseValue(labelAttr, locale);
+//        String labelAttr = propertyElement.getAttribute("Label");
+        String label = propertyElement.getAttribute("Label");
+//        if (UtilValidate.isEmpty(labelAttr) && modelEntity != null) {
+//            labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(name) + "}";
+//        }
+//        label = parseValue(labelAttr, locale);
         String semanticObjectAttr = propertyElement.getAttribute("SemanticObject");
         String semanticObject;
         semanticObject = parseValue(semanticObjectAttr, locale);
@@ -1308,7 +1313,7 @@ public class EdmConfigLoader {
             } else if (propertyChildTag.equals("Text")) {
                 terms.add(loadTextFromElement(propertyChild));
             } else if (propertyChildTag.equals("ValueList")) {
-                terms.add(loadValueListFromElement(property, propertyChild, locale));
+                terms.add(loadValueListFromElement(property, modelEntity, propertyChild, locale));
             }
         }
         if (UtilValidate.isNotEmpty(annotations)) {
@@ -1336,11 +1341,16 @@ public class EdmConfigLoader {
         return keyPropertyRefs;
     }
 
-    private static Term loadValueListFromElement(OfbizCsdlProperty property, Element valueListElement, Locale locale) {
+    private static Term loadValueListFromElement(OfbizCsdlProperty property, ModelEntity modelEntity, Element valueListElement, Locale locale) {
         String collectionPath = valueListElement.getAttribute("CollectionPath");
         String label = loadAttributeValue(valueListElement, "Label", locale);
         if (UtilValidate.isEmpty(label)) {
-            label = property.getLabel();
+            if (UtilValidate.isNotEmpty(property.getLabel())) {
+                label = property.getLabel();
+            } else if (modelEntity != null) {
+                String labelAttr = "${uiLabelMap." + modelEntity.getEntityName() + Util.firstUpperCase(property.getName()) + "}";
+                label = parseValue(labelAttr, locale);
+            }
         }
         String qualifier = valueListElement.getAttribute("Qualifier");
         if (UtilValidate.isEmpty(qualifier)) {
@@ -1389,6 +1399,10 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(functionElement.getAttribute("OfbizService"))) {
             ofbizService = functionElement.getAttribute("OfbizService");
         }
+        boolean isComposable = false;
+        if (UtilValidate.isNotEmpty(functionElement.getAttribute("IsComposable"))) {
+            isComposable = "true".equals(functionElement.getAttribute("IsComposable"));
+        }
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, name);
         List<? extends Element> functionChildren = UtilXml.childElementList(functionElement);
         List<CsdlParameter> parameters = new ArrayList<>();
@@ -1406,6 +1420,7 @@ public class EdmConfigLoader {
         OfbizCsdlFunction ofbizCsdlFunction;
         ofbizCsdlFunction = createFunction(fullQualifiedName, parameters, csdlReturnType, isBound);
         ofbizCsdlFunction.setOfbizMethod(ofbizService);
+        ofbizCsdlFunction.setComposable(isComposable);
         return ofbizCsdlFunction;
     }
 
@@ -1981,7 +1996,8 @@ public class EdmConfigLoader {
                                                         List<CsdlNavigationProperty> csdlNavigationProperties,
                                                         List<CsdlPropertyRef> csdlPropertyRefs, boolean autoId, boolean filterByDate,
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
-                                                        EntityCondition entityCondition, String labelPrefix, Locale locale, String searchOption, boolean groupBy, boolean hasStream) {
+                                                        EntityCondition entityCondition, String labelPrefix, Locale locale, String searchOption,
+                                                        boolean groupBy, boolean hasStream) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
@@ -2013,12 +2029,15 @@ public class EdmConfigLoader {
                  }
                  **************************************************/
                 OfbizCsdlProperty csdlProperty = generatePropertyFromField(delegator, dispatcher, field, false);
-                if (csdlProperties != null && csdlProperties.contains(csdlProperty)) { // 已经xml定义了，就不要自动生成了
-                    continue;
+                if (csdlProperties != null) {
+                    if (csdlProperties.contains(csdlProperty)) {
+                        //已经xml定义了，就不要自动生成了
+                        continue;
+                    }
+//                    String label = (String) Util.getUiLabelMap(locale).get(entityName + Util.firstUpperCase(csdlProperty.getName()));
+//                    csdlProperty.setLabel(label);
+                    csdlProperties.add(csdlProperty);
                 }
-                String label = (String) Util.getUiLabelMap(locale).get(entityName + Util.firstUpperCase(csdlProperty.getName()));
-                csdlProperty.setLabel(label);
-                csdlProperties.add(csdlProperty);
             }
         }
         if (UtilValidate.isEmpty(propertyRefs) && UtilValidate.isNotEmpty(modelEntity)) { // EntityType的Key还没有定义
@@ -2039,6 +2058,11 @@ public class EdmConfigLoader {
                 false, autoId, filterByDate, draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName,
                 hadDerivedEntity, entityCondition, labelPrefix, searchOption, groupBy, hasStream);
         if (UtilValidate.isNotEmpty(baseType)) {
+            //有BaseType, Property里就不应该再有pk
+            if (modelEntity != null) {
+                List<String> pkFieldNames = modelEntity.getPkFieldNames();
+                csdlProperties.removeIf(cdp -> pkFieldNames.contains(cdp.getName()));
+            }
             if (baseType.indexOf('.') == -1) {
                 entityType.setBaseType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, baseType));
             } else {
@@ -2229,9 +2253,6 @@ public class EdmConfigLoader {
             modelEntity.setEntityName(draftEntityName);
             modelEntity.setTableName(draftEntityName);
             modelEntity.setPackageName("com.dpbird.draft");
-            //ofbiz会在删除数据时创建主键删除记录，并且draft表会发生频繁的删除操作(Discard)，
-            //数据量大时非常影响速度，而且对于draft表来说是不必要的，这个属性可以防止这个问题 不去创建删除记录
-            modelEntity.setNoAutoStamp(true);
             //Draft固定字段
             modelEntity.addField(ModelField.create(modelEntity, "draftUUID", "id", true));
             modelEntity.addField(ModelField.create(modelEntity, "isActiveEntity", "id", false));
@@ -2261,7 +2282,7 @@ public class EdmConfigLoader {
                     continue;
                 }
                 //relAlias为空
-                if(UtilValidate.isEmpty(relAlias)) {
+                if (UtilValidate.isEmpty(relAlias)) {
                     Debug.logWarning("NavigationProperty (" + navigationProperty.getName() + ") relAlias is empty.", module);
                     continue;
                 }

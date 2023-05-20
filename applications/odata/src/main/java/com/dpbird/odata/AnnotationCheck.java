@@ -4,6 +4,7 @@ package com.dpbird.odata;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntitySet;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
@@ -53,7 +54,7 @@ public class AnnotationCheck {
             requiredPrecondition(request, edmProvider, edmEntitySet);
 
             // 2.如果带有If-Match 进行匹配验证
-            if (request.getHeader("If-Match") != null || request.getHeader("If-None-Match") != null) {
+                if (request.getHeader("If-Match") != null || request.getHeader("If-None-Match") != null) {
                 Map<String, Object> primaryKey = Util.uriParametersToMap(keyPredicates, edmEntitySet.getEntityType());
                 OfbizCsdlEntityType entityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntitySet.getEntityType().getFullQualifiedName());
                 GenericValue genericValue = EntityQuery.use(delegator).from(entityType.getOfbizEntity()).where(primaryKey)
@@ -89,6 +90,9 @@ public class AnnotationCheck {
     private static void matchEtag(GenericValue genericValue, ODataRequest request) throws ODataApplicationException {
         boolean checkResult;
         String currEtag = Util.getGenericValueETag(genericValue);
+        if (UtilValidate.isEmpty(currEtag)) {
+            return;
+        }
         if (request.getHeader("If-Match") != null) {
             //无差异为正确匹配
             String ifMatch = request.getHeader("If-Match");

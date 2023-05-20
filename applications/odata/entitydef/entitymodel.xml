@@ -42,8 +42,74 @@ under the License.
         <prim-key field="language"/>
     </entity>
 
-    <!-- shortcut view -->
+    <extend-entity entity-name="Person">
+        <relation type="many" rel-entity-name="PartyRole">
+            <key-map field-name="partyId"/>
+        </relation>
+    </extend-entity>
 
+    <!-- shortcut view -->
+    <!-- PartyPersonPartyGroup is for Person and PartyGroup which has Party as Base Type -->
+    <view-entity entity-name="PartyPersonPartyGroup" package-name="com.dpbird.odata">
+        <member-entity entity-alias="P" entity-name="Party"/>
+        <member-entity entity-alias="PS" entity-name="Person"/>
+        <member-entity entity-alias="PG" entity-name="PartyGroup"/>
+        <alias-all entity-alias="P"/>
+        <alias-all entity-alias="PS"/>
+        <alias-all entity-alias="PG"/>
+        <view-link rel-entity-alias="PS" entity-alias="P" rel-optional="true">
+            <key-map field-name="partyId"/>
+        </view-link>
+        <view-link rel-entity-alias="PG" entity-alias="P" rel-optional="true">
+            <key-map field-name="partyId"/>
+        </view-link>
+        <relation type="many" rel-entity-name="PartyContactMech">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="many" rel-entity-name="PartyContactMechPurpose">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="many" rel-entity-name="PartyRole">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="many" rel-entity-name="PartyIdentification">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="Person">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="PartyGroup">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="Party">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="StatusItem">
+            <key-map field-name="statusId"/>
+        </relation>
+    </view-entity>
+
+    <!-- DataResouceElectornicOther is for Person and PartyGroup which has Party as Base Type -->
+    <view-entity entity-name="DataResouceElectornicOther" package-name="com.dpbird.odata">
+        <member-entity entity-alias="D" entity-name="DataResource"/>
+        <member-entity entity-alias="E" entity-name="ElectronicText"/>
+        <member-entity entity-alias="O" entity-name="OtherDataResource"/>
+        <alias-all entity-alias="D"/>
+        <alias-all entity-alias="E"/>
+        <alias-all entity-alias="O"/>
+        <view-link rel-entity-alias="E" entity-alias="D" rel-optional="true">
+            <key-map field-name="dataResourceId"/>
+        </view-link>
+        <view-link rel-entity-alias="O" entity-alias="D" rel-optional="true">
+            <key-map field-name="dataResourceId"/>
+        </view-link>
+        <relation type="one-nofk" rel-entity-name="ElectronicText">
+            <key-map field-name="dataResourceId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="OtherDataResource">
+            <key-map field-name="dataResourceId"/>
+        </relation>
+    </view-entity>
     <!-- end shortcut view -->
 
     <!-- 数据库动态view，及odata的metadata数据库化 -->
@@ -618,7 +684,7 @@ under the License.
     <entity entity-name="VariantFile"
             package-name="com.dpbird.odata"
             title="Variant File">
-        <field name="userLoginId" type="id-vlong"/>
+        <field name="userLoginId" type="id"/>
         <field name="fileName" type="id"/>
         <field name="fileType" type="id"/>
         <field name="variantManagementReference" type="id-vlong"/>
