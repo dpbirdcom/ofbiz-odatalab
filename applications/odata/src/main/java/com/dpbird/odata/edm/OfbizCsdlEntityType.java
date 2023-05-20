@@ -1,6 +1,8 @@
 package com.dpbird.odata.edm;
 
+import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
@@ -11,14 +13,16 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
+import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
 import com.dpbird.odata.Util;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 
-public class OfbizCsdlEntityType extends CsdlEntityType {
+public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private String ofbizEntity;
+    private String entityConditionStr;
     private EntityCondition entityCondition;
     private String fullQualifiedNameString;
     private String labelPrefix;
@@ -30,7 +34,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private boolean autoAnnotations;
     private boolean autoNavigations = true;
     private boolean autoEnum = false;
-    private boolean autoId = false;
     private boolean filterByDate = false;
     private String attrEntityName;
     private String attrNumericEntityName;
@@ -42,14 +45,24 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
     private List<EntityTypeRelAlias> relAliases = null;
     private String searchOption;
     private boolean groupBy;
+    private final boolean autoLabel;
+    private final boolean autoDraft;
+    private final boolean autoValueList;
+    private List<OfbizCsdlAction> actionList;
+    private List<OfbizCsdlFunction> functionList;
+    private final Map<String, Object> defaultValueProperties = new HashMap<>();
+    private final Map<String, Object> autoValueProperties = new HashMap<>();
+    private List<String> insertRequireProperties = new ArrayList<>();
 
-    public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum, boolean autoId,
+    public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
-                               EntityCondition entityCondition, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream) {
+                               EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
+                               boolean autoLabel, boolean autoDraft, boolean autoValueList) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
         this.entityCondition = entityCondition;
+        this.entityConditionStr = entityConditionStr;
         this.fullQualifiedNameString = null;
         this.labelPrefix = labelPrefix;
         this.referencedEntitySet = null;
@@ -57,7 +70,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         this.autoAnnotations = false;
         this.hasDerivedEntity = hasDerivedEntity;
         this.autoEnum = autoEnum;
-        this.autoId = autoId;
         this.filterByDate = filterByDate;
         this.draftEntityName = draftEntityName;
         this.attrEntityName = attrEntityName;
@@ -66,6 +78,9 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
         this.terms = null;
         this.searchOption = searchOption;
         this.groupBy = groupBy;
+        this.autoLabel = autoLabel;
+        this.autoDraft = autoDraft;
+        this.autoValueList = autoValueList;
         setHasStream(hasStream);
     }
 
@@ -79,6 +94,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public void setOfbizEntity(String ofbizEntity) {
         this.ofbizEntity = ofbizEntity;
+    }
+
+    public String getEntityConditionStr() {
+        return entityConditionStr;
+    }
+
+    public void setEntityConditionStr(String entityConditionStr) {
+        this.entityConditionStr = entityConditionStr;
     }
 
     public EntityCondition getEntityCondition() {
@@ -148,10 +171,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public boolean isAutoEnum() {
         return autoEnum;
-    }
-
-    public boolean isAutoId() {
-        return autoId;
     }
 
     public boolean isFilterByDate() {
@@ -275,5 +294,87 @@ public class OfbizCsdlEntityType extends CsdlEntityType {
 
     public CsdlProperty getStreamProperty() {
         return properties.stream().filter(p -> "Edm.Stream".equals(p.getType())).findFirst().orElse(null);
+    }
+
+    public CsdlProperty getPropertyFromField(String ofbizFieldName) {
+        for (CsdlProperty property : properties) {
+            OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
+            if (ofbizFieldName.equals(ofbizCsdlProperty.getOfbizFieldName())) {
+                return property;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public CsdlEntityType setProperties(final List<CsdlProperty> properties) {
+        this.properties = properties;
+        for (CsdlProperty property : properties) {
+            OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
+            Object defaultValue = property.getDefaultValue();
+            if (UtilValidate.isNotEmpty(property.getDefaultValue())) {
+                if (property.getType().contains("Decimal")) {
+                    defaultValue = new BigDecimal((String) defaultValue);
+                }
+                defaultValueProperties.put(property.getName(), defaultValue);
+            }
+            if (UtilValidate.isNotEmpty(ofbizCsdlProperty.getAutoValue())) {
+                autoValueProperties.put(property.getName(), ofbizCsdlProperty.getAutoValue());
+            }
+        }
+        return this;
+    }
+
+    public Map<String, Object> getDefaultValueProperties() {
+        return defaultValueProperties;
+    }
+    public Map<String, Object> getAutoValueProperties() {
+        return autoValueProperties;
+    }
+
+    public boolean isAutoLabel() {
+        return autoLabel;
+    }
+
+    public boolean isAutoDraft() {
+        return autoDraft;
+    }
+
+    public List<OfbizCsdlAction> getActionList() {
+        return actionList;
+    }
+
+    public void setActionList(List<OfbizCsdlAction> actionList) {
+        this.actionList = actionList;
+    }
+
+    public List<OfbizCsdlFunction> getFunctionList() {
+        return functionList;
+    }
+
+    public void setFunctionList(List<OfbizCsdlFunction> functionList) {
+        this.functionList = functionList;
+    }
+
+    public boolean isAutoValueList() {
+        return autoValueList;
+    }
+
+    public List<String> getInsertRequireProperties() {
+        return insertRequireProperties;
+    }
+
+    public void setInsertRequireProperties(List<String> insertRequireProperties) {
+        this.insertRequireProperties = insertRequireProperties;
+    }
+
+    @Override
+    public OfbizCsdlEntityType clone() {
+        try {
+            return (OfbizCsdlEntityType) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

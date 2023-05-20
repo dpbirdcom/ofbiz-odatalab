@@ -352,6 +352,14 @@
 	<EntityType Name="TelecomNumber" BaseType="ContactMech" AutoProperties="true"/>
 
 	<!-- 测试BaseType start-->
+	<EntityType Name="BaseOrderHeader" OfbizEntity="OrderHeader">
+		<Property Name="orderId"/>
+		<Property Name="orderName"/>
+		<Property Name="externalId"/>
+		<Property Name="orderTypeId"/>
+		<NavigationProperty Name="BaseContactMech" Type="BaseContactMech" IsCollection="true"
+							Relations="OrderContactMech(contactMechPurposeTypeId=SHIPPING_LOCATION)/ContactMech"/>
+	</EntityType>
 	<EntityType Name="BaseContactMech" OfbizEntity="ContactMech" hasDerivedEntity="true" AutoProperties="true">
 		<NavigationProperty Name="DerivedPostalAddress" Type="DerivedPostalAddress" Relations="PostalAddress"/>
 		<NavigationProperty Name="DerivedTelecomNumber" Type="DerivedTelecomNumber" Relations="TelecomNumber"/>
@@ -418,6 +426,8 @@
 				AttrEntityName="ContentAttribute"
 				AttrDateEntityName="ContentAttributeDate"
 				AttrNumericEntityName="ContentAttributeNumeric">
+		<RelAlias Name="DataResource" Relations="DataResource"/>
+		<Property Name="dataResourceName" RelAlias="DataResource" Type="String" Field="dataResourceName"/>
         <Property Name="statusId" Type="ContentStatus"/>
 		<Property Name="testStringAttr" Type="String" IsAttribute="true"/>
 		<Property Name="contentAttrNumeric" Type="BigDecimal" Scale="6" IsNumericAttribute="true"/>
@@ -503,6 +513,7 @@
 		<Property Name="semanticString2" Type="String"/>
 		<Property Name="semanticDateTime1" Type="Edm.DateTimeOffset"/>
 		<Property Name="semanticDateTime2" Type="Edm.DateTimeOffset"/>
+		<NavigationProperty Name="Content" Relations="ProductContent(productContentTypeId=IMAGE)/Content" Type="Content" IsCollection="true"/>
 	</EntityType>
 	<EntityType Name="SimpleFacility" OfbizEntity="Facility">
 		<Property Name="facilityId"/>
@@ -524,6 +535,7 @@
 <!--		<Property Name="brandName"/>-->
 <!--		<Property Name="productName"/>-->
 	</EntityType>
+	<EntityType Name="CurrentParty" OfbizEntity="Party" AutoProperties="true"/>
 	<EntityType Name="GlAccountOrganization" AutoProperties="true"/>
 	<EntityType Name="PartyAcctgPreference" AutoProperties="true"/>
 	<EntityType Name="GlAccount" AutoProperties="true"/>
@@ -644,7 +656,9 @@
 		<Property Name="workEffortId"/>
 		<Property Name="workEffortTypeId"/>
 		<Property Name="workEffortName"/>
+		<NavigationProperty Name="WorkEffortPartyAssignment"/>
 	</EntityType>
+	<EntityType Name="WorkEffortPartyAssignment" AutoProperties="true"/>
 	<EntityType Name="ContactMechAndAttr" OfbizEntity="ContactMech" AutoProperties="true">
 		<RelAlias Name="AttributeAlias" Relations="ContactMechAttribute"/>
 		<Property Name="attrName" RelAlias="AttributeAlias" Field="attrName" />
@@ -677,6 +691,10 @@
 		<NavigationProperty Name="Party" Type="Party"/>
 		<NavigationProperty Name="UserPreference" Type="UserPreference" FilterByDate="false"/>
 	</EntityType>
+	<EntityType Name="PartyUserLogin" AutoProperties="true" >
+		<NavigationProperty Name="Party" Type="Party"/>
+		<NavigationProperty Name="UserPreference" Type="UserPreference" FilterByDate="false"/>
+	</EntityType>
 	<EntityType Name="RoleType" AutoProperties="true"/>
 	<EntityType Name="OrderAttribute" AutoProperties="true"/>
 	<EntityType Name="UserPreference" AutoProperties="true"/>
@@ -701,6 +719,33 @@
 		<Property Name="dataResourceContent" MimeType="application/pdf"/>
 		<NavigationProperty Name="DataResource"/>
 	</EntityType>
+
+<!--  别名字段demo start	-->
+	<EntityType Name="DemoContent" OfbizEntity="Content" AttrEntityName="ContentAttribute">
+		<Property Name="demoContentId" Field="contentId"/>
+		<Property Name="demoContentName" Field="contentName" DefaultValue="test_Con_Name"/>
+		<Property Name="testStringAttr" Type="String" IsAttribute="true"/>
+		<NavigationProperty Name="DemoContentAttribute" Type="DemoContentAttribute" Relations="ContentAttribute"/>
+		<NavigationProperty Name="DemoDataResource" Type="DemoDataResource" Relations="DataResource"/>
+	</EntityType>
+	<EntityType Name="DemoContentAttribute" OfbizEntity="ContentAttribute">
+		<Property Name="demoContentId" Field="contentId"/>
+		<Property Name="demoAttrName" Field="attrName"/>
+		<Property Name="demoAttrValue" Field="attrValue"/>
+	</EntityType>
+	<EntityType Name="DemoDataResource" OfbizEntity="DataResource">
+		<Property Name="demoDataResourceId" Field="dataResourceId"/>
+		<Property Name="demoDataResourceName" Field="dataResourceName" DefaultValue="def_resourceName"/>
+		<NavigationProperty Name="DemoDataResourceAttribute" Type="DemoDataResourceAttribute"
+							Relations="DataResourceAttribute"/>
+	</EntityType>
+	<EntityType Name="DemoDataResourceAttribute" OfbizEntity="DataResourceAttribute">
+		<Property Name="demoDataResourceId" Field="dataResourceId"/>
+		<Property Name="demoAttrName" Field="attrName"/>
+		<Property Name="demoAttrValue" Field="attrValue"/>
+	</EntityType>
+<!--  别名字段demo end	-->
+
 
 	<Action Name="ProductEditAction" IsBound="true" EntitySetPath="product">
 		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
@@ -860,6 +905,14 @@
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false" />
 		<ReturnType Type="Product"/>
 	</Action>
+	<!-- 使用odata上传文件到数据库通用Action -->
+	<Action Name="customerUpload" IsBound="true"
+			OfbizService="com.dpbird.odata.processor.OfbizActionProcessor.createMediaDataResource">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="mimeTypeId" Type="String" Nullable="true" IsCollection="false"/>
+		<Parameter Name="contentTypeId" Type="String" Nullable="true" IsCollection="false"/>
+		<ReturnType Name="dateResourceId" Type="String" />
+	</Action>
 	<Function Name="testImportFunctionPrimitive" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testImportFunctionPrimitive">
 		<Parameter Name="partyId" Type="Edm.String" Nullable="false" IsCollection="false"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
@@ -883,6 +936,11 @@
 	</Function>
 	<Function Name="testBoundSetFunctionPrimitive" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetFunctionPrimitive">
 		<Parameter Name="party" Type="Party" Nullable="false" IsCollection="false"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Function>
+	<Function Name="testBoundCollectionFunctionPrimitive" IsComposable="true" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundCollectionFunctionPrimitive">
+		<Parameter Name="partyRole" Type="PartyRole" Nullable="false" IsCollection="true"/>
 		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
 		<ReturnType Type="Edm.String"/>
 	</Function>
@@ -1092,6 +1150,24 @@
 		<ReturnType Type="Party"/>
 	</Function>
 
+	<Action Name="testBoundCollectionActionPrimitive" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundCollectionActionPrimitive">
+		<Parameter Name="partyRole" Type="PartyRole" Nullable="false" IsCollection="true"/>
+		<Parameter Name="otherParm" Type="Edm.String" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
+
+	<Action Name="testBoundSetActionComplexParam" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionComplexParam">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="testComplex" Type="TestComplexProperty" Nullable="true" IsCollection="false"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
+
+	<Action Name="testBoundSetActionComplexCollectionParam" IsBound="true" OfbizService="com.dpbird.odata.test.ActionFunctionEvents.testBoundSetActionComplexCollectionParam">
+		<Parameter Name="product" Type="Product" Nullable="false" IsCollection="false"/>
+		<Parameter Name="testComplex" Type="TestComplexProperty" Nullable="true" IsCollection="true"/>
+		<ReturnType Type="Edm.String"/>
+	</Action>
+
 	<ComplexType Name="MimeType" OfbizClass="com.dpbird.odata.complexType.upload.MimeType">
 		<Property Name="title" Type="String" Nullable="true"/>
 		<Property Name="extensions" Type="String" Nullable="true"/>
@@ -1108,7 +1184,10 @@
 		<NavigationPropertyBinding Path="ProductPrice" Target="ProductPrices"/>
 		</EntitySet>
 		<EntitySet Name="PartyInfos" EntityType="PartyInfo"/>
+		<EntitySet Name="WorkEfforts" EntityType="WorkEffort" EntityCondition="WorkEffortPartyAssignment/partyId=${userLogin.partyId}"/>
+		<EntitySet Name="WorkEffortPartyAssignments" EntityType="WorkEffortPartyAssignment"/>
 		<EntitySet Name="SimpleProducts" EntityType="SimpleProduct"/>
+		<EntitySet Name="CurrentParties" EntityType="CurrentParty" EntityCondition="partyId = ${userLogin.partyId}"/>
 		<EntitySet Name="OpenProducts" EntityType="OpenProduct"/>
 		<EntitySet Name="SimpleFacilities" EntityType="SimpleFacility"/>
 		<EntitySet Name="PartyTypes" EntityType="PartyType"/>
@@ -1346,6 +1425,7 @@
 		<EntitySet Name="ProductCategoryMembers" EntityType="ProductCategoryMember"/>
 		<EntitySet Name="ProductFeatureTypes" EntityType="ProductFeatureType"></EntitySet>
 		<EntitySet Name="ProductFeatures" EntityType="ProductFeature"/>
+		<EntitySet Name="BaseOrderHeaders" EntityType="BaseOrderHeader"/>
 		<EntitySet Name="ProductCategories" EntityType="ProductCategory">
 		    <NavigationPropertyBinding Path="MemberProduct" Target="Products" />
 			<NavigationPropertyBinding Path="ProductCategoryMember" Target="ProductCategoryMembers"/>
@@ -1381,6 +1461,10 @@
 		<EntitySet Name="PartyIdentifications" EntityType="PartyIdentification"/>
 		<EntitySet Name="UserLogins" EntityType="UserLogin"/>
 		<EntitySet Name="FixedAssets" EntityType="FixedAsset"/>
+		<EntitySet Name="DemoContents" EntityType="DemoContent"/>
+		<EntitySet Name="DemoContentAttributes" EntityType="DemoContentAttribute"/>
+		<EntitySet Name="DemoDataResources" EntityType="DemoDataResource"/>
+		<EntitySet Name="DemoDataResourceAttributes" EntityType="DemoDataResourceAttribute"/>
 		<ActionImport Name="DiscardAction" Action="DiscardAction"/>
 
 		<ActionImport Name="testImportActionPrimitive" Action="testImportActionPrimitive"/>
@@ -1407,7 +1491,7 @@
 		<FunctionImport Name="testImportFunctionEntityCollectionFilter" Function="testImportFunctionEntityCollectionFilter"/>
 		<FunctionImport Name="testImportFunctionEntityCollectionFilterManyKey" Function="testImportFunctionEntityCollectionFilterManyKey"/>
 
-		<Singleton Name="Me" Type="UserLogin" Handler="com.dpbird.odata.SingletonHandler.getMe">
+		<Singleton Name="Me" Type="PartyUserLogin" Handler="com.dpbird.odata.SingletonHandler.getMe">
 			<NavigationPropertyBinding Path="Party" Target="Parties"/>
 			<NavigationPropertyBinding Path="UserPreference" Target="UserPreferences"/>
 		</Singleton>

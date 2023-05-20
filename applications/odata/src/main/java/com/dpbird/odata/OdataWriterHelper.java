@@ -20,10 +20,7 @@ import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class OdataWriterHelper {
     public static final String module = OdataWriterHelper.class.getName();
@@ -84,6 +81,7 @@ public class OdataWriterHelper {
                                                                        Locale locale) throws OfbizODataException {
         OdataOfbizEntity entity = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, genericValue, locale);
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationPropertyName);
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
         try {
             GenericValue nestedGenericValue = null;
@@ -98,9 +96,19 @@ public class OdataWriterHelper {
                 }
             }
             if (nestedGenericValue == null) {
-                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, dispatcher, delegator, userLogin);
+                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin);
                 if (nestedGenericValue == null) {
                     return null;
+                }
+            }
+            //创建Derived
+            if (navCsdlEntityType.isHasDerivedEntity()) {
+                OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, (OdataOfbizEntity) entityToWrite, navCsdlEntityType);
+                if (UtilValidate.isNotEmpty(derivedType)) {
+                    OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entityToWrite;
+                    Entity derivedEntity = Util.mapToEntity(derivedType, ofbizEntity.getGenericValue());
+                    Util.addBasePrimaryKey(dispatcher, edmProvider, navCsdlEntityType, nestedGenericValue, derivedEntity);
+                    OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedType, derivedEntity, edmProvider, userLogin);
                 }
             }
             OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
@@ -126,7 +134,7 @@ public class OdataWriterHelper {
                                                     OfbizAppEdmProvider edmProvider,
                                                     OfbizCsdlEntityType csdlEntityType,
                                                     Map<String, Object> keyMap,
-                                                    Entity entityToWrite,
+                                                    OdataOfbizEntity entityToWrite,
                                                     GenericValue userLogin,
                                                     Locale locale) throws OfbizODataException {
         String entityName = csdlEntityType.getOfbizEntity();
@@ -152,11 +160,11 @@ public class OdataWriterHelper {
                 }
             }
             if (updatedGenericValue == null) {
-                Map<String, Object> fieldMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+                Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToWrite);
+                Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);
                 //如果draft提交保存数据，保留值为null的字段
-                if (entityToWrite instanceof OdataOfbizEntity && ((OdataOfbizEntity) entityToWrite).isDraft()) {
-                    OdataOfbizEntity odataOfbizEntity = (OdataOfbizEntity) entityToWrite;
-                    GenericValue draftGenericValue = odataOfbizEntity.getGenericValue();
+                if (entityToWrite.isDraft()) {
+                    GenericValue draftGenericValue = entityToWrite.getGenericValue();
                     for (Map.Entry<String, Object> entry : draftGenericValue.getAllFields().entrySet()) {
                         if (entry.getValue() == null && !fieldMap.containsKey(entry.getKey())) {
                             fieldMap.put(entry.getKey(), null);
@@ -167,7 +175,16 @@ public class OdataWriterHelper {
                 if (delegator.getModelEntity(entityName).isField("lastModifiedDate")) {
                     fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
                 }
-                updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), keyMap, fieldMap, userLogin);
+                updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(),
+                        keyMap, fieldMap, csdlEntityType, userLogin);
+                //更新DerivedEntity
+                if (csdlEntityType.isHasDerivedEntity()) {
+                    OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, entityToWrite, csdlEntityType);
+                    if (UtilValidate.isNotEmpty(derivedType)) {
+                        OdataProcessorHelper.updateGenericValue(dispatcher, delegator, derivedType.getOfbizEntity(),
+                                keyMap, new HashMap<>(entityToWrite.getGenericValue()), derivedType, userLogin);
+                    }
+                }
                 if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
                         UtilValidate.isNotEmpty(csdlEntityType.getAttrNumericEntityName()) ||
                         UtilValidate.isNotEmpty(csdlEntityType.getAttrDateEntityName())) {
@@ -237,13 +254,13 @@ public class OdataWriterHelper {
         if (UtilValidate.isNotEmpty(navKeyMap)) { // navigation为非collection的时候，navKeyMap为null
             nestedGenericValue = OdataProcessorHelper.readEntityData(odataContext, nestedCsdlEntityType, navKeyMap);
         }
-        deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, csdlEntityType,
+        deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider, csdlEntityType,
                 navigationPropertyName, genericValue, nestedGenericValue, userLogin, locale);
     }
 
 
     public static void deleteEntitySetRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,
-                                                        HttpServletRequest httpServletRequest,
+                                                        HttpServletRequest httpServletRequest, OfbizAppEdmProvider edmProvider,
                                                         OfbizCsdlEntityType csdlEntityType,
                                                         String navigationPropertyName,
                                                         GenericValue genericValue,
@@ -266,6 +283,10 @@ public class OdataWriterHelper {
                 }
             }
         } else {
+            if (UtilValidate.isNotEmpty(csdlNavigationProperty.getHandlerNode())) {
+                deleteRelatedEntityFromNode(delegator, dispatcher, edmProvider, genericValue, nestedGenericValue, csdlNavigationProperty, userLogin);
+                return;
+            }
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
             List<String> relations = relAlias.getRelations();
             if (nestedGenericValue == null) { // navigation为非collection时
@@ -273,6 +294,42 @@ public class OdataWriterHelper {
             } else {
                 OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin);
             }
+        }
+    }
+
+
+    public static void deleteRelatedEntityFromNode(Delegator delegator, LocalDispatcher dispatcher, OfbizAppEdmProvider edmProvider,
+                                                   GenericValue genericValue, GenericValue nestedGenericValue,
+                                                   OfbizCsdlNavigationProperty csdlNavigationProperty, GenericValue userLogin) throws OfbizODataException {
+        //根据指定的操作节点删除关联实体
+        String handlerNode = csdlNavigationProperty.getHandlerNode();
+        List<String> relations = csdlNavigationProperty.getRelAlias().getRelations();
+        EntityTypeRelAlias nodeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), genericValue.getModelEntity(), null, handlerNode);
+        try {
+            if (relations.size() == handlerNode.split("/").length) {
+                //如果操作节点已经到了Relation的最后一段 可以直接删除
+                OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+                String serviceName = Util.getEntityActionService(navCsdlEntityType, navCsdlEntityType.getOfbizEntity(), "delete", delegator);
+                Map<String, Object> serviceParam = new HashMap<>(nestedGenericValue.getPrimaryKey());
+                serviceParam.put("userLogin", userLogin);
+                dispatcher.runSync(serviceName, serviceParam);
+                return;
+            }
+            //查询到指定节点的数据
+            List<GenericValue> relatedGenericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, nodeRelAlias, csdlNavigationProperty.isFilterByDate());
+            if (UtilValidate.isEmpty(relatedGenericValues)) {
+                return;
+            }
+            //调用service执行删除操作
+            String serviceName = Util.getEntityActionService(null, relatedGenericValues.get(0).getEntityName(), "delete", delegator);
+            for (GenericValue relatedGenericValue : relatedGenericValues) {
+                Map<String, Object> serviceParam = new HashMap<>(relatedGenericValue.getPrimaryKey());
+                serviceParam.put("userLogin", userLogin);
+                dispatcher.runSync(serviceName, serviceParam);
+            }
+        } catch (GenericServiceException e) {
+            e.printStackTrace();
+            throw new OfbizODataException(e.getMessage());
         }
     }
 

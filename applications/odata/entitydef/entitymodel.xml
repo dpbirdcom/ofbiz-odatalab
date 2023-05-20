@@ -48,6 +48,47 @@ under the License.
         </relation>
     </extend-entity>
 
+    <extend-entity entity-name="Party">
+        <field name="partyName" type="name">
+            <description>Person Name or PartyGroup Name</description>
+        </field>
+    </extend-entity>
+
+
+    <view-entity entity-name="PartyUserLogin"
+                 package-name="com.banfftech"
+                 title="Party and UserLogin View Entity">
+        <member-entity entity-alias="ULN" entity-name="UserLogin"/>
+        <member-entity entity-alias="PTY" entity-name="Party"/>
+        <alias-all entity-alias="ULN"/>
+        <alias-all entity-alias="PTY"/>
+
+        <view-link entity-alias="ULN" rel-entity-alias="PTY" rel-optional="true">
+            <key-map field-name="partyId"/>
+        </view-link>
+        <relation type="one-nofk" rel-entity-name="Party">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="PartyGroup">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="Person">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="many" rel-entity-name="PartyRole">
+            <key-map field-name="partyId"/>
+        </relation>
+        <relation type="one-nofk" rel-entity-name="UserLogin">
+            <key-map field-name="userLoginId"/>
+        </relation>
+        <relation type="many" rel-entity-name="PartyContactMechPurpose">
+            <key-map field-name="partyId" />
+        </relation>
+        <relation type="many" rel-entity-name="UserLoginSecurityGroup">
+            <key-map field-name="userLoginId"/>
+        </relation>
+    </view-entity>
+
     <!-- shortcut view -->
     <!-- PartyPersonPartyGroup is for Person and PartyGroup which has Party as Base Type -->
     <view-entity entity-name="PartyPersonPartyGroup" package-name="com.dpbird.odata">

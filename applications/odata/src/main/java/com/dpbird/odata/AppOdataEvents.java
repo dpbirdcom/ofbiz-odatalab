@@ -12,6 +12,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edmx.EdmxReference;
 import org.apache.olingo.commons.api.edmx.EdmxReferenceInclude;
@@ -24,12 +25,9 @@ import org.apache.olingo.server.api.etag.ServiceMetadataETagSupport;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class AppOdataEvents {
     public static final String module = AppOdataEvents.class.getName();
@@ -192,6 +190,11 @@ public class AppOdataEvents {
 
             edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Aggregation.xml"));
             referenceInclude = new EdmxReferenceInclude("Org.OData.Aggregation.V1", "Aggregation");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Session.xml"));
+            referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Session.v1", "Session");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
 

@@ -10,7 +10,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.DelegatorFactory;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.marketing.tracking.TrackingCodeEvents;
+//import org.apache.ofbiz.marketing.tracking.TrackingCodeEvents;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ServiceContainer;
@@ -100,7 +100,7 @@ public class AppOdataServlet extends HttpServlet {
 			return;
 		}
 		//处理trackingCode的方法,不处理任何返回数据，反正都要调用
-		TrackingCodeEvents.checkTrackingCodeUrlParam(req, resp);
+//		TrackingCodeEvents.checkTrackingCodeUrlParam(req, resp);
 
 		// create odata handler and configure it with CsdlEdmProvider and Processor
 		String servletPath = req.getServletPath();

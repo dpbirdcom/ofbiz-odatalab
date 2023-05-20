@@ -201,7 +201,7 @@ public class ExtraOdataReader extends OdataReader {
     }
 
     @SuppressWarnings("unchecked")
-    private static class ExtraExpressionVisitor implements ExpressionVisitor<Object> {
+    public static class ExtraExpressionVisitor implements ExpressionVisitor<Object> {
         @Override
         public Object visitBinaryOperator(BinaryOperatorKind operator, Object left, Object right) throws ExpressionVisitException, ODataApplicationException {
             EntityComparisonOperator<?, ?> entityComparisonOperator = OdataExpressionVisitor.COMPARISONOPERATORMAP.get(operator);

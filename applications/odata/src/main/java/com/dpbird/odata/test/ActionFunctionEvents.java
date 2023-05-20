@@ -6,34 +6,29 @@ import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.base.util.collections.PagedList;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.util.EntityFindOptions;
 import org.apache.ofbiz.entity.util.EntityQuery;
-import org.apache.ofbiz.entity.util.EntityUtil;
-import org.apache.ofbiz.order.shoppingcart.CartItemModifyException;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
-import org.apache.olingo.commons.api.data.*;
+import org.apache.olingo.commons.api.data.ComplexValue;
+import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
-import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
-import org.joda.time.DateTimeUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
 
 public class ActionFunctionEvents {
     public static Object testBoundSetActionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -45,7 +40,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -57,7 +52,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -106,7 +101,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
 
@@ -128,7 +123,7 @@ public class ActionFunctionEvents {
     }
 
      public static Object testBoundSingletonActionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
 
@@ -140,7 +135,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -150,8 +145,49 @@ public class ActionFunctionEvents {
         return party.getPropertyValue("partyId") + otherParm;
     }
 
+    public static Object testBoundCollectionFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
+            throws GenericEntityException, GenericServiceException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        List<OdataOfbizEntity> partyRoles = UtilGenerics.checkList(actionParameters.get("partyRole"));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (OdataOfbizEntity partyRole : partyRoles) {
+            stringBuilder.append(partyRole.getPropertyValue("roleTypeId"));
+        }
+        return stringBuilder.toString();
+    }
+
+    public static Object testBoundCollectionActionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        List<OdataOfbizEntity> partyRoles = UtilGenerics.checkList(actionParameters.get("partyRole"));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (OdataOfbizEntity partyRole : partyRoles) {
+            stringBuilder.append(partyRole.getPropertyValue("roleTypeId"));
+        }
+        return stringBuilder.toString();
+    }
+
+    public static Object testBoundSetActionComplexParam(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        ComplexValue complex = (ComplexValue) actionParameters.get("testComplex");
+        return complex.toString();
+    }
+
+    public static Object testBoundSetActionComplexCollectionParam(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        List<ComplexValue> complexValues = UtilGenerics.checkList(actionParameters.get("testComplex"));
+        return complexValues.toString();
+    }
+
     public static Object testBoundSetFunctionOdataQuery(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -186,7 +222,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -209,7 +245,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -232,7 +268,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetParamAliasComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -295,7 +331,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         ComplexValue complexValue = new ComplexValue();
@@ -375,7 +411,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> functionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Debug.log(">>>>>>>> testBoundSetFunctionEntityCollection edmBindingTarget: " + edmBindingTarget);
 
         Delegator delegator = (Delegator) oDataContext.get("delegator");
@@ -388,28 +424,28 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("Product").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
     public static Object testImportFunctionEntityCollectionFilter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderHeader").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
     public static Object testImportFunctionEntityCollectionFilterManyKey(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         PagedList<GenericValue> pagedList = EntityQuery.use(delegator).from("OrderItem").queryPagedList(1, 100);
         return pagedList.getData();
     }
 
     public static Object testBoundSingletonFunctionEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Debug.log(">>>>>>testBoundSingletonFunctionEntity edmBindingTarget: " + edmBindingTarget);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
@@ -431,7 +467,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionVoid(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -442,7 +478,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionVoid(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
@@ -451,7 +487,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -471,7 +507,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -495,7 +531,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -506,7 +542,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportActionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -536,7 +572,7 @@ public class ActionFunctionEvents {
 
 
     public static Object testImportActionVoid(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -549,7 +585,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -562,7 +598,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetActionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         OdataOfbizEntity entity = (OdataOfbizEntity) actionParameters.get("party");
         GenericValue party = entity.getGenericValue();
         String otherParm = (String) actionParameters.get("otherParm");
@@ -585,7 +621,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonActionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
 
@@ -614,7 +650,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testChangeSetBoundSetAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         OdataOfbizEntity product = (OdataOfbizEntity) actionParameters.get("product");
@@ -658,7 +694,7 @@ public class ActionFunctionEvents {
 
 
     public static Object testBoundSetFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -670,7 +706,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSetFunctionComplexCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -698,7 +734,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testBoundSingletonFunctionComplex(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         OdataOfbizEntity userLogin = (OdataOfbizEntity) actionParameters.get("userLogin");
@@ -723,7 +759,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportFunctionPrimitive(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         String partyId = (String) actionParameters.get("partyId");
@@ -829,7 +865,7 @@ public class ActionFunctionEvents {
     }
 
     public static Object testImportFunctionEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Debug.log(">>>>>>>>> testImportFunctionEntity edmBindingTarget: " + edmBindingTarget);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
@@ -859,7 +895,7 @@ public class ActionFunctionEvents {
     }
 
    public static Object testImportFunctionEntityCollection(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws GenericEntityException, GenericServiceException, CartItemModifyException {
+            throws GenericEntityException, GenericServiceException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");

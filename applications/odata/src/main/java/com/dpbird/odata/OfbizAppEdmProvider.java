@@ -46,6 +46,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             put("Common", "/vocabularies/Common.xml");
             put("UI", "/vocabularies/UI.xml");
             put("Aggregation", "/vocabularies/Aggregation.xml");
+            put("Session", "/vocabularies/Session.xml");
         }
     };
 
@@ -77,7 +78,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
 //		this.edmConfigInputStream = edmConfigInputStream;
         CsdlSchemaCache csdlSchemaCache;
         csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
-        cachedSchema = csdlSchemaCache.get(this.webapp);
+        cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
         Iterator<Map.Entry<String, String>> it = edmReferencePath.entrySet().iterator();
         while (it.hasNext()) { // 获取所有的reference schema从cache里
             Map.Entry<String, String> entry = it.next();
@@ -85,7 +86,9 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         }
         if (cachedSchema == null || reload) {
             try {
-                this.reloadAppSchema(csdlSchemaCache);
+                this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
+                this.reloadAppSchema(csdlSchemaCache, Locale.SIMPLIFIED_CHINESE);
+                this.cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
                 // 先前的方案，会把需要内存数据库的Entity全量copy到内存数据库，但是数据量大会导致内存不够
                 // 现在的方案，会把当前编辑的对象copy到内存数据库，以及当前对象关联的其它对象copy到内存数据库
                 // refreshDraftData(webapp, cachedSchema);
@@ -112,7 +115,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         return componentName;
     }
 
-    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache) throws ODataException {
+    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws ODataException {
 
         String prefix = "component://" ;
         String filePath = prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml";
@@ -122,7 +125,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             edmWebConfig = EdmConfigLoader.loadAppEdmConfig(delegator, dispatcher, edmConfigInputStream, locale);
             OfbizCsdlSchema csdlSchema = this.createSchema(OfbizMapOdata.NAMESPACE, edmWebConfig, null);
             EdmConfigLoader.generateAnnotations(delegator, csdlSchema, locale);
-            csdlSchemaCache.put(this.webapp, csdlSchema);
+            csdlSchemaCache.put(locale.getLanguage() + this.webapp, csdlSchema);
             if (UtilValidate.isEmpty(this.edmReferenceConfigMap)) {
                 this.edmReferenceConfigMap = new HashMap<>();
             }
@@ -136,7 +139,6 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
                 csdlSchemaCache.put(entry.getKey(), referenceSchema);
                 referenceSchemaMap.put(entry.getKey(), referenceSchema);
             }
-            this.cachedSchema = csdlSchema;
         } catch (SAXException e) {
             e.printStackTrace();
             throw new ODataException(e.getMessage(), e);

@@ -101,7 +101,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
                     midFields.put("fromDate", UtilDateTime.nowTimestamp());
                 }
                 midFields.put("userLogin", userLogin);
-                String serviceName = Util.getEntityActionService(relModelEntity.getEntityName(), "create", delegator);
+                String serviceName = Util.getEntityActionService(null, relModelEntity.getEntityName(), "create", delegator);
                 try {
                     Map<String, Object> createResult = dispatcher.runSync(serviceName, midFields);
                     if (ServiceUtil.isError(createResult)) {
@@ -121,7 +121,8 @@ public class DefaultNavigationHandler implements NavigationHandler {
                     String relFieldName = relationKeyMap.getRelFieldName();
                     fkFieldMap.put(fieldName, bindPrimaryKey.get(relFieldName));
                 }
-                OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(), fkFieldMap, userLogin);
+                OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(),
+                        fkFieldMap, csdlEntityType, userLogin);
             }
         }
     }
@@ -142,7 +143,8 @@ public class DefaultNavigationHandler implements NavigationHandler {
             ModelRelation modelRelation = modelEntity.getRelation(relAlias.getRelations().get(0));
             if (modelRelation.getType().contains("one")) {
                 //将外键置空
-                OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, csdlEntityType.getOfbizEntity(), genericValue.getPrimaryKey(), modelRelation, userLogin);
+                OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, csdlEntityType.getOfbizEntity(),
+                        genericValue.getPrimaryKey(), modelRelation, csdlEntityType, userLogin);
             } else {
                 //删除relation实体
                 GenericValue navigationGenericValue = delegator.findOne(navigationEntityType.getOfbizEntity(), unbindPrimaryKey, false);

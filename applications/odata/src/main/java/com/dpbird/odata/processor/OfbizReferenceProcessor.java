@@ -126,7 +126,7 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
             UriResourceNavigation resourceNavigation = (UriResourceNavigation) uriResourceParts.get(uriResourceParts.size() - 2);
             EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
             //执行service创建
-            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmNavigationProperty.getType());
+            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmNavigationProperty.getType(), edmProvider);
             Map<String, Object> serviceResult = dispatcher.runSync("dpbird.createReference", UtilMisc.toMap("odataContext", getOdataContext(),
                     "edmBindingTarget", odataParts.getEdmBindingTarget(), "entity", odataParts.getEntityData(),
                     "edmNavigationProperty", edmNavigationProperty, "bindPrimaryKey", bindPrimaryKey, "userLogin", userLogin));
@@ -154,7 +154,7 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
             EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
             //获取要bind的primaryKey
             List<UriParameter> keyPredicates = getReference(request, contentType).getKeyPredicates();
-            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(keyPredicates, edmNavigationProperty.getType());
+            Map<String, Object> bindPrimaryKey = Util.uriParametersToMap(keyPredicates, edmNavigationProperty.getType(), edmProvider);
 
             Map<String, Object> serviceMap = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", odataParts.getEdmBindingTarget(),
                     "entity", odataParts.getEntityData(), "edmNavigationProperty", resourceNavigation.getProperty(), "userLogin", userLogin);
@@ -164,7 +164,7 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
                 OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), embeddedEdmParams);
                 EntityCollection relatedList = reader.findRelatedList((Entity) odataParts.getEntityData(), edmNavigationProperty, new HashMap<>(), null);
                 //这个是要删除的key，每条跟这个key匹配的都要删除并新建一条新的数据
-                Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+                Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(resourceNavigation.getKeyPredicates(), edmNavigationProperty.getType(), edmProvider);
                 for (Entity entity : relatedList) {
                     OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entity;
                     Map<String, Object> existPrimaryKey = ofbizEntity.getKeyMap();
@@ -203,7 +203,7 @@ public class OfbizReferenceProcessor implements ReferenceProcessor, ReferenceCol
             UriResourceNavigation uriResourceNavigation = (UriResourceNavigation) uriResourceParts.get(uriResourceParts.size() - 2);
             EdmNavigationProperty edmNavigationProperty = uriResourceNavigation.getProperty();
             //要删除的key
-            Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), edmNavigationProperty.getType());
+            Map<String, Object> unBindPrimaryKey = Util.uriParametersToMap(uriResourceNavigation.getKeyPredicates(), edmNavigationProperty.getType(), edmProvider);
             Map<String, Object> serviceMap = UtilMisc.toMap("odataContext", getOdataContext(), "edmBindingTarget", mainParts.getEdmBindingTarget(), "entity", mainParts.getEntityData(),
                     "edmNavigationProperty", uriResourceNavigation.getProperty(), "bindPrimaryKey", unBindPrimaryKey, "userLogin", userLogin);
             if (edmNavigationProperty.isCollection()) {

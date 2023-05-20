@@ -4,6 +4,7 @@
         <xs:complexType>
             <xs:choice maxOccurs="unbounded">
                 <xs:choice maxOccurs="unbounded">
+                    <xs:element ref="ImportEdm"/>
                     <xs:element ref="Action"/>
                     <xs:element ref="ComplexType"/>
                     <xs:element ref="EntityType"/>
@@ -39,6 +40,11 @@
             <xs:attribute name="OfbizClass"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="ImportEdm">
+        <xs:complexType>
+            <xs:attribute name="Path" use="required" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="EntityType">
         <xs:annotation>
             <xs:documentation>Definition of entity</xs:documentation>
@@ -55,9 +61,12 @@
                 <xs:element ref="SelectionFields"/>
                 <xs:element ref="Exclude"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
+                <xs:element ref="Action"/>
+                <xs:element ref="Function"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
+            <xs:attribute name="Properties" type="xs:anyURI"/>
             <xs:attribute name="DraftEntityName" type="xs:NCName"/>
             <xs:attribute name="AttrDateEntityName" type="xs:NCName"/>
             <xs:attribute name="AttrEntityName" type="xs:NCName"/>
@@ -76,12 +85,17 @@
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="SearchOption"/>
             <xs:attribute name="hasDerivedEntity" type="xs:boolean"/>
+            <xs:attribute name="AutoLabel" type="xs:boolean"/>
+            <xs:attribute name="AutoDraft" type="xs:boolean"/>
+            <xs:attribute name="AutoValueList" type="xs:boolean"/>
+            <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
         <xs:complexType>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Relations" use="required"/>
+            <xs:attribute name="Properties" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReferentialConstraint">
@@ -106,6 +120,9 @@
             <xs:attribute name="Relations"/>
             <xs:attribute name="RemoveService" type="xs:NCName"/>
             <xs:attribute name="Type" type="xs:NCName"/>
+            <xs:attribute name="ReadOnly" type="xs:boolean"/>
+            <xs:attribute name="HandlerNode" type="xs:anyURI"/>
+            <xs:attribute name="PreCreate" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="EnumType">
@@ -130,6 +147,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="Parameter"/>
                 <xs:element ref="ReturnType"/>
             </xs:sequence>
+            <xs:attribute name="EntitySetPath" type="xs:anyURI"/>
             <xs:attribute name="IsBound" type="xs:boolean"/>
             <xs:attribute name="IsComposable" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
@@ -229,10 +247,33 @@
     </xs:element>
     <xs:element name="ValueList">
         <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="ParameterIn"/>
+                <xs:element minOccurs="0" ref="ParameterOut"/>
+                <xs:element minOccurs="0" ref="ParameterInOut"/>
+            </xs:choice>
             <xs:attribute name="CollectionPath" type="xs:NCName"/>
             <xs:attribute name="WithFixedValues" type="xs:boolean"/>
             <xs:attribute name="ParameterDisplayOnly"/>
             <xs:attribute name="Label"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterInOut">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
+            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterIn">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
+            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterOut">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
+            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Title">
@@ -258,6 +299,7 @@
             <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
+            <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
@@ -313,7 +355,7 @@
             <xs:attribute name="IsCollection" type="xs:boolean"/>
             <xs:attribute name="IsDateAttribute" type="xs:boolean"/>
             <xs:attribute name="IsNumericAttribute" type="xs:boolean"/>
-            <xs:attribute name="Label" type="xs:NCName"/>
+            <xs:attribute name="Label"/>
             <xs:attribute name="Computed" type="xs:boolean"/>
             <xs:attribute name="Immutable" type="xs:boolean"/>
             <xs:attribute name="IsImageURL" type="xs:boolean"/>
@@ -330,6 +372,8 @@
             <xs:attribute name="Scale" type="xs:integer"/>
             <xs:attribute name="Type" type="xs:NCName"/>
             <xs:attribute name="MimeType" type="xs:anyURI"/>
+            <xs:attribute name="DefaultValue" type="xs:anyURI"/>
+            <xs:attribute name="AutoValue" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">

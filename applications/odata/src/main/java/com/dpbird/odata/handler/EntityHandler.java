@@ -1,6 +1,8 @@
 package com.dpbird.odata.handler;
 
 import com.dpbird.odata.OfbizODataException;
+import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
@@ -44,11 +46,11 @@ public interface EntityHandler {
      * @param odataContext odataContext
      * @param edmBindingTarget EdmBindingTarget
      * @param queryOptions queryOptions
-     * @param applyCondition 查询范围
+     * @param rangeCondition 查询范围
      * @return 返回apply数据
      */
     HandlerResults findApply(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
-                             Map<String, QueryOption> queryOptions, EntityCondition applyCondition) throws OfbizODataException;
+                             Map<String, QueryOption> queryOptions, EntityCondition rangeCondition) throws OfbizODataException;
 
     /**
      * 创建实体数据
@@ -81,6 +83,7 @@ public interface EntityHandler {
      */
     void delete(Entity entityToDelete, Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget,
                 Map<String, Object> deleteParam) throws OfbizODataException;
+
 
 
 }

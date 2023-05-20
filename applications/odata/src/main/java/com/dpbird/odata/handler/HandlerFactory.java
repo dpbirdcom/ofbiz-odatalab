@@ -42,6 +42,31 @@ public class HandlerFactory {
     }
 
     /**
+     * 获取一个DraftHandler的实例
+     *
+     * @return 配置指定的接口实例
+     */
+    public static DraftHandler getDraftHandler(EdmEntityType edmEntityType, OfbizAppEdmProvider edmProvider, Delegator delegator)
+            throws OfbizODataException {
+        try {
+            String resource = edmProvider.getComponentName() + "Edm.properties";
+            String handlerKey = edmProvider.getWebapp() + "Draft." + edmEntityType.getName();
+            String handlerImpl = EntityUtilProperties.getPropertyValue(resource, handlerKey, delegator);
+            if (UtilValidate.isEmpty(handlerImpl)) {
+                //Default handler
+                return new DefaultDraftHandler();
+            }
+            Class<?> implClass = Class.forName(handlerImpl);
+            if (DraftHandler.class.isAssignableFrom(implClass)) {
+                return (DraftHandler) implClass.newInstance();
+            }
+            throw new OfbizODataException("The wrong instance: " + handlerImpl);
+        } catch (ReflectiveOperationException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    /**
      * 获取一个NavigationHandler的实例
      *
      * @param edmEntityType 主实体

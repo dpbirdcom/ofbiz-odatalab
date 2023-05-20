@@ -97,7 +97,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
             } else {
                 //apply
                 EdmEntitySet edmEntitySet;
-                EntityCondition applyCondition = null;
+                EntityCondition rangeCondition = null;
                 if (uriResourceParts.size() > 1) {
                     //多段式apply 先查询出最终的数据范围 再查询apply
                     UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
@@ -110,12 +110,12 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                         oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
                         return;
                     }
-                    applyCondition = Util.getEntityCollectionQueryCond(applyEntities);
+                    rangeCondition = Util.getEntityCollectionQueryCond(applyEntities);
                 } else {
                     edmEntitySet = ((UriResourceEntitySet) uriResourceParts.get(0)).getEntitySet();
                 }
                 OdataReader reader = new OdataReader(getOdataContext(), new HashMap<>(), UtilMisc.toMap("edmBindingTarget", edmEntitySet));
-                EntityCollection resultEntityCollection = reader.findApply(applyCondition, queryOptions);
+                EntityCollection resultEntityCollection = reader.findApply(rangeCondition, queryOptions);
                 serializeApplyEntityCollection(oDataResponse, edmEntitySet, resultEntityCollection, responseContentType);
             }
         } catch (OfbizODataException e) {

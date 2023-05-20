@@ -6,6 +6,7 @@ public abstract class DataFieldAbstract {
     private CriticalityRepresentationType criticalityRepresentationType; // WithIcon, WithoutIcon
     private String iconUrl;
     private ImportanceType importance;
+    private String hidden = null;
 
     public String getLabel() {
         return label;
@@ -45,5 +46,13 @@ public abstract class DataFieldAbstract {
 
     public void setImportance(ImportanceType importance) {
         this.importance = importance;
+    }
+
+    public String getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(String hidden) {
+        this.hidden = hidden;
     }
 }

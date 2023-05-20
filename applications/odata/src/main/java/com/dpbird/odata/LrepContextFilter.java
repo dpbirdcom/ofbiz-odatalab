@@ -17,6 +17,7 @@ import org.apache.ofbiz.webapp.website.WebSiteWorker;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
@@ -86,7 +87,7 @@ public class LrepContextFilter implements Filter {
             request.setCharacterEncoding(defaultCharacterEncoding);
         }
         String pathInfo = httpRequest.getPathInfo();
-        if (!pathInfo.endsWith("changes/") && !pathInfo.endsWith("changes")) {
+        if (setAttributeFromBody(httpRequest)) {
             Debug.logInfo("Content-Type from request is .............. " + request.getContentType(), module);
             WebAppUtil.setAttributesFromRequestBody(request);
         }
@@ -164,6 +165,20 @@ public class LrepContextFilter implements Filter {
 
         // we're done checking; continue on
         chain.doFilter(request, httpResponse);
+    }
+
+    /**
+     * 当请求是odata或者是fe的保存变体 不让ofbiz读取body
+     */
+    private boolean setAttributeFromBody(HttpServletRequest request) {
+        if (request.getRequestURI().contains("odatasvc") || request.getRequestURI().contains("odataAppSvc")) {
+            return false;
+        }
+        String pathInfo = request.getPathInfo();
+        if (pathInfo.endsWith("changes/") || pathInfo.endsWith("changes")) {
+            return false;
+        }
+        return true;
     }
 
     /**
