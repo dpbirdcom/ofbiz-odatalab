@@ -1066,24 +1066,6 @@ under the License.
         <key-map field-name="noteId"/>
       </view-link>
     </view-entity>
-    <entity entity-name="PartyProfileDefault"
-            package-name="org.apache.ofbiz.party.party"
-            title="Party Profile Defaults">
-      <field name="partyId" type="id"></field>
-      <field name="productStoreId" type="id"></field>
-      <field name="defaultShipAddr" type="id"></field>
-      <field name="defaultBillAddr" type="id"></field>
-      <field name="defaultPayMeth" type="id"></field>
-      <field name="defaultShipMeth" type="id"></field>
-      <prim-key field="partyId"/>
-      <prim-key field="productStoreId"/>
-      <relation type="one" fk-name="PARTY_PROF_PARTY" rel-entity-name="Party">
-        <key-map field-name="partyId"/>
-      </relation>
-      <relation type="one" fk-name="PARTY_PROF_PSTORE" rel-entity-name="ProductStore">
-        <key-map field-name="productStoreId"/>
-      </relation>
-    </entity>
     <entity entity-name="PartyRelationship"
             package-name="org.apache.ofbiz.party.party"
             title="Party Relationship Entity">
