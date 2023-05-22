@@ -47,6 +47,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private boolean groupBy;
     private final boolean autoLabel;
     private final boolean autoDraft;
+    private final boolean autoSet;
     private final boolean autoValueList;
     private List<OfbizCsdlAction> actionList;
     private List<OfbizCsdlFunction> functionList;
@@ -57,7 +58,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
                                EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
-                               boolean autoLabel, boolean autoDraft, boolean autoValueList) {
+                               boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
@@ -81,6 +82,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.autoLabel = autoLabel;
         this.autoDraft = autoDraft;
         this.autoValueList = autoValueList;
+        this.autoSet = autoSet;
         setHasStream(hasStream);
     }
 
@@ -366,6 +368,10 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public void setInsertRequireProperties(List<String> insertRequireProperties) {
         this.insertRequireProperties = insertRequireProperties;
+    }
+
+    public boolean isAutoSet() {
+        return autoSet;
     }
 
     @Override
