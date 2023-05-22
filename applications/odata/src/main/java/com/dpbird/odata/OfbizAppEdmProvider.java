@@ -122,7 +122,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         InputStream edmConfigInputStream = getFileInputStream(filePath);
         EdmWebConfig edmWebConfig;
         try {
-            edmWebConfig = EdmConfigLoader.loadAppEdmConfig(delegator, dispatcher, edmConfigInputStream, locale);
+            edmWebConfig = EdmConfigLoader.loadAppEdmConfig(delegator, dispatcher, this.webapp, edmConfigInputStream, locale);
             OfbizCsdlSchema csdlSchema = this.createSchema(OfbizMapOdata.NAMESPACE, edmWebConfig, null);
             EdmConfigLoader.generateAnnotations(delegator, csdlSchema, locale);
             csdlSchemaCache.put(locale.getLanguage() + this.webapp, csdlSchema);

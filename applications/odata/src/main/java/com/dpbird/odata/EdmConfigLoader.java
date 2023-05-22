@@ -71,7 +71,7 @@ public class EdmConfigLoader {
         }
     }
 
-    public static EdmWebConfig loadAppEdmConfig(Delegator delegator, LocalDispatcher dispatcher,
+    public static EdmWebConfig loadAppEdmConfig(Delegator delegator, LocalDispatcher dispatcher, String webapp,
                                                 InputStream edmConfigInputStream, Locale locale)
             throws GenericEntityException, GenericServiceException, ParserConfigurationException, IOException, SAXException, OfbizODataException {
         EdmWebConfig edmWebConfig = new EdmWebConfig();
@@ -93,7 +93,7 @@ public class EdmConfigLoader {
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
-        createDraftTable(edmWebConfig, delegator);
+        createDraftTable(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 
@@ -667,12 +667,14 @@ public class EdmConfigLoader {
             } else if (tagName.equals("EntityType")) {
                 OfbizCsdlEntityType csdlEntityType = loadEntityTypeFromElement(delegator, dispatcher, currentElt, locale);
                 //Default EntitySet
-//                OfbizCsdlEntitySet csdlEntitySet = new OfbizCsdlEntitySet(null);
-//                csdlEntitySet.setName(csdlEntityType.getName());
-//                csdlEntitySet.setType(new FullQualifiedName(csdlEntityType.getFullQualifiedNameString()));
-//                csdlEntityType.addReferencedEntitySet(csdlEntitySet.getName());
                 edmWebConfig.addEntityType(csdlEntityType);
-//                edmWebConfig.addEntitySet(csdlEntitySet);
+                if (csdlEntityType.isAutoSet()) {
+                    OfbizCsdlEntitySet csdlEntitySet = new OfbizCsdlEntitySet(null);
+                    csdlEntitySet.setName(csdlEntityType.getName());
+                    csdlEntitySet.setType(new FullQualifiedName(csdlEntityType.getFullQualifiedNameString()));
+                    csdlEntityType.addReferencedEntitySet(csdlEntitySet.getName());
+                    edmWebConfig.addEntitySet(csdlEntitySet);
+                }
                 //Default StickySessionAction
                 if (csdlEntityType.isAutoDraft()) {
                     List<OfbizCsdlAction> actionList = generateStickySessionAction(csdlEntityType, locale);
@@ -783,7 +785,6 @@ public class EdmConfigLoader {
             throws GenericServiceException {
         String name = entityTypeElement.getAttribute("Name");
         String ofbizEntity = name;
-        String draftEntityName = null;
         String attrEntityName = null;
         String attrNumericEntityName = null;
         String attrDateEntityName = null;
@@ -793,9 +794,6 @@ public class EdmConfigLoader {
         EntityCondition entityCondition = null;
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizEntity"))) {
             ofbizEntity = entityTypeElement.getAttribute("OfbizEntity");
-        }
-        if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("DraftEntityName"))) {
-            draftEntityName = entityTypeElement.getAttribute("DraftEntityName");
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("AttrEntityName"))) {
             attrEntityName = entityTypeElement.getAttribute("AttrEntityName");
@@ -880,6 +878,10 @@ public class EdmConfigLoader {
         if ("true".equals(entityTypeElement.getAttribute("AutoValueList"))) {
             autoValueList = true;
         }
+        boolean autoSet = true;
+        if ("false".equals(entityTypeElement.getAttribute("AutoSet"))) {
+            autoSet = false;
+        }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("Properties"))) {
             List<OfbizCsdlProperty> propertyList = generatePropertiesFromAttribute(dispatcher, modelEntity, null, entityTypeElement.getAttribute("Properties"), locale, labelPrefix, autoLabel);
             csdlProperties.addAll(propertyList);
@@ -960,10 +962,10 @@ public class EdmConfigLoader {
             }
         }
         OfbizCsdlEntityType csdlEntityType = createEntityType(delegator, dispatcher, fullQualifiedName, ofbizEntity,
-                draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
+                attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
                 csdlProperties, csdlNavigationProperties, csdlPropertyRefs, filterByDate, baseType, hasDerivedEntity,
                 excludeProperties, entityCondition, entityConditionStr, labelPrefix, locale, searchOption, groupBy, hasStream,
-                autoLabel, autoDraft, autoValueList);
+                autoLabel, autoDraft, autoValueList, autoSet);
         csdlEntityType.setAbstract(isAbstract);
         csdlEntityType.setAnnotations(csdlAnnotationList);
         csdlEntityType.setTerms(terms);
@@ -2336,14 +2338,14 @@ public class EdmConfigLoader {
 
     private static OfbizCsdlEntityType createEntityType(Delegator delegator, LocalDispatcher dispatcher,
                                                         FullQualifiedName entityTypeFqn, String ofbizEntity,
-                                                        String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName,
+                                                        String attrEntityName, String attrNumericEntityName, String attrDateEntityName,
                                                         String handlerClass, boolean autoProperties,
                                                         List<CsdlProperty> csdlProperties,
                                                         List<CsdlNavigationProperty> csdlNavigationProperties,
                                                         List<CsdlPropertyRef> csdlPropertyRefs, boolean filterByDate,
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
                                                         EntityCondition entityCondition, String entityConditionStr, String labelPrefix, Locale locale, String searchOption,
-                                                        boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft, boolean autoValueList) {
+                                                        boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
@@ -2414,8 +2416,8 @@ public class EdmConfigLoader {
 //            }
         }
         OfbizCsdlEntityType entityType = new OfbizCsdlEntityType(ofbizEntity, handlerClass, false,
-                false, filterByDate, draftEntityName, attrEntityName, attrNumericEntityName, attrDateEntityName,
-                hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream, autoLabel, autoDraft, autoValueList);
+                false, filterByDate, attrEntityName, attrNumericEntityName, attrDateEntityName,
+                hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream, autoLabel, autoDraft, autoValueList, autoSet);
         if (UtilValidate.isNotEmpty(baseType)) {
             //有BaseType, Property里就不应该再有pk
             List<String> propertyRefNames = propertyRefs.stream().map(CsdlPropertyRef::getName).collect(Collectors.toList());
@@ -2596,13 +2598,17 @@ public class EdmConfigLoader {
         return propertyValue;
     }
 
-    public synchronized static void createDraftTable(EdmWebConfig edmWebConfig, Delegator delegator) throws GenericEntityException {
+    public synchronized static void createDraftTable(EdmWebConfig edmWebConfig, String webapp, Delegator delegator) throws GenericEntityException {
         ModelReader modelReader = delegator.getModelReader();
         Map<String, ModelEntity> entityCache = modelReader.getEntityCache();
         for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
-            String draftEntityName = entityType.getDraftEntityName(); //TODO: remove
+            String draftEntityName = webapp + entityType.getName() + "Draft";
             //没有定义Draft或者已经创建过了 跳过
-            if (UtilValidate.isEmpty(draftEntityName) || UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
+            if (!entityType.isAutoDraft()) {
+                continue;
+            }
+            if (UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
+                entityType.setDraftEntityName(draftEntityName);
                 continue;
             }
             //根据这个EntityType创建一个内存数据库表
@@ -2662,6 +2668,7 @@ public class EdmConfigLoader {
                     modelEntity.addRelation(modelRelation);
                 }
             }
+            entityType.setDraftEntityName(draftEntityName);
             GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
             DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
             //创建
