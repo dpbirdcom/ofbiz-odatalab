@@ -618,7 +618,7 @@ public class EdmConfigLoader {
                                                                OfbizCsdlSchema csdlSchema, Locale locale) {
         CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
         String entityTypeFQN = csdlEntityType.getFullQualifiedNameString();
-        String annotationsTarget = csdlSchema.getNamespace() + "." + csdlSchema.getEntityContainer().getName() + "/" + csdlEntityType.getName() + "s";
+        String annotationsTarget = csdlSchema.getNamespace() + "." + csdlSchema.getEntityContainer().getName() + "/" + csdlEntityType.getName();
         csdlAnnotations.setTarget(annotationsTarget);
         List<CsdlAnnotation> csdlAnnotationList = new ArrayList<CsdlAnnotation>();
         CsdlAnnotation annotation = createAnnotation("Session.StickySessionSupported", null);
