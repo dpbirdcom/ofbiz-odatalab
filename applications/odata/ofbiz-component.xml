@@ -32,7 +32,7 @@ under the License.
     <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entitymodel.xml"/>
     <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entitymemmodel.xml"/>
     <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entityolapmodel.xml"/>
-    <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entityattrmodel.xml"/>
+<!--    <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entityattrmodel.xml"/>-->
     <entity-resource type="group" reader-name="main" loader="main" location="entitydef/entitygroup.xml"/>
     <!-- <entity-resource type="eca" reader-name="main" loader="main" location="entitydef/eecas.xml"/> -->
     <entity-resource type="data" reader-name="seed" loader="main" location="data/OdataTypeData.xml"/>
@@ -43,8 +43,8 @@ under the License.
     <!-- service resources: model(s), eca(s) and group definitions -->
     <service-resource type="model" loader="main" location="servicedef/services.xml"/>
     <service-resource type="model" loader="main" location="servicedef/services_test.xml"/>
-    <service-resource type="model" loader="main" location="servicedef/services_app.xml"/>
-    <service-resource type="model" loader="main" location="servicedef/services_attribute.xml"/>
+<!--    <service-resource type="model" loader="main" location="servicedef/services_app.xml"/>-->
+<!--    <service-resource type="model" loader="main" location="servicedef/services_attribute.xml"/>-->
     <!--
     <service-resource type="eca" loader="main" location="servicedef/secas.xml"/>
     <service-resource type="group" loader="main" location="servicedef/groups.xml"/>
