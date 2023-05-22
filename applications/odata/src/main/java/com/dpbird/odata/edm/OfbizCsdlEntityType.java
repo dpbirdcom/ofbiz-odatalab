@@ -56,7 +56,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private List<String> insertRequireProperties = new ArrayList<>();
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
-                               boolean filterByDate, String draftEntityName, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
+                               boolean filterByDate, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
                                EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
                                boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet) {
         super();
@@ -72,7 +72,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.hasDerivedEntity = hasDerivedEntity;
         this.autoEnum = autoEnum;
         this.filterByDate = filterByDate;
-        this.draftEntityName = draftEntityName;
         this.attrEntityName = attrEntityName;
         this.attrNumericEntityName = attrNumericEntityName;
         this.attrDateEntityName = attrDateEntityName;
@@ -203,6 +202,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.attrDateEntityName = attrDateEntityName;
     }
 
+    public String getDraftEntityName() {
+        return draftEntityName;
+    }
+
+    public void setDraftEntityName(String draftEntityName) {
+        this.draftEntityName = draftEntityName;
+    }
+
     public boolean equals(Object o) {
         if (!(o instanceof OfbizCsdlEntityType)) {
             return false;
@@ -252,14 +259,6 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public void setTerms(List<Term> terms) {
         this.terms = terms;
-    }
-
-    public String getDraftEntityName() {
-        return draftEntityName;
-    }
-
-    public void setDraftEntityName(String draftEntityName) {
-        this.draftEntityName = draftEntityName;
     }
 
     public boolean isHasRelField() {
