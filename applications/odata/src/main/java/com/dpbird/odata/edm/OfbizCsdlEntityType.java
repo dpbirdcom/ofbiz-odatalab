@@ -58,7 +58,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
                                EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
-                               boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet) {
+                               boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet, String draftEntityName) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
@@ -82,6 +82,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.autoDraft = autoDraft;
         this.autoValueList = autoValueList;
         this.autoSet = autoSet;
+        this.draftEntityName = draftEntityName;
         setHasStream(hasStream);
     }
 
