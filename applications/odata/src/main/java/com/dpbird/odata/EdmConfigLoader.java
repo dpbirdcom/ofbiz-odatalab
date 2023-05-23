@@ -675,8 +675,8 @@ public class EdmConfigLoader {
                     csdlEntityType.addReferencedEntitySet(csdlEntitySet.getName());
                     edmWebConfig.addEntitySet(csdlEntitySet);
                 }
-                //Default StickySessionAction
-                if (csdlEntityType.isAutoDraft()) {
+                //Default StickySessionAction TODO: remove isAutoSet
+                if (csdlEntityType.isAutoDraft() && csdlEntityType.isAutoSet()) {
                     List<OfbizCsdlAction> actionList = generateStickySessionAction(csdlEntityType, locale);
                     actionList.forEach(edmWebConfig::addAction);
                     //DiscardActionImport
@@ -791,6 +791,7 @@ public class EdmConfigLoader {
         String handlerClass = null;
         String entityConditionStr = null;
         String searchOption = null;
+        String draftEntityName = null;
         EntityCondition entityCondition = null;
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizEntity"))) {
             ofbizEntity = entityTypeElement.getAttribute("OfbizEntity");
@@ -803,6 +804,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("AttrDateEntityName"))) {
             attrDateEntityName = entityTypeElement.getAttribute("AttrDateEntityName");
+        }
+        if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("DraftEntityName"))) {
+            draftEntityName = entityTypeElement.getAttribute("DraftEntityName");
         }
         ModelEntity modelEntity = null;
         try {
@@ -878,9 +882,9 @@ public class EdmConfigLoader {
         if ("true".equals(entityTypeElement.getAttribute("AutoValueList"))) {
             autoValueList = true;
         }
-        boolean autoSet = true;
-        if ("false".equals(entityTypeElement.getAttribute("AutoSet"))) {
-            autoSet = false;
+        boolean autoSet = false;
+        if ("true".equals(entityTypeElement.getAttribute("AutoSet"))) {
+            autoSet = true;
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("Properties"))) {
             List<OfbizCsdlProperty> propertyList = generatePropertiesFromAttribute(dispatcher, modelEntity, null, entityTypeElement.getAttribute("Properties"), locale, labelPrefix, autoLabel);
@@ -965,7 +969,7 @@ public class EdmConfigLoader {
                 attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
                 csdlProperties, csdlNavigationProperties, csdlPropertyRefs, filterByDate, baseType, hasDerivedEntity,
                 excludeProperties, entityCondition, entityConditionStr, labelPrefix, locale, searchOption, groupBy, hasStream,
-                autoLabel, autoDraft, autoValueList, autoSet);
+                autoLabel, autoDraft, autoValueList, autoSet, draftEntityName);
         csdlEntityType.setAbstract(isAbstract);
         csdlEntityType.setAnnotations(csdlAnnotationList);
         csdlEntityType.setTerms(terms);
@@ -2345,7 +2349,7 @@ public class EdmConfigLoader {
                                                         List<CsdlPropertyRef> csdlPropertyRefs, boolean filterByDate,
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
                                                         EntityCondition entityCondition, String entityConditionStr, String labelPrefix, Locale locale, String searchOption,
-                                                        boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet) {
+                                                        boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet, String draftEntityName) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
@@ -2417,7 +2421,7 @@ public class EdmConfigLoader {
         }
         OfbizCsdlEntityType entityType = new OfbizCsdlEntityType(ofbizEntity, handlerClass, false,
                 false, filterByDate, attrEntityName, attrNumericEntityName, attrDateEntityName,
-                hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream, autoLabel, autoDraft, autoValueList, autoSet);
+                hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream, autoLabel, autoDraft, autoValueList, autoSet, draftEntityName);
         if (UtilValidate.isNotEmpty(baseType)) {
             //有BaseType, Property里就不应该再有pk
             List<String> propertyRefNames = propertyRefs.stream().map(CsdlPropertyRef::getName).collect(Collectors.toList());
@@ -2602,15 +2606,19 @@ public class EdmConfigLoader {
         ModelReader modelReader = delegator.getModelReader();
         Map<String, ModelEntity> entityCache = modelReader.getEntityCache();
         for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
-            String draftEntityName = webapp + entityType.getName() + "Draft";
+            String draftEntityName = entityType.getDraftEntityName();
+            if (UtilValidate.isEmpty(draftEntityName) || UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
+                continue;
+            }
+//            String draftEntityName = webapp + entityType.getName() + "Draft";
             //没有定义Draft或者已经创建过了 跳过
-            if (!entityType.isAutoDraft()) {
-                continue;
-            }
-            if (UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
-                entityType.setDraftEntityName(draftEntityName);
-                continue;
-            }
+//            if (!entityType.isAutoDraft()) {
+//                continue;
+//            }
+//            if (UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
+//                entityType.setDraftEntityName(draftEntityName);
+//                continue;
+//            }
             //根据这个EntityType创建一个内存数据库表
             ModelEntity modelEntity = new ModelEntity();
             modelEntity.setEntityName(draftEntityName);
