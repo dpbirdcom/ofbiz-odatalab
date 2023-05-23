@@ -89,6 +89,7 @@
             <xs:attribute name="AutoDraft" type="xs:boolean"/>
             <xs:attribute name="AutoValueList" type="xs:boolean"/>
             <xs:attribute name="AutoSet" type="xs:boolean"/>
+            <xs:attribute name="EntitySetName" type="xs:NCName"/>
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
