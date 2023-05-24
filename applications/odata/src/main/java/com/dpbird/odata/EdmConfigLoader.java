@@ -551,11 +551,6 @@ public class EdmConfigLoader {
                 true, saveActionPath, true, true, editParam.getName());
         actionList.add(saveAction);
 
-        //discard Action
-        OfbizCsdlAction discardAction = new OfbizCsdlAction();
-        discardAction.setName("DiscardAction").setBound(false);
-        discardAction.setOfbizMethod("DiscardAction");
-        actionList.add(discardAction);
         return actionList;
 
     }
@@ -679,11 +674,18 @@ public class EdmConfigLoader {
                 if (csdlEntityType.isAutoDraft() && csdlEntityType.isAutoSet()) {
                     List<OfbizCsdlAction> actionList = generateStickySessionAction(csdlEntityType, locale);
                     actionList.forEach(edmWebConfig::addAction);
-                    //DiscardActionImport
-                    CsdlActionImport csdlActionImport = new CsdlActionImport();
-                    FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, "DiscardAction");
-                    csdlActionImport.setName("DiscardAction").setAction(fullQualifiedName);
-                    edmWebConfig.addActionImport(csdlActionImport);
+                    if (UtilValidate.isEmpty(edmWebConfig.getAction("DiscardAction"))) {
+                        //Discard Action
+                        OfbizCsdlAction discardAction = new OfbizCsdlAction();
+                        discardAction.setName("DiscardAction").setBound(false);
+                        discardAction.setOfbizMethod("DiscardAction");
+                        edmWebConfig.addAction(discardAction);
+                        //DiscardActionImport
+                        CsdlActionImport csdlActionImport = new CsdlActionImport();
+                        FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, "DiscardAction");
+                        csdlActionImport.setName("DiscardAction").setAction(fullQualifiedName);
+                        edmWebConfig.addActionImport(csdlActionImport);
+                    }
                 }
                 csdlEntityType.getActionList().forEach(edmWebConfig::addAction);
                 csdlEntityType.getFunctionList().forEach(edmWebConfig::addFunction);
