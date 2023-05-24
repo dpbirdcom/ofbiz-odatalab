@@ -39,6 +39,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private String attrNumericEntityName;
     private String attrDateEntityName;
     private String draftEntityName;
+    private String entitySetName;
     private List<String> keyPropertyNames = null;
     private List<Term> terms;
     private boolean hasRelField = false;
@@ -58,7 +59,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
                                EntityCondition entityCondition, String entityConditionStr, String labelPrefix, String searchOption, boolean groupBy, boolean hasStream,
-                               boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet, String draftEntityName) {
+                               boolean autoLabel, boolean autoDraft, boolean autoValueList, boolean autoSet, String draftEntityName, String entitySetName) {
         super();
         this.ofbizEntity = ofbizEntity;
         this.handlerClass = handlerClass;
@@ -83,6 +84,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
         this.autoValueList = autoValueList;
         this.autoSet = autoSet;
         this.draftEntityName = draftEntityName;
+        this.entitySetName = entitySetName;
         setHasStream(hasStream);
     }
 
@@ -209,6 +211,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public void setDraftEntityName(String draftEntityName) {
         this.draftEntityName = draftEntityName;
+    }
+
+    public String getEntitySetName() {
+        return entitySetName;
+    }
+
+    public void setEntitySetName(String entitySetName) {
+        this.entitySetName = entitySetName;
     }
 
     public boolean equals(Object o) {
