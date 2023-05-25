@@ -3,6 +3,7 @@ package com.dpbird.odata.processor;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
+import org.apache.commons.io.IOUtils;
 import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -16,6 +17,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -24,14 +26,12 @@ import org.apache.olingo.server.api.processor.PrimitiveValueProcessor;
 import org.apache.olingo.server.api.serializer.ODataSerializer;
 import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
 import org.apache.olingo.server.api.serializer.SerializerResult;
-import org.apache.olingo.server.api.uri.UriInfo;
-import org.apache.olingo.server.api.uri.UriResource;
-import org.apache.olingo.server.api.uri.UriResourceFunction;
-import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
+import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -204,9 +204,30 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
     }
 
     @Override
-    public void updatePrimitive(ODataRequest arg0, ODataResponse arg1, UriInfo arg2, ContentType arg3, ContentType arg4)
+    public void updatePrimitive(ODataRequest request, ODataResponse response, UriInfo uriInfo, ContentType requestFormat, ContentType responseFormat)
             throws ODataApplicationException, ODataLibraryException {
-        throw new ODataApplicationException("Not supported.", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ROOT);
+        try {
+            byte[] mediaData = IOUtils.toByteArray(request.getBody());
+            List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
+            UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
+            EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            String draftEntityName = csdlEntityType.getDraftEntityName();
+            Map<String, Object> keyMap = Util.uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType, edmProvider);
+            GenericValue genericValue = EntityQuery.use(delegator).from(draftEntityName).where(keyMap).queryFirst();
+            UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) ListUtil.getLast(uriResourceParts);
+            String segmentValue = primitiveProperty.getSegmentValue();
+            genericValue.set(segmentValue, mediaData);
+            if (genericValue.containsKey("mimeTypeId")) {
+                genericValue.set("mimeTypeId", requestFormat.toContentTypeString());
+            }
+            genericValue.store();
+            response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
+        } catch (OfbizODataException e) {
+            throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH);
+        } catch (GenericEntityException | IOException e) {
+            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
+        }
     }
 
     @Override
