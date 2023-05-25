@@ -397,7 +397,13 @@ public class DraftReaderAndWriter {
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
-                return reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
+                EntityCollection relatedList = reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
+                for (Entity related : relatedList.getEntities()) {
+                    if (navCsdlEntityType.hasStream()) {
+                        related.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+                    }
+                }
+                return relatedList;
             } catch (GenericEntityException e) {
                 throw new OfbizODataException(String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR), e.getMessage());
             }
