@@ -63,6 +63,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
                 <xs:element ref="Action"/>
                 <xs:element ref="Function"/>
+                <xs:element minOccurs="0" ref="ValueList"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -87,7 +88,6 @@
             <xs:attribute name="hasDerivedEntity" type="xs:boolean"/>
             <xs:attribute name="AutoLabel" type="xs:boolean"/>
             <xs:attribute name="AutoDraft" type="xs:boolean"/>
-            <xs:attribute name="AutoValueList" type="xs:boolean"/>
             <xs:attribute name="AutoSet" type="xs:boolean"/>
             <xs:attribute name="EntitySetName" type="xs:NCName"/>
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
