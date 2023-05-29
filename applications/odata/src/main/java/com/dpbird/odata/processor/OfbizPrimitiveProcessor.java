@@ -1,6 +1,7 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
 import org.apache.commons.io.IOUtils;
@@ -11,13 +12,13 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -26,7 +27,10 @@ import org.apache.olingo.server.api.processor.PrimitiveValueProcessor;
 import org.apache.olingo.server.api.serializer.ODataSerializer;
 import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
 import org.apache.olingo.server.api.serializer.SerializerResult;
-import org.apache.olingo.server.api.uri.*;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.UriResource;
+import org.apache.olingo.server.api.uri.UriResourceFunction;
+import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -73,7 +77,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
         Property property;
         String mimeType;
         try {
-            Map<String, Object> propertyInfo = readProperty(uriInfo.getUriResourceParts(), uriInfo.getAliases());
+            Map<String, Object> propertyInfo = readProperty(request, uriInfo.getUriResourceParts(), uriInfo.getAliases());
             property = (Property) propertyInfo.get("property");
             mimeType = (String) propertyInfo.get("mimeTypeId");
             UriResource lastUriResource = ListUtil.getLast(uriInfo.getUriResourceParts());
@@ -124,7 +128,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
         try {
             List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
             uriResourceParts = uriResourceParts.subList(0, uriResourceParts.size() - 1);
-            Map<String, Object> propertyInfo = readProperty(uriResourceParts, uriInfo.getAliases());
+            Map<String, Object> propertyInfo = readProperty(request, uriResourceParts, uriInfo.getAliases());
 
             Property property = (Property) propertyInfo.get("property");
             if (property != null && property.getValue() != null) {
@@ -138,10 +142,11 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
         }
     }
 
-    private Map<String, Object> readProperty(List<UriResource> resourcePaths, List<AliasQueryOption> aliases) throws OfbizODataException {
+    private Map<String, Object> readProperty(ODataRequest request, List<UriResource> resourcePaths, List<AliasQueryOption> aliases) throws OfbizODataException {
         Property property;
         UriResource lastUriResource = ListUtil.getLast(resourcePaths);
-        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), null);
+        String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+        UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
         Map<String, Object> propertyInfo = new HashMap<>();
         if (lastUriResource instanceof UriResourceFunction) {
             //Function
@@ -172,7 +177,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
             List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, aliases);
             OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
-            Entity entity = (Entity) odataParts.getEntityData();
+            OdataOfbizEntity entity = (OdataOfbizEntity) odataParts.getEntityData();
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(odataParts.getEdmEntityType().getFullQualifiedName());
             OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(lastUriResource.getSegmentValue());
             property = entity.getProperty(lastUriResource.getSegmentValue());
@@ -181,9 +186,13 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                 if (UtilValidate.isNotEmpty(property) && "Edm.Stream".equals(property.getType())) {
                     String mimeType = csdlProperty.getMimeType();
                     if (UtilValidate.isEmpty(mimeType)) {
-                        String dataResourceId = (String) entity.getProperty("dataResourceId").getValue();
-                        mimeType = EntityQuery.use(delegator).from("DataResource")
-                                .select("mimeTypeId").where(UtilMisc.toMap("dataResourceId", dataResourceId)).queryOne().getString("mimeTypeId");
+                        if (UtilValidate.isNotEmpty(entity.getProperty("mimeTypeId"))) {
+                            mimeType = (String) entity.getProperty("mimeTypeId").getValue();
+                        } else {
+                            String dataResourceId = (String) entity.getProperty("dataResourceId").getValue();
+                            mimeType = EntityQuery.use(delegator).from("DataResource")
+                                    .select("mimeTypeId").where(UtilMisc.toMap("dataResourceId", dataResourceId)).queryOne().getString("mimeTypeId");
+                        }
                     }
                     if (UtilValidate.isEmpty(mimeType)) {
                         throw new OfbizODataException("MimeType not found");
@@ -208,24 +217,35 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             throws ODataApplicationException, ODataLibraryException {
         try {
             byte[] mediaData = IOUtils.toByteArray(request.getBody());
-            List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
-            UriResourceEntitySet resourceEntitySet = (UriResourceEntitySet) uriResourceParts.get(0);
-            EdmEntityType edmEntityType = resourceEntitySet.getEntityType();
-            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-            String draftEntityName = csdlEntityType.getDraftEntityName();
-            Map<String, Object> keyMap = Util.uriParametersToMap(resourceEntitySet.getKeyPredicates(), edmEntityType, edmProvider);
-            GenericValue genericValue = EntityQuery.use(delegator).from(draftEntityName).where(keyMap).queryFirst();
-            UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) ListUtil.getLast(uriResourceParts);
+            String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+            UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
+            List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
+            List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
+            List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(uriResourceList, uriInfo.getAliases());
+            OdataParts odataParts = ListUtil.getLast(resourceDataInfos);
+            UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) ListUtil.getLast(resourcePaths);
             String segmentValue = primitiveProperty.getSegmentValue();
-            genericValue.set(segmentValue, mediaData);
+            OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) odataParts.getEntityData();
+            GenericValue genericValue = ofbizEntity.getGenericValue();
+            //update
+            Map<String, Object> toWrite = UtilMisc.toMap(segmentValue, mediaData);
             if (genericValue.containsKey("mimeTypeId")) {
-                genericValue.set("mimeTypeId", requestFormat.toContentTypeString());
+                toWrite.put("mimeTypeId", requestFormat.toContentTypeString());
             }
-            genericValue.store();
-            response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
+            EdmEntityType edmEntityType = odataParts.getEdmEntityType();
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            Entity entityToWrite = Util.mapToEntity(csdlEntityType, toWrite);
+            Map<String, Object> serviceParams = UtilMisc.toMap("primaryKey", new HashMap<>(genericValue.getPrimaryKey()),
+                    "edmBindingTarget", odataParts.getEdmBindingTarget(), "entityToWrite", entityToWrite,
+                    "odataContext", getOdataContext(), "sapContextId", sapContextId, "userLogin", userLogin);
+            Map<String, Object> serviceResult = dispatcher.runSync("dpbird.updateEntity", serviceParams);
+            final InputStream responseContent = odata.createFixedFormatSerializer().binary(mediaData);
+            response.setContent(responseContent);
+            response.setStatusCode(HttpStatusCode.OK.getStatusCode());
+            response.setHeader(HttpHeader.CONTENT_TYPE, requestFormat.toContentTypeString());
         } catch (OfbizODataException e) {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH);
-        } catch (GenericEntityException | IOException e) {
+        } catch (GenericServiceException | IOException e) {
             throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
         }
     }
