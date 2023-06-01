@@ -363,7 +363,7 @@
             <xs:attribute name="IsImageURL" type="xs:boolean"/>
             <xs:attribute name="MultiLineText" type="xs:boolean"/>
             <xs:attribute name="ExcludeFromNavigationContext" type="xs:boolean"/>
-            <xs:attribute name="Hidden" type="xs:boolean"/>
+            <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="HiddenFilter" type="xs:boolean"/>
             <xs:attribute name="SemanticObject" type="xs:NCName"/>
             <xs:attribute name="FieldControl" type="xs:NCName"/>
