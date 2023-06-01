@@ -573,8 +573,11 @@ public class EdmConfigLoader {
         if (csdlProperty.isComputed()) {
             csdlAnnotationList.add(createAnnotationBool("Core.Computed", "true", null));
         }
-        if (csdlProperty.isHidden()) {
-            csdlAnnotationList.add(createAnnotationBool("UI.Hidden", "true", null));
+        String hidden = csdlProperty.getHidden();
+        if (UtilValidate.isNotEmpty(hidden)) {
+            CsdlAnnotation hiddenAnnotation = "true".equals(hidden) || "false".equals(hidden) ?
+                    createAnnotationBool("UI.Hidden", hidden, null) : createAnnotationPath("UI.Hidden", hidden, null);
+            csdlAnnotationList.add(hiddenAnnotation);
         }
         if (csdlProperty.isHiddenFilter()) {
             csdlAnnotationList.add(createAnnotationBool("UI.HiddenFilter", "true", null));
@@ -1613,7 +1616,7 @@ public class EdmConfigLoader {
             property.setFieldControl(FieldControlType.valueOf(fieldControl));
         }
         if (UtilValidate.isNotEmpty(hidden)) {
-            property.setHidden(Boolean.valueOf(hidden));
+            property.setHidden(hidden);
         }
         if (UtilValidate.isNotEmpty(hiddenFilter)) {
             property.setHiddenFilter(Boolean.valueOf(hiddenFilter));
