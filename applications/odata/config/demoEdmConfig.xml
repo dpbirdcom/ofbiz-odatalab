@@ -438,6 +438,7 @@
 		<NavigationProperty Name="DataResource" FilterByDate="false"/>
 		<NavigationProperty Name="ContentAttribute" FilterByDate="false" IsCollection="true"/>
 	</EntityType>
+	<EntityType Name="CustomerParty" OfbizEntity="Party" AutoProperties="true" EntityCondition="PartyRole/roleTypeId=INTERNAL_ORGANIZATIO"/>
 	<EntityType Name="DataResource" hasDerivedEntity="true" AutoProperties="true">
         <Property Name="statusId" Type="ContentStatus"/>
 		<NavigationProperty Name="ImageDataResource" />
@@ -1450,6 +1451,7 @@
 		<EntitySet Name="ElectronicTexts" EntityType="ElectronicText"/>
 		<EntitySet Name="ProductKeywords" EntityType="ProductKeyword"/>
 		<EntitySet Name="ProductTypes" EntityType="ProductType"/>
+		<EntitySet Name="CustomerParties" EntityType="CustomerParty"/>
 		<EntitySet Name="People" EntityType="Person"/>
 		<EntitySet Name="Persons" EntityType="Person2"/>
 		<EntitySet Name="Parties" EntityType="Party">
