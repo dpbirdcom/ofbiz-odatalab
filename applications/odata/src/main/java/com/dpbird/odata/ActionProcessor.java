@@ -87,7 +87,7 @@ public class ActionProcessor extends OdataWriter {
             throws OfbizODataException {
         EdmAction edmAction = uriResourceAction.getAction();
         EdmType type = edmAction.getReturnType().getType();
-        if (UtilValidate.isNotEmpty(edmProvider.getActions(edmAction.getFullQualifiedName()))) {
+        if (UtilValidate.isEmpty(edmProvider.getActions(edmAction.getFullQualifiedName()))) {
             Debug.logError("!!!! Not found action : " + edmProvider.getWebapp() + " :: " + edmAction.getFullQualifiedName(), module);
         }
         OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
