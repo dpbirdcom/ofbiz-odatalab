@@ -107,7 +107,7 @@ public class OfbizEntityCollectionProcessor implements EntityCollectionProcessor
                     EntityCollection applyEntities = (EntityCollection) lastParts.getEntityData();
                     if (UtilValidate.isEmpty(applyEntities) || UtilValidate.isEmpty(applyEntities.getEntities())) {
                         //没有数据
-                        oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
+                        oDataResponse.setStatusCode(HttpStatusCode.OK.getStatusCode());
                         return;
                     }
                     rangeCondition = Util.getEntityCollectionQueryCond(applyEntities);

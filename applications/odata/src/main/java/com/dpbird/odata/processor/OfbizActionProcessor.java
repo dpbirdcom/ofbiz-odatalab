@@ -362,7 +362,7 @@ public class OfbizActionProcessor
             if (e instanceof GenericServiceException) {
                 errMes = e.getCause().getMessage();
             }
-            throw new ODataApplicationException(errMes, HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);
+            throw new ODataApplicationException(errMes, HttpStatus.SC_INTERNAL_SERVER_ERROR, Locale.ROOT);
         }
         if (property == null) {
             throw new ODataApplicationException("Nothing found.", HttpStatusCode.NOT_FOUND.getStatusCode(), Locale.ROOT);

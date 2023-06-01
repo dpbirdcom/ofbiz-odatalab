@@ -156,7 +156,8 @@ public class EdmConfigLoader {
                 for (CsdlNavigationProperty navigationProperty : csdlEntityType.getNavigationProperties()) {
                     if (navigationProperty.getType().equals(autoValueListEntity.getFullQualifiedNameString()) && UtilValidate.isNotEmpty(navigationProperty.getReferentialConstraints())) {
                         //生成ValueList
-                        csdlAnnotationsList.add(generateAutoValueList(ofbizCsdlEntityType, navigationProperty, csdlSchema, locale));
+                        ValueList autoValueList =(ValueList) autoValueListEntity.getTerms().stream().filter(ValueList.class::isInstance).findFirst().get();
+                        csdlAnnotationsList.add(generateAutoValueList(autoValueList, ofbizCsdlEntityType, navigationProperty, csdlSchema, locale));
                     }
                 }
             }
@@ -390,26 +391,27 @@ public class EdmConfigLoader {
         return valueListAnnotation;
     }
 
-    private static CsdlAnnotations generateAutoValueList(OfbizCsdlEntityType csdlEntityType, CsdlNavigationProperty csdlNavigationProperty,
+    private static CsdlAnnotations generateAutoValueList(ValueList valueList, OfbizCsdlEntityType ofbizCsdlEntityType, CsdlNavigationProperty navigationProperty,
                                                         CsdlSchema csdlSchema, Locale locale) {
-        List<CsdlReferentialConstraint> referentialConstraints = csdlNavigationProperty.getReferentialConstraints();
+        List<CsdlReferentialConstraint> referentialConstraints = navigationProperty.getReferentialConstraints();
         CsdlReferentialConstraint csdlReferentialConstraint = referentialConstraints.get(0);
         String propertyName = csdlReferentialConstraint.getProperty();
         String referencedPropertyName = csdlReferentialConstraint.getReferencedProperty();
-        CsdlProperty csdlProperty = csdlEntityType.getProperty(propertyName);
+        CsdlProperty csdlProperty = ofbizCsdlEntityType.getProperty(propertyName);
 
         CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
-        String annotationsTarget = csdlEntityType.getFullQualifiedNameString() + "/" + csdlProperty.getName();
+        String annotationsTarget = ofbizCsdlEntityType.getFullQualifiedNameString() + "/" + csdlProperty.getName();
         csdlAnnotations.setTarget(annotationsTarget);
 
         CsdlAnnotation valueListAnnotation = createAnnotation("Common.ValueList", null);
         CsdlRecord csdlRecord = new CsdlRecord();
         csdlRecord.setType("Common.ValueListType");
-        CsdlEntityType navCsdlEntityType = csdlSchema.getEntityType(csdlNavigationProperty.getTypeFQN().getName());
+        CsdlEntityType navCsdlEntityType = csdlSchema.getEntityType(navigationProperty.getTypeFQN().getName());
         List<CsdlPropertyValue> propertyValues = new ArrayList<>();
-        CsdlPropertyValue propertyValue = createPropertyValueString("Label", navCsdlEntityType.getName());
+        String label = UtilValidate.isEmpty(valueList.getLabel()) ? navCsdlEntityType.getName() : valueList.getLabel();
+        CsdlPropertyValue propertyValue = createPropertyValueString("Label", label);
         propertyValues.add(propertyValue);
-        propertyValue = createPropertyValueString("CollectionPath", navCsdlEntityType.getName());
+        propertyValue = createPropertyValueString("CollectionPath", valueList.getCollectionPath());
         propertyValues.add(propertyValue);
         // Parameters
         propertyValue = new CsdlPropertyValue();
@@ -417,13 +419,17 @@ public class EdmConfigLoader {
         CsdlCollection csdlCollection = new CsdlCollection();
         List<CsdlExpression> csdlExpressions = new ArrayList<>();
 
-        //DisplayOnly
-//        CsdlRecord displayOnlyRecord = new CsdlRecord();
-//        displayOnlyRecord.setType("Common.ValueListParameterDisplayOnly");
-//        CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", "referencedPropertyName");
-//        displayOnlyRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
-//        csdlExpressions.add(displayOnlyRecord);
+        //displayOnly
+        List<String> displayOnlyParameters = valueList.getParameterDisplayOnly();
+        for (String displayOnlyParameter : displayOnlyParameters) {
+            CsdlRecord parameterRecord = new CsdlRecord();
+            parameterRecord.setType("Common.ValueListParameterDisplayOnly");
+            CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", displayOnlyParameter);
+            parameterRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
+            csdlExpressions.add(parameterRecord);
+        }
 
+        //InOut
         CsdlRecord parameterRecord = new CsdlRecord();
         parameterRecord.setType("Common.ValueListParameterInOut");
         CsdlPropertyValue localDataProperty = createPropertyValuePropertyPath("LocalDataProperty", propertyName);
@@ -436,7 +442,9 @@ public class EdmConfigLoader {
         csdlRecord.setPropertyValues(propertyValues);
         valueListAnnotation.setExpression(csdlRecord);
 
-        csdlAnnotations.setAnnotations(UtilMisc.toList(valueListAnnotation));
+        CsdlAnnotation withFixedValues = createAnnotationBool("Common.ValueListWithFixedValues",
+                Boolean.toString(valueList.isWithFixedValues()), null);
+        csdlAnnotations.setAnnotations(UtilMisc.toList(valueListAnnotation, withFixedValues));
         return csdlAnnotations;
     }
 
@@ -885,9 +893,6 @@ public class EdmConfigLoader {
             autoDraft = true;
         }
         boolean autoValueList = false;
-        if ("true".equals(entityTypeElement.getAttribute("AutoValueList"))) {
-            autoValueList = true;
-        }
         boolean autoSet = true;
         if ("false".equals(entityTypeElement.getAttribute("AutoSet"))) {
             autoSet = false;
@@ -969,6 +974,11 @@ public class EdmConfigLoader {
             // Function
             if (inEntityTagName.equals("Function")) {
                 functionList.add(loadFunctionFromElement(inEntityElement));
+            }
+            // AutoValueList
+            if (inEntityTagName.equals("ValueList")) {
+                terms.add(loadAutoValueListFromElement(modelEntity, inEntityElement, locale));
+                autoValueList = true;
             }
         }
         OfbizCsdlEntityType csdlEntityType = createEntityType(delegator, dispatcher, fullQualifiedName, ofbizEntity,
@@ -1720,6 +1730,29 @@ public class EdmConfigLoader {
             valueList.setParameters(parameterList);
         }
 
+        // WithFixedValues
+        String withFixedValues = valueListElement.getAttribute("WithFixedValues");
+        if (UtilValidate.isNotEmpty(withFixedValues)) {
+            valueList.setWithFixedValues(Boolean.valueOf(withFixedValues));
+        }
+
+        return valueList;
+    }
+
+    private static Term loadAutoValueListFromElement(ModelEntity modelEntity, Element valueListElement, Locale locale) {
+        String collectionPath = valueListElement.getAttribute("CollectionPath");
+        String label = loadAttributeValue(valueListElement, "Label", locale);
+
+        String qualifier = valueListElement.getAttribute("Qualifier");
+        if (UtilValidate.isEmpty(qualifier)) {
+            qualifier = null;
+        }
+        ValueList valueList = new ValueList(label, collectionPath, qualifier);
+        String parameterDisplayOnly = valueListElement.getAttribute("ParameterDisplayOnly");
+        if (UtilValidate.isNotEmpty(parameterDisplayOnly)) {
+            List<String> displayOnlyList = StringUtil.split(parameterDisplayOnly, ",");
+            valueList.setParameterDisplayOnly(displayOnlyList);
+        }
         // WithFixedValues
         String withFixedValues = valueListElement.getAttribute("WithFixedValues");
         if (UtilValidate.isNotEmpty(withFixedValues)) {
