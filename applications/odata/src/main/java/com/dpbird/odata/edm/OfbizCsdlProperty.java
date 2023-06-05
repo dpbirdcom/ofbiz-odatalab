@@ -15,7 +15,7 @@ public class OfbizCsdlProperty extends CsdlProperty {
     private boolean computed = false;
     private boolean immutable = false;
     private boolean imageUrl = false;
-    private boolean hidden = false;
+    private String hidden;
     private boolean hiddenFilter = false;
     private boolean multiLineText = false;
     private boolean excludeFromNavigationContext = false;
@@ -72,11 +72,11 @@ public class OfbizCsdlProperty extends CsdlProperty {
         this.imageUrl = imageUrl;
     }
 
-    public boolean isHidden() {
+    public String getHidden() {
         return hidden;
     }
 
-    public void setHidden(boolean hidden) {
+    public void setHidden(String hidden) {
         this.hidden = hidden;
     }
 

@@ -8,7 +8,6 @@ import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.ModelEntity;
@@ -16,13 +15,10 @@ import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.Entity;
-import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
-import org.apache.olingo.server.api.uri.queryoption.ApplyOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +36,12 @@ public class DefaultEntityHandler implements EntityHandler {
 
     @Override
     public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) throws OfbizODataException {
-        return OdataProcessorHelper.readEntityData(odataContext, edmBindingTarget, primaryKey);
+        OdataReader reader = new OdataReader(odataContext, new HashMap<>(), UtilMisc.toMap("edmBindingTarget", edmBindingTarget));
+        HandlerResults handlerResults = reader.ofbizFindList(EntityCondition.makeCondition(primaryKey));
+        if (UtilValidate.isNotEmpty(handlerResults) && UtilValidate.isNotEmpty(handlerResults.getResultData())) {
+            return handlerResults.getResultData().get(0);
+        }
+        return null;
     }
 
     @Override

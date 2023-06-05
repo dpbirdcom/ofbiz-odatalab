@@ -1,5 +1,6 @@
 package com.dpbird.odata.handler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -9,8 +10,8 @@ import java.util.Map;
  * @date 2022/11/14
  */
 public class HandlerResults {
-    private int resultCount;
-    private List<? extends Map<String, Object>> resultData;
+    private int resultCount = 0;
+    private List<? extends Map<String, Object>> resultData = new ArrayList<>();
 
     public HandlerResults(int resultCount, List<? extends Map<String, Object>> resultData) {
         this.resultCount = resultCount;

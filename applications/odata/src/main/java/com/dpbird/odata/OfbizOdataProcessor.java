@@ -128,6 +128,7 @@ public class OfbizOdataProcessor {
             entityCondition = Util.appendCondition(entityCondition, searchCondition);
         }
         EntityCondition entitySetCondition = null;
+        EntityCondition entityTypeCondition = null;
         //检查是否是多段式的apply查询 如果是就不添加主对象的EntitySetCondition
         List<UriResource> uriResourceParts = (List<UriResource>) odataContext.get("uriResourceParts");
         boolean isMultistageApply = Util.isMultistageApply(uriResourceParts, queryOptions);
@@ -137,91 +138,22 @@ public class OfbizOdataProcessor {
                 OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) this.edmProvider.getEntityContainer()
                         .getEntitySet(((EdmEntitySet) edmParams.get("edmBindingTarget")).getName());
                 String entitySetConditionStr = csdlEntitySet.getConditionStr();
-                if (UtilValidate.isNotEmpty(entitySetConditionStr) && entitySetConditionStr.contains("/")) {
-                    //entitySet的Condition是多段式的, 要使用dynamicView
-                    if (dynamicViewHolder == null) {
-                        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(csdlEntitySet.getTypeFQN());
-                        dynamicViewHolder = new DynamicViewHolder(csdlEntityType, edmProvider, delegator, dispatcher, userLogin);
-                    }
-                    List<EntityCondition> entitySetConditionList = new ArrayList<>();
-                    String[] split;
-                    EntityJoinOperator conditionsOperator;
-                    if (entitySetConditionStr.contains(" or ")) {
-                        split = entitySetConditionStr.split(" or ");
-                        conditionsOperator = EntityOperator.OR;
-                    } else {
-                        split = entitySetConditionStr.split(" and ");
-                        conditionsOperator = EntityOperator.AND;
-                    }
-                    for (int i = 0; i < split.length; i++) {
-                        String relString = split[i];
-                        if (relString.contains("/")) {
-                            String r = relString.substring(0, relString.lastIndexOf("/"));
-                            EntityTypeRelAlias entityTypeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), modelEntity, null, r);
-                            String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias);
-                            String fieldCondition = relString.substring(relString.lastIndexOf("/") + 1);
-                            String[] condition;
-                            if (fieldCondition.contains("!=")) {
-                                condition = fieldCondition.split("!=");
-                                String conValue = Util.parseVariable(condition[1].trim(), userLogin);
-                                if ("null".equals(conValue)) {
-                                    conValue = null;
-                                }
-                                String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
-                                entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
-                            } else if (fieldCondition.contains("=")) {
-                                condition = fieldCondition.split("=");
-                                String conValue = Util.parseVariable(condition[1].trim(), userLogin);
-                                if ("null".equals(conValue)) {
-                                    conValue = null;
-                                }
-                                String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
-                                entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.EQUALS, conValue));
-                            } else if (fieldCondition.contains(" in ")) {
-                                EntityComparisonOperator<?, ?> operator;
-                                //是not in
-                                if (fieldCondition.contains(" not in ")) {
-                                    condition = fieldCondition.split(" not in ");
-                                    operator = EntityOperator.NOT_IN;
-                                } else {
-                                    condition = fieldCondition.split(" in ");
-                                    operator = EntityOperator.IN;
-                                }
-                                String valueStr = condition[1].trim();
-                                valueStr = valueStr.substring(1, valueStr.length() - 1);
-                                List<String> values = StringUtil.split(valueStr, ",");
-                                String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0]);
-                                entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, operator, values));
-                            }
-                        } else {
-                            entitySetConditionList.add(Util.parseEntityCondition(relString, userLogin));
-                        }
-                    }
-                    if (entitySetConditionList.size() > 0) {
-                        entitySetCondition = EntityCondition.makeCondition(entitySetConditionList, conditionsOperator);
-                    }
-                } else {
-                    entitySetCondition = Util.parseEntityCondition(csdlEntitySet.getConditionStr(), userLogin);
+                OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlEntitySet.getTypeFQN());
+                if (UtilValidate.isNotEmpty(entitySetConditionStr)) {
+                    entitySetCondition = getStringCondition(entitySetConditionStr, csdlEntityType);
+                }
+                //EntityType的Condition
+                if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+                    entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
                 }
             }
         }
-        if (entitySetCondition != null) {
-            if (entityCondition == null) {
-                entityCondition = entitySetCondition;
-            } else {
-                entityCondition = EntityCondition.makeCondition(entityCondition, EntityOperator.AND, entitySetCondition);
-            }
-        }
+        entityCondition = Util.appendCondition(entityCondition, entitySetCondition);
+        entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
+
         if (this.edmEntityType != null) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             this.filterByDate = csdlEntityType.isFilterByDate();
-            if (csdlEntityType.getEntityCondition() != null) {
-                if (entityCondition == null) {
-                    entityCondition = csdlEntityType.getEntityCondition();
-                } else {
-                    entityCondition = EntityCondition.makeCondition(entityCondition, EntityOperator.AND, csdlEntityType.getEntityCondition());
-                }
-            }
             if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(csdlEntityType.getDraftEntityName())) {
                 List<EntityCondition> exprs = new ArrayList<EntityCondition>();
                 exprs.add(EntityCondition.makeCondition(UtilMisc.toMap("isActiveEntity", "Y")));
@@ -292,6 +224,77 @@ public class OfbizOdataProcessor {
             return entityCondition;
         }
         return null;
+    }
+
+    //获取EntityType EntitySet定义的Condition
+    private EntityCondition getStringCondition(String conditionStr, OfbizCsdlEntityType csdlEntityType) {
+        EntityCondition entityCondition = null;
+        if (UtilValidate.isNotEmpty(conditionStr) && conditionStr.contains("/")) {
+            //entitySet的Condition是多段式的, 要使用dynamicView
+            if (dynamicViewHolder == null) {
+                dynamicViewHolder = new DynamicViewHolder(csdlEntityType, edmProvider, delegator, dispatcher, userLogin);
+            }
+            List<EntityCondition> entitySetConditionList = new ArrayList<>();
+            String[] split;
+            EntityJoinOperator conditionsOperator;
+            if (conditionStr.contains(" or ")) {
+                split = conditionStr.split(" or ");
+                conditionsOperator = EntityOperator.OR;
+            } else {
+                split = conditionStr.split(" and ");
+                conditionsOperator = EntityOperator.AND;
+            }
+            for (int i = 0; i < split.length; i++) {
+                String relString = split[i];
+                if (relString.contains("/")) {
+                    String r = relString.substring(0, relString.lastIndexOf("/"));
+                    EntityTypeRelAlias entityTypeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), modelEntity, null, r);
+                    String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias);
+                    String fieldCondition = relString.substring(relString.lastIndexOf("/") + 1);
+                    String[] condition;
+                    if (fieldCondition.contains("!=")) {
+                        condition = fieldCondition.split("!=");
+                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        if ("null".equals(conValue)) {
+                            conValue = null;
+                        }
+                        String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
+                        entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
+                    } else if (fieldCondition.contains("=")) {
+                        condition = fieldCondition.split("=");
+                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        if ("null".equals(conValue)) {
+                            conValue = null;
+                        }
+                        String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0].trim());
+                        entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.EQUALS, conValue));
+                    } else if (fieldCondition.contains(" in ")) {
+                        EntityComparisonOperator<?, ?> operator;
+                        //是not in
+                        if (fieldCondition.contains(" not in ")) {
+                            condition = fieldCondition.split(" not in ");
+                            operator = EntityOperator.NOT_IN;
+                        } else {
+                            condition = fieldCondition.split(" in ");
+                            operator = EntityOperator.IN;
+                        }
+                        String valueStr = condition[1].trim();
+                        valueStr = valueStr.substring(1, valueStr.length() - 1);
+                        List<String> values = StringUtil.split(valueStr, ",");
+                        String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, condition[0]);
+                        entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, operator, values));
+                    }
+                } else {
+                    entitySetConditionList.add(Util.parseEntityCondition(relString, userLogin));
+                }
+            }
+            if (entitySetConditionList.size() > 0) {
+                entityCondition = EntityCondition.makeCondition(entitySetConditionList, conditionsOperator);
+            }
+        } else {
+            entityCondition = Util.parseEntityCondition(conditionStr, userLogin);
+        }
+        return entityCondition;
     }
 
     private EntityCondition processSearchOption() throws OfbizODataException {
