@@ -53,6 +53,12 @@ under the License.
         <response name="success" type="none"/>
     </request-map>
 
+    <request-map uri="stream">
+        <security https="false" auth="false"/>
+        <event type="java" path="com.dpbird.odata.AppOdataEvents" invoke="testStream"></event>
+        <response name="success" type="none"/>
+    </request-map>
+
     <request-map uri="uploadFile">
         <event type="java" path="com.dpbird.odata.AppOdataEvents" invoke="uploadFile"/>
         <response name="success" type="none"/>

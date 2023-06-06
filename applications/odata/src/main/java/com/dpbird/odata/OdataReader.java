@@ -6,14 +6,12 @@ import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.HandlerResults;
 import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.StringUtil;
+import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
-import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityExpr;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityListIterator;
@@ -23,8 +21,6 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
-import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
@@ -529,7 +525,14 @@ public class OdataReader extends OfbizOdataProcessor {
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
             OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
             //添加Navigation对应EntityType的Condition
-            condition = Util.appendCondition(condition, navCsdlEntityType.getEntityCondition());
+            if (navCsdlEntityType.getEntityCondition() != null) {
+                if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
+                    //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
+                    condition = Util.appendCondition(condition, navCsdlEntityType.getEntityCondition());
+                } else {
+                    Debug.logWarning("The EntityType condition is not supported", module);
+                }
+            }
             List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(), csdlNavigationProperty.isFilterByDate());
             if (condition != null) {
                 relatedList = EntityUtil.filterByCondition(relatedList, condition);
