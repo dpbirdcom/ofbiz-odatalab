@@ -23,7 +23,6 @@ import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.server.api.OData;
@@ -40,7 +39,6 @@ import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitEx
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
 import org.apache.olingo.server.core.uri.queryoption.ExpandItemImpl;
 import org.apache.olingo.server.core.uri.queryoption.ExpandOptionImpl;
-import org.apache.olingo.server.core.uri.queryoption.FilterOptionImpl;
 import org.apache.olingo.server.core.uri.queryoption.LevelsOptionImpl;
 import org.apache.olingo.server.core.uri.queryoption.apply.FilterImpl;
 import org.apache.olingo.server.core.uri.queryoption.apply.GroupByImpl;
@@ -249,7 +247,7 @@ public class OfbizOdataProcessor {
                 if (relString.contains("/")) {
                     String r = relString.substring(0, relString.lastIndexOf("/"));
                     EntityTypeRelAlias entityTypeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), modelEntity, null, r);
-                    String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias);
+                    String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias, null);
                     String fieldCondition = relString.substring(relString.lastIndexOf("/") + 1);
                     String[] condition;
                     if (fieldCondition.contains("!=")) {
@@ -322,7 +320,7 @@ public class OfbizOdataProcessor {
                 }
                 String aliasEntityString = option.substring(0, option.lastIndexOf("/"));
                 EntityTypeRelAlias entityTypeRelAlias = EdmConfigLoader.loadRelAliasFromAttribute(dispatcher.getDelegator(), modelEntity, null, aliasEntityString);
-                String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias);
+                String lastRelEntityName = dynamicViewHolder.addRelAlias(null, entityTypeRelAlias, null);
 
                 String aliasPropertyName = option.substring(option.lastIndexOf("/") + 1);
                 aliasPropertyName = aliasPropertyName.replace("[", "").replace("]", "");
@@ -344,7 +342,7 @@ public class OfbizOdataProcessor {
                         searchProperties.add(option);
                     } else {
                         //relAlias字段 search
-                        String lastRelEntityName = dynamicViewHolder.addRelAlias(null, csdlProperty.getRelAlias());
+                        String lastRelEntityName = dynamicViewHolder.addRelAlias(null, csdlProperty.getRelAlias(), null);
                         String filterProperty = dynamicViewHolder.addFilterProperty(lastRelEntityName, csdlProperty.getOfbizFieldName());
                         searchProperties.add(filterProperty);
                     }
@@ -637,7 +635,7 @@ public class OfbizOdataProcessor {
                         //多段式的RelAlias字段排序
                         if (property.getRelAlias() != null) {
                             EntityTypeRelAlias relAlias = property.getRelAlias();
-                            dynamicViewHolder.addRelAlias(newCsdlEntity, relAlias);
+                            dynamicViewHolder.addRelAlias(newCsdlEntity, relAlias, null);
                             List<String> relations = relAlias.getRelations();
                             String relPropertyName = dynamicViewHolder.addFilterProperty(relations.get(relations.size() - 1), property.getOfbizFieldName());
                             relPropertyName = relPropertyName + " NULLS LAST";
@@ -822,7 +820,7 @@ public class OfbizOdataProcessor {
         Object newInstance = null;
         Map<String, Object> propertyFieldMap = new HashMap<>();
         for (Property property : properties) {
-            if (property.getValue() != null && property.getValue().getClass().equals(java.lang.Double.class)) {
+            if (property.getValue() != null && property.getValue().getClass().equals(Double.class)) {
                 propertyFieldMap.put(property.getName(), new BigDecimal((Double) property.getValue()));
             } else {
                 propertyFieldMap.put(property.getName(), property.getValue());
@@ -844,7 +842,7 @@ public class OfbizOdataProcessor {
                     if (Util.isBaseType(propertyFieldMap.get(field.getName()))) {
                         field.set(newInstance, propertyFieldMap.get(field.getName()));
                     } else {
-                        if (propertyFieldMap.get(field.getName()).getClass().equals(java.util.ArrayList.class)) {
+                        if (propertyFieldMap.get(field.getName()).getClass().equals(ArrayList.class)) {
                             List<ComplexValue> innerComplexValue = (List<ComplexValue>) propertyFieldMap.get(field.getName());
                             String ofbizTypeFullName = innerComplexValue.get(0).getTypeName();
                             // String innerClassName = edmWebConfig.getComplexTypeMap().get(ofbizTypeName).getOfbizClass();
