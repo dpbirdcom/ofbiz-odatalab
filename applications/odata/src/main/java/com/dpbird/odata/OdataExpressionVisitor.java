@@ -3,7 +3,6 @@ package com.dpbird.odata;
 import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
-import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -19,7 +18,6 @@ import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.edm.EdmProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
-import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
@@ -397,7 +395,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                 //lambda查询relAlias字段
                 if (lambdaEntityTypeProperty.getRelAlias() != null) {
                     OfbizCsdlEntityType lastCsdlEntity = cloneCsdlEntityType(lambdaEntityType);
-                    dynamicViewHolder.addRelAlias(lastCsdlEntity, lambdaEntityTypeProperty.getRelAlias());
+                    dynamicViewHolder.addRelAlias(lastCsdlEntity, lambdaEntityTypeProperty.getRelAlias(), null);
                     List<String> relations = lambdaEntityTypeProperty.getRelAlias().getRelations();
                     String relPropertyName = dynamicViewHolder.addFilterProperty(relations.get(relations.size() - 1), lambdaEntityTypeProperty.getOfbizFieldName());
                     dynamicViewHolder.edmPropertyMap.put(relPropertyName, property);
@@ -451,7 +449,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             OfbizCsdlEntityType lastCsdlEntity = cloneCsdlEntityType(navCsdlEntityType);
             OfbizCsdlProperty currProperty = (OfbizCsdlProperty) lastCsdlEntity.getProperty(propertyName);
             EntityTypeRelAlias relAlias = currProperty.getRelAlias();
-            dynamicViewHolder.addRelAlias(lastCsdlEntity, relAlias);
+            dynamicViewHolder.addRelAlias(lastCsdlEntity, relAlias, null);
             List<String> relations = relAlias.getRelations();
             String relPropertyName = dynamicViewHolder.addFilterProperty(relations.get(relations.size() - 1), currProperty.getOfbizFieldName());
             dynamicViewHolder.edmPropertyMap.put(relPropertyName, property);

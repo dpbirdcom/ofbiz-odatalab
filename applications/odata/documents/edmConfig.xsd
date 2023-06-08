@@ -11,6 +11,7 @@
                     <xs:element ref="EnumType"/>
                     <xs:element ref="Function"/>
                     <xs:element ref="view-entity"/>
+                    <xs:element ref="Term"/>
                 </xs:choice>
                 <xs:element ref="EntityContainer"/>
             </xs:choice>
@@ -135,6 +136,13 @@
             <xs:attribute name="EntityCondition"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Term">
+        <xs:complexType>
+            <xs:attribute name="Name" use="required" type="xs:NCName"/>
+            <xs:attribute name="Type" type="xs:NCName"/>
+            <xs:attribute name="AppliesTo" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Member">

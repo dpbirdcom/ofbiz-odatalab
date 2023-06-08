@@ -10,11 +10,17 @@ import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.condition.EntityConditionList;
 import org.apache.ofbiz.entity.condition.EntityExpr;
-import org.apache.ofbiz.entity.model.*;
+import org.apache.ofbiz.entity.model.DynamicViewEntity;
+import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelRelation;
+import org.apache.ofbiz.entity.model.ModelViewEntity;
 import org.apache.ofbiz.service.LocalDispatcher;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class DynamicViewHolder {
     private OfbizCsdlEntityType csdlEntityType;
@@ -62,7 +68,7 @@ public class DynamicViewHolder {
     public void addNavigationRelAlias(String navigationName) {
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(navigationName);
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-        addRelAlias(null, relAlias);
+        addRelAlias(null, relAlias, null);
     }
 
     /**
@@ -72,7 +78,7 @@ public class DynamicViewHolder {
         OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
         EntityTypeRelAlias relAlias = csdlProperty.getRelAlias();
         if (relAlias != null) {
-            return addRelAlias(null, relAlias);
+            return addRelAlias(null, relAlias, null);
         }
         return null;
     }
@@ -118,9 +124,10 @@ public class DynamicViewHolder {
     /**
      * @param firstCsdlEntityType 为空就是直接查询主对象的RelAlias字段, 不为空就是多段式的最后一个对象
      * @param relAlias relAlias
+     * @param entityAliasName 指定的entityAlias名称
      * @return 返回最后一个RelAlias的name
      */
-    public String addRelAlias(OfbizCsdlEntityType firstCsdlEntityType, EntityTypeRelAlias relAlias) {
+    public String addRelAlias(OfbizCsdlEntityType firstCsdlEntityType, EntityTypeRelAlias relAlias, String entityAliasName) {
         if (firstCsdlEntityType == null){
             firstCsdlEntityType = csdlEntityType;
         }
@@ -136,13 +143,17 @@ public class DynamicViewHolder {
             String relation = relations.get(i);
             ModelRelation modelRelation = relationsEntity.get(relation);
             String entityAlias = modelRelation.getModelEntity().getEntityName();
-            //也有可能是lambda变量来查询relAlias字段...
-            if (lambdaName.get(entityAlias) != null){
-                entityAlias = lambdaName.get(entityAlias);
+            if (UtilValidate.isNotEmpty(entityAliasName)) {
+                entityAlias = entityAliasName;
+            } else {
+                //也有可能是lambda变量查询relAlias字段
+                if (lambdaName.get(entityAlias) != null){
+                    entityAlias = lambdaName.get(entityAlias);
+                }
+                //加前缀 主对象除外，主对象也可能取了别名,所以取entityType的name
+                entityAlias = lastRalAlias != null ? lastRalAlias :
+                        entityAlias.equals(getMainEntityAlias()) ? firstCsdlEntityType.getName() : entityAlias;
             }
-            //加前缀 主对象除外，主对象也可能取了别名,所以取entityType的name
-            entityAlias = lastRalAlias != null ? lastRalAlias :
-                    entityAlias.equals(getMainEntityAlias()) ? firstCsdlEntityType.getName() : entityAlias;
             String relEntityAlias = modelRelation.getCombinedName();
             String relEntityName = modelRelation.getRelEntityName();
             //最后一个，可能是lambda
@@ -199,6 +210,7 @@ public class DynamicViewHolder {
         }
         OfbizCsdlEntityType currentCsdlEntityType = null;
         //这个for用来处理url中的多段式
+        String lastResourceParts = null;
         for (int i = 0; i < resourceParts.size(); i++) {
             if (i == 0) {
                 //第一个是主对象
@@ -227,8 +239,9 @@ public class DynamicViewHolder {
                 }
             }
             //处理 RelAlias
-            returnEntityAlias = addRelAlias(null, relAlias);
+            returnEntityAlias = addRelAlias(null, relAlias, lastResourceParts);
             currentCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+            lastResourceParts = relAlias.getName();
         }
         return returnEntityAlias;
     }
@@ -253,7 +266,7 @@ public class DynamicViewHolder {
             if (csdlProperty.getRelAlias() != null) {
                 //RelAlias字段
                 EntityTypeRelAlias relAlias = csdlProperty.getRelAlias();
-                addRelAlias(null, relAlias);
+                addRelAlias(null, relAlias, null);
                 List<String> relations = relAlias.getRelations();
                 //这个字段属于Relations最后一个Entity
                 String lastEntityAlias = relations.get(relations.size() - 1);

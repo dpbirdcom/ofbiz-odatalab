@@ -12,7 +12,6 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
-import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edmx.EdmxReference;
 import org.apache.olingo.commons.api.edmx.EdmxReferenceInclude;
@@ -25,9 +24,14 @@ import org.apache.olingo.server.api.etag.ServiceMetadataETagSupport;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.PushBuilder;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class AppOdataEvents {
     public static final String module = AppOdataEvents.class.getName();
@@ -370,5 +374,32 @@ public class AppOdataEvents {
         }
         return "success";
     }
+
+    public static String testStream(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("text/event-stream");
+        response.setCharacterEncoding("UTF-8");
+        PushBuilder pushBuilder = request.newPushBuilder();
+        if (pushBuilder != null) {
+            // 发送首次响应，通知客户端建立持久连接
+            pushBuilder.path("/stream").push();
+        }
+        try (PrintWriter writer = response.getWriter()) {
+            // 模拟每秒发送一次响应
+            for (int i = 0; i < 30; i++) {
+                String message = "当前时间是: " + UtilDateTime.nowTimestamp() + "\n\n";
+                writer.write(message);
+                writer.flush();
+                // 等待1秒
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        Debug.log(">>>>>>>>>>>>>>>>>>>>>>> ok ");
+        return "success";
+    }
+
 
 }
