@@ -537,7 +537,7 @@ public class ProcessorServices {
     }
 
     public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
-        runBefore(oDataContext, actionParameters, edmBindingTarget);
+//        runBefore(oDataContext, actionParameters, edmBindingTarget);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
