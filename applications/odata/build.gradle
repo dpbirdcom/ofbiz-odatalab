@@ -32,6 +32,8 @@ dependencies {
     pluginLibsRuntime 'org.apache.olingo:odata-server-core:4.9.0'
 	pluginLibsCompile 'org.apache.olingo:odata-server-api:4.9.0'
     pluginLibsRuntime 'org.apache.olingo:odata-server-api:4.9.0'
+    pluginLibsCompile 'org.reflections:reflections:0.9.12'
+    pluginLibsRuntime 'org.reflections:reflections:0.9.12'
 }
 
 task install {

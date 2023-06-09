@@ -1,6 +1,8 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
+import com.dpbird.odata.handler.annotation.HandlerEvent;
+import com.dpbird.odata.handler.draftEvent.NewEvent;
 import com.dpbird.odata.services.ProcessorServices;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
@@ -50,11 +52,13 @@ import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
+import org.reflections.Reflections;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.*;
@@ -2685,6 +2689,27 @@ public class Util {
             }
         }
         return map;
+    }
+
+
+    /**
+     * 获取注解类
+     *
+     * @param packageName 要扫描的包名
+     * @param annotation 要扫描的注解
+     * @return 所有匹配的Class
+     */
+    public static List<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation) {
+        List<Class<?>> result = new ArrayList<>();
+        Reflections reflections = new Reflections(packageName);
+        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(annotation);
+        for (Class<?> aClass : typesAnnotatedWith) {
+            boolean assignableFrom = NewEvent.class.isAssignableFrom(aClass);
+            if (assignableFrom) {
+                result.add(aClass);
+            }
+        }
+        return result;
     }
 
 }

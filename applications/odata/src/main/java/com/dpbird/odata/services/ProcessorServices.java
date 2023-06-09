@@ -5,6 +5,7 @@ import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
+import com.dpbird.odata.handler.annotation.HandlerEvent;
 import com.dpbird.odata.processor.DataModifyActions;
 import org.apache.fop.util.ListUtil;
 import org.apache.http.HttpStatus;
@@ -33,6 +34,8 @@ import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ODataResponse;
 
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -534,6 +537,7 @@ public class ProcessorServices {
     }
 
     public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
+        runBefore(oDataContext, actionParameters, edmBindingTarget);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -598,6 +602,7 @@ public class ProcessorServices {
                 null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
         //create cascade navigation
         createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId);
+        //TODO: after event
         return ofbizEntity;
     }
 
@@ -1111,6 +1116,25 @@ public class ProcessorServices {
             List<GenericValue> findResult = delegator.findByAnd(modelEntity.getEntityName(), primaryKey, null, true);
             return UtilValidate.isNotEmpty(findResult);
         } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    private static void runBefore(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws OfbizODataException {
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation("com.banfftech", HandlerEvent.class);
+        try {
+            for (Class<?> clazz : classesWithAnnotation) {
+                HandlerEvent annotation = clazz.getAnnotation(HandlerEvent.class);
+                String annotationEntity = annotation.entityType();
+                String annotationApp = annotation.edmApp();
+                if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
+                    Method method = clazz.getMethod("before", Map.class, Map.class, EdmBindingTarget.class);
+                    Object obj = clazz.getDeclaredConstructor().newInstance();
+                    method.invoke(obj, oDataContext, actionParameters, edmBindingTarget);
+                }
+            }
+        } catch (Exception e) {
             throw new OfbizODataException(e.getMessage());
         }
     }
