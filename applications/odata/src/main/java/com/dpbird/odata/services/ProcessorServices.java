@@ -6,12 +6,14 @@ import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
 import com.dpbird.odata.processor.DataModifyActions;
+import org.apache.fop.util.ListUtil;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
@@ -594,6 +596,8 @@ public class ProcessorServices {
                 draftGenericValue, (Locale) oDataContext.get("locale"));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
+        //create cascade navigation
+        createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId);
         return ofbizEntity;
     }
 
@@ -765,6 +769,54 @@ public class ProcessorServices {
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
             throw new OfbizODataException(String.valueOf(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode()), e.getMessage());
+        }
+    }
+
+    private static void createCascade(Map<String, Object> oDataContext,OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType, String sapContextId) throws OfbizODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        for (CsdlNavigationProperty navigationProperty : csdlEntityType.getNavigationProperties()) {
+            OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) navigationProperty;
+            OfbizCsdlEntityType navOfbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+            ModelEntity modelEntity = delegator.getModelEntity(navOfbizCsdlEntityType.getOfbizEntity());
+            if (ofbizCsdlNavigationProperty.isCascade()) {
+                //关联字段
+                Map<String, Object> navProperties = new HashMap<>();
+                Map<String, Object> relatedConditionMap = Util.getRelatedConditionMap(ofbizCsdlNavigationProperty);
+                if (UtilValidate.isNotEmpty(relatedConditionMap)) {
+                    navProperties.putAll(relatedConditionMap);
+                }
+                Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, csdlEntityType.getOfbizEntity(), ofbizCsdlNavigationProperty, Util.entityToMap(ofbizEntity), edmProvider);
+                if (UtilValidate.isNotEmpty(relatedFieldMap)) {
+                    navProperties.putAll(relatedFieldMap);
+                }
+                //default value
+                for (Map.Entry<String, Object> entry : navOfbizCsdlEntityType.getDefaultValueProperties().entrySet()) {
+                    navProperties.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                //补充seqId
+                DraftReaderAndWriter.addDraftNextSeqId(delegator, navOfbizCsdlEntityType, navProperties);
+                //补充fromDate
+                Util.makeupFromDate(navProperties, modelEntity);
+                //如果是单主键并且不存在这个值 获取一个自增主键
+                if (modelEntity.getPkFieldNames().size() == 1) {
+                    CsdlPropertyRef csdlPropertyRef = navOfbizCsdlEntityType.getKey().get(0);
+                    Object primaryKeyValue = navProperties.get(csdlPropertyRef.getName());
+                    if (UtilValidate.isEmpty(primaryKeyValue)) {
+                        String pkValue = "ID" + delegator.getNextSeqId(modelEntity.getEntityName());
+                        navProperties.put(csdlPropertyRef.getName(), pkValue);
+                    }
+                }
+                Map<String, Object> primaryKey = new HashMap<>();
+                //获取主键
+                for (CsdlPropertyRef csdlPropertyRef : navOfbizCsdlEntityType.getKey()) {
+                    Object key = navProperties.get(csdlPropertyRef.getName());
+                    if (UtilValidate.isNotEmpty(key)) {
+                        primaryKey.put(csdlPropertyRef.getName(), key);
+                    }
+                }
+                Util.createNavDraftData(oDataContext, sapContextId,  primaryKey,  navigationProperty.getName(), navProperties);
+            }
         }
     }
 

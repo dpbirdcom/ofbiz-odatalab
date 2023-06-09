@@ -431,7 +431,7 @@ public class DraftReaderAndWriter {
     /**
      * 再向Draft添加数据时 获取一个SeqId
      */
-    private void addDraftNextSeqId(Delegator delegator, OfbizCsdlEntityType ofbizCsdlEntityType, Map<String, Object> fieldMap) {
+    public static void addDraftNextSeqId(Delegator delegator, OfbizCsdlEntityType ofbizCsdlEntityType, Map<String, Object> fieldMap) {
         //位数
         final int numericPadding = 5;
         //递增数
