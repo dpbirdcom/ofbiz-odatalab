@@ -1,5 +1,6 @@
 package com.dpbird.odata.handler.draftEvent;
 
+import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 
@@ -13,7 +14,7 @@ import java.util.Map;
  */
 public interface NewEvent {
 
-    void before(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget);
+    void before(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws OfbizODataException;
 
-    void after(OdataOfbizEntity ofbizEntity);
+    void after(OdataOfbizEntity ofbizEntity) throws OfbizODataException;
 }
