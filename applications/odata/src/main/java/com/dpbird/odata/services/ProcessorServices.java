@@ -1135,6 +1135,9 @@ public class ProcessorServices {
                 }
             }
         } catch (Exception e) {
+            if (e.getCause() instanceof OfbizODataException) {
+                throw (OfbizODataException) e.getCause();
+            }
             throw new OfbizODataException(e.getMessage());
         }
     }
