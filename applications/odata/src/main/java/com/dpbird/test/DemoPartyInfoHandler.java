@@ -21,16 +21,16 @@ import java.util.Map;
  * @date 2022/11/7
  */
 public class DemoPartyInfoHandler extends DefaultEntityHandler {
-    @Override
-    public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) {
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("partyId", primaryKey.get("partyId"));
-        resultMap.put("displayName", "testName_" + primaryKey.get("partyId"));
-        return resultMap;
-    }
+//    @Override
+//    public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) {
+//        Map<String, Object> resultMap = new HashMap<>();
+//        resultMap.put("partyId", primaryKey.get("partyId"));
+//        resultMap.put("displayName", "testName_" + primaryKey.get("partyId"));
+//        return resultMap;
+//    }
 
     @Override
-    public HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOption, Map<String, Object> navigationParam) throws OfbizODataException {
+    public HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> pk, Map<String, QueryOption> queryOption, Map<String, Object> navigationParam) throws OfbizODataException {
         List<Map<String, Object>> resultList = new ArrayList<>();
         if (UtilValidate.isEmpty(navigationParam)) {
             for (int i = 0; i < 5; i++) {

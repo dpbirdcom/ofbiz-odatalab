@@ -23,19 +23,20 @@ import java.util.Map;
  * @date 2022/11/7
  */
 public class DemoSimpleFacilityHandler extends DefaultEntityHandler {
-    @Override
-    public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) throws OfbizODataException {
-        try {
-            Delegator delegator = (Delegator) odataContext.get("delegator");
-            return EntityQuery.use(delegator).from("Facility").where(primaryKey).queryOne();
-        } catch (GenericEntityException e) {
-            throw new OfbizODataException(e.getMessage());
-        }
-    }
+//    @Override
+//    public Map<String, Object> findOne(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey) throws OfbizODataException {
+//        try {
+//            Delegator delegator = (Delegator) odataContext.get("delegator");
+//            return EntityQuery.use(delegator).from("Facility").where(primaryKey).queryOne();
+//        } catch (GenericEntityException e) {
+//            throw new OfbizODataException(e.getMessage());
+//        }
+//    }
 
 
     @Override
-    public HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions,  Map<String, Object> navigationParam) throws OfbizODataException {
+    public HandlerResults findList(Map<String, Object> odataContext, EdmBindingTarget edmBindingTarget, Map<String, Object> primaryKey,
+                                   Map<String, QueryOption> queryOptions, Map<String, Object> navigationParam) throws OfbizODataException {
         try {
             Delegator delegator = (Delegator) odataContext.get("delegator");
             List<GenericValue> genericValueList = EntityQuery.use(delegator).from("Facility").queryList();

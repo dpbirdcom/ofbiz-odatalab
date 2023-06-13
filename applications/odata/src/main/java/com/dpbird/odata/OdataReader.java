@@ -93,10 +93,11 @@ public class OdataReader extends OfbizOdataProcessor {
         //从接口实例中读取数据
         EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
-        Map<String, Object> resultMap = entityHandler.findOne(odataContext, edmEntitySet, keyMap);
-        if (UtilValidate.isEmpty(resultMap)) {
+        HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, keyMap, null, null);
+        if (UtilValidate.isEmpty(results) || UtilValidate.isEmpty(results.getResultData())) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Not found.");
         }
+        Map<String, Object> resultMap = results.getResultData().get(0);
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, resultMap);
         entity.addOdataParts(new OdataParts(edmEntitySet, edmEntityType, null, entity));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
@@ -127,7 +128,7 @@ public class OdataReader extends OfbizOdataProcessor {
         } else {
             //从接口实例获取数据
             EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
-            HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, queryOptions, null);
+            HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, null, queryOptions, null);
             entityCollection.setCount(results.getResultCount());
             for (Map<String, Object> result : results.getResultData()) {
                 OdataOfbizEntity resultToEntity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, result);
@@ -305,7 +306,7 @@ public class OdataReader extends OfbizOdataProcessor {
         navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
-        HandlerResults handlerList = entityHandler.findList(odataContext, null, queryOptions, navigationParam);
+        HandlerResults handlerList = entityHandler.findList(odataContext, null, null,  queryOptions, navigationParam);
         List<? extends Map<String, Object>> resultData = handlerList.getResultData();
         if (resultData == null) {
             return null;
@@ -345,7 +346,7 @@ public class OdataReader extends OfbizOdataProcessor {
         navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler navEntityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
-        HandlerResults results = navEntityHandler.findList(odataContext, null, queryOptions, navigationParam);
+        HandlerResults results = navEntityHandler.findList(odataContext, null, null, queryOptions, navigationParam);
         if (UtilValidate.isEmpty(results) || UtilValidate.isEmpty(results.getResultData())) {
             return entityCollection;
         }

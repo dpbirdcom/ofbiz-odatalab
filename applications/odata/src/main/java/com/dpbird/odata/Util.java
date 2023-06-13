@@ -1,8 +1,6 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
-import com.dpbird.odata.handler.annotation.HandlerEvent;
-import com.dpbird.odata.handler.draftEvent.NewEvent;
 import com.dpbird.odata.services.ProcessorServices;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
@@ -16,7 +14,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.base.util.collections.ResourceBundleMapWrapper;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntity;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.*;
@@ -39,7 +36,6 @@ import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.ex.ODataRuntimeException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
-import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDateTimeOffset;
 import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
@@ -2697,16 +2693,19 @@ public class Util {
      *
      * @param packageName 要扫描的包名
      * @param annotation 要扫描的注解
+     * @param implInterface 实现接口
      * @return 所有匹配的Class
      */
-    public static List<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation) {
+    public static List<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation, Class<?> implInterface) {
         List<Class<?>> result = new ArrayList<>();
         Reflections reflections = new Reflections(packageName);
         Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(annotation);
         for (Class<?> aClass : typesAnnotatedWith) {
-            boolean assignableFrom = NewEvent.class.isAssignableFrom(aClass);
-            if (assignableFrom) {
-                result.add(aClass);
+            if (UtilValidate.isNotEmpty(implInterface)) {
+                boolean assignableFrom = implInterface.isAssignableFrom(aClass);
+                if (assignableFrom) {
+                    result.add(aClass);
+                }
             }
         }
         return result;
