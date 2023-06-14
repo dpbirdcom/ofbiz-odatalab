@@ -611,7 +611,7 @@ public class ProcessorServices {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
         //create cascade navigation
-        createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId);
+        createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId, actionParameters);
         //后置处理
         runAfter(oDataContext, ofbizEntity, edmBindingTarget, DraftNewAfter.class, NEW_AFTER_METHOD);
         return ofbizEntity;
@@ -792,7 +792,8 @@ public class ProcessorServices {
         }
     }
 
-    private static void createCascade(Map<String, Object> oDataContext,OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType, String sapContextId) throws OfbizODataException {
+    private static void createCascade(Map<String, Object> oDataContext,OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType,
+                                      String sapContextId, Map<String, Object> actionParameters) throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         for (CsdlNavigationProperty navigationProperty : csdlEntityType.getNavigationProperties()) {
@@ -809,6 +810,12 @@ public class ProcessorServices {
                 Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, csdlEntityType.getOfbizEntity(), ofbizCsdlNavigationProperty, Util.entityToMap(ofbizEntity), edmProvider);
                 if (UtilValidate.isNotEmpty(relatedFieldMap)) {
                     navProperties.putAll(relatedFieldMap);
+                }
+                //action参数
+                for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
+                    if (UtilValidate.isNotEmpty(navOfbizCsdlEntityType.getProperty(entry.getKey()))) {
+                        navProperties.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
                 }
                 //default value
                 for (Map.Entry<String, Object> entry : navOfbizCsdlEntityType.getDefaultValueProperties().entrySet()) {

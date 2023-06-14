@@ -2,10 +2,12 @@ package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
 import com.dpbird.odata.processor.DataModifyActions;
-import org.apache.ofbiz.base.util.*;
+import org.apache.ofbiz.base.util.Debug;
+import org.apache.ofbiz.base.util.UtilDateTime;
+import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
-import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.ofbiz.entity.model.*;
@@ -24,9 +26,9 @@ import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlEnumMember;
 import org.apache.olingo.commons.api.edm.provider.CsdlEnumType;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
-import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
-import org.apache.olingo.server.api.*;
+import org.apache.olingo.server.api.ODataRequest;
+import org.apache.olingo.server.api.ODataResponse;
 import org.apache.olingo.server.api.uri.UriHelper;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.UriParameter;
@@ -42,8 +44,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class OdataProcessorHelper {
@@ -92,6 +92,7 @@ public class OdataProcessorHelper {
             throws OfbizODataException {
         // String entityName = edmEntityType.getName();
         Delegator delegator = (Delegator) odataContext.get("delegator");
+        GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         String sapContextId = (String) odataContext.get("sapContextId");
         GenericValue genericValue = null;
@@ -102,7 +103,10 @@ public class OdataProcessorHelper {
                 conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
             }
             EntityCondition queryCondition = EntityCondition.makeCondition(conditionMap);
-            queryCondition = Util.appendCondition(queryCondition, csdlEntityType.getEntityCondition());
+            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+                Map<String, Object> entityTypeCondition = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+                queryCondition = Util.appendCondition(queryCondition, EntityCondition.makeCondition(entityTypeCondition));
+            }
             genericValue = EntityQuery.use(delegator).from(entityNameToFind).where(queryCondition).queryFirst();
         } catch (GenericEntityException e) {
             e.printStackTrace();
@@ -744,7 +748,7 @@ public class OdataProcessorHelper {
     }
 
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
-                                                  OfbizCsdlEntityType csdlEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
+                                                  OfbizCsdlEntityType csdlEntityType, Entity entityToCreate,
                                                   OfbizAppEdmProvider edmProvider, GenericValue userLogin)
             throws OfbizODataException {
         GenericValue newGenericValue = null;
@@ -803,7 +807,7 @@ public class OdataProcessorHelper {
      * @return serviceResult
      */
     public static Map<String, Object> createAttrGenericValue(OfbizCsdlEntityType
-                                                                     csdlEntityType, org.apache.olingo.commons.api.data.Entity entityToCreate,
+                                                                     csdlEntityType, Entity entityToCreate,
                                                              GenericValue userLogin, Map<String, Object> pkMap, LocalDispatcher dispatcher) throws
             OfbizODataException {
         //获取Attribute service

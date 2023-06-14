@@ -529,7 +529,8 @@ public class OdataReader extends OfbizOdataProcessor {
             if (navCsdlEntityType.getEntityCondition() != null) {
                 if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
                     //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
-                    condition = Util.appendCondition(condition, navCsdlEntityType.getEntityCondition());
+                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
+                    condition = Util.appendCondition(condition, EntityCondition.makeCondition(entityTypeCondition));
                 } else {
                     Debug.logWarning("The EntityType condition is not supported", module);
                 }
