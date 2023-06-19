@@ -12,5 +12,5 @@ import java.util.Map;
  * @date 2023/6/9
  */
 public interface DraftSaveAfter {
-    void saveAfter(Map<String, Object> oDataContext, OdataOfbizEntity ofbizEntity) throws OfbizODataException;
+    void saveAfter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, OdataOfbizEntity ofbizEntity) throws OfbizODataException;
 }

@@ -613,7 +613,7 @@ public class ProcessorServices {
         //create cascade navigation
         createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId, actionParameters);
         //后置处理
-        runAfter(oDataContext, ofbizEntity, edmBindingTarget, DraftNewAfter.class, NEW_AFTER_METHOD);
+        runAfter(oDataContext, actionParameters, ofbizEntity, edmBindingTarget, DraftNewAfter.class, NEW_AFTER_METHOD);
         return ofbizEntity;
     }
 
@@ -715,7 +715,7 @@ public class ProcessorServices {
         OdataProcessorHelper.appendNonEntityFields(null, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(updatedEntity), locale, userLogin);
         //执行后置处理
-        runAfter(oDataContext, updatedEntity, edmBindingTarget, DraftSaveAfter.class, SAVE_AFTER_METHOD);
+        runAfter(oDataContext, actionParameters, updatedEntity, edmBindingTarget, DraftSaveAfter.class, SAVE_AFTER_METHOD);
         return updatedEntity;
     }
 
@@ -1171,7 +1171,7 @@ public class ProcessorServices {
     /**
      * 执行后置处理
      */
-    private static void runAfter(Map<String, Object> oDataContext, OdataOfbizEntity ofbizEntity, EdmBindingTarget edmBindingTarget,
+    private static void runAfter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, OdataOfbizEntity ofbizEntity, EdmBindingTarget edmBindingTarget,
                                  Class<?> implInterface, String methodName) throws OfbizODataException {
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, HandlerEvent.class, implInterface);
@@ -1181,9 +1181,9 @@ public class ProcessorServices {
                 String annotationEntity = annotation.entityType();
                 String annotationApp = annotation.edmApp();
                 if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
-                    Method method = clazz.getMethod(methodName, Map.class, OdataOfbizEntity.class);
+                    Method method = clazz.getMethod(methodName, Map.class, Map.class, OdataOfbizEntity.class);
                     Object obj = clazz.getDeclaredConstructor().newInstance();
-                    method.invoke(obj, oDataContext, ofbizEntity);
+                    method.invoke(obj, oDataContext, actionParameters, ofbizEntity);
                 }
             }
         } catch (Exception e) {
