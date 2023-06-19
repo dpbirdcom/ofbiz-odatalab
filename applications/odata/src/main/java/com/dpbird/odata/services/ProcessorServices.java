@@ -48,8 +48,8 @@ public class ProcessorServices {
 
     public final static String module = ProcessorServices.class.getName();
     //自定义Event注解要扫描的路径
-    public final static String PACKAGE_NAME = "com.dpbird";
-//    public final static String PACKAGE_NAME = "com.banfftech";
+//    public final static String PACKAGE_NAME = "com.dpbird";
+    public final static String PACKAGE_NAME = "com.banfftech";
 
     private final static String NEW_BEFORE_METHOD = "newBefore";
     private final static String NEW_AFTER_METHOD = "newAfter";
