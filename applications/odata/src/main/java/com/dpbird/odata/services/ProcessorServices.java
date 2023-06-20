@@ -5,9 +5,17 @@ import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
+import com.dpbird.odata.handler.annotation.HandlerEvent;
+import com.dpbird.odata.handler.draftEvent.DraftNewAfter;
+import com.dpbird.odata.handler.draftEvent.DraftNewBefore;
+import com.dpbird.odata.handler.draftEvent.DraftSaveAfter;
+import com.dpbird.odata.handler.draftEvent.DraftSaveBefore;
 import com.dpbird.odata.processor.DataModifyActions;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.*;
+import org.apache.ofbiz.base.util.UtilDateTime;
+import org.apache.ofbiz.base.util.UtilGenerics;
+import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
@@ -23,7 +31,6 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
-import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
@@ -31,7 +38,7 @@ import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ODataResponse;
 
 import javax.servlet.http.HttpServletRequest;
-import java.nio.ByteBuffer;
+import java.lang.reflect.Method;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
@@ -40,6 +47,14 @@ public class ProcessorServices {
 
 
     public final static String module = ProcessorServices.class.getName();
+    //自定义Event注解要扫描的路径
+//    public final static String PACKAGE_NAME = "com.dpbird";
+    public final static String PACKAGE_NAME = "com.banfftech";
+
+    private final static String NEW_BEFORE_METHOD = "newBefore";
+    private final static String NEW_AFTER_METHOD = "newAfter";
+    private final static String SAVE_BEFORE_METHOD = "saveBefore";
+    private final static String SAVE_AFTER_METHOD = "saveAfter";
 
     public static Map<String, Object> createEntity(DispatchContext dctx, Map<String, Object> context)
             throws OfbizODataException, ODataApplicationException {
@@ -532,6 +547,7 @@ public class ProcessorServices {
     }
 
     public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
+        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftNewBefore.class, NEW_BEFORE_METHOD);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -594,6 +610,10 @@ public class ProcessorServices {
                 draftGenericValue, (Locale) oDataContext.get("locale"));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(ofbizEntity), (Locale) oDataContext.get("locale"), userLogin);
+        //create cascade navigation
+        createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId, actionParameters);
+        //后置处理
+        runAfter(oDataContext, actionParameters, ofbizEntity, edmBindingTarget, DraftNewAfter.class, NEW_AFTER_METHOD);
         return ofbizEntity;
     }
 
@@ -664,6 +684,8 @@ public class ProcessorServices {
 
     // saveAction will load data from mem database and store into real database
     public static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws ODataException {
+        //执行前置处理
+        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftSaveBefore.class, SAVE_BEFORE_METHOD);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -692,6 +714,8 @@ public class ProcessorServices {
                 mainGenericValue, (Locale) oDataContext.get("locale"));
         OdataProcessorHelper.appendNonEntityFields(null, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(updatedEntity), locale, userLogin);
+        //执行后置处理
+        runAfter(oDataContext, actionParameters, updatedEntity, edmBindingTarget, DraftSaveAfter.class, SAVE_AFTER_METHOD);
         return updatedEntity;
     }
 
@@ -765,6 +789,61 @@ public class ProcessorServices {
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
             throw new OfbizODataException(String.valueOf(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode()), e.getMessage());
+        }
+    }
+
+    private static void createCascade(Map<String, Object> oDataContext,OdataOfbizEntity ofbizEntity, OfbizCsdlEntityType csdlEntityType,
+                                      String sapContextId, Map<String, Object> actionParameters) throws OfbizODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        for (CsdlNavigationProperty navigationProperty : csdlEntityType.getNavigationProperties()) {
+            OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) navigationProperty;
+            OfbizCsdlEntityType navOfbizCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
+            ModelEntity modelEntity = delegator.getModelEntity(navOfbizCsdlEntityType.getOfbizEntity());
+            if (ofbizCsdlNavigationProperty.isCascade()) {
+                //关联字段
+                Map<String, Object> navProperties = new HashMap<>();
+                Map<String, Object> relatedConditionMap = Util.getRelatedConditionMap(ofbizCsdlNavigationProperty);
+                if (UtilValidate.isNotEmpty(relatedConditionMap)) {
+                    navProperties.putAll(relatedConditionMap);
+                }
+                Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, csdlEntityType.getOfbizEntity(), ofbizCsdlNavigationProperty, Util.entityToMap(ofbizEntity), edmProvider);
+                if (UtilValidate.isNotEmpty(relatedFieldMap)) {
+                    navProperties.putAll(relatedFieldMap);
+                }
+                //action参数
+                for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
+                    if (UtilValidate.isNotEmpty(navOfbizCsdlEntityType.getProperty(entry.getKey()))) {
+                        navProperties.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
+                }
+                //default value
+                for (Map.Entry<String, Object> entry : navOfbizCsdlEntityType.getDefaultValueProperties().entrySet()) {
+                    navProperties.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                //补充seqId
+                DraftReaderAndWriter.addDraftNextSeqId(delegator, navOfbizCsdlEntityType, navProperties);
+                //补充fromDate
+                Util.makeupFromDate(navProperties, modelEntity);
+                //如果是单主键并且不存在这个值 获取一个自增主键
+                if (modelEntity.getPkFieldNames().size() == 1) {
+                    CsdlPropertyRef csdlPropertyRef = navOfbizCsdlEntityType.getKey().get(0);
+                    Object primaryKeyValue = navProperties.get(csdlPropertyRef.getName());
+                    if (UtilValidate.isEmpty(primaryKeyValue)) {
+                        String pkValue = "ID" + delegator.getNextSeqId(modelEntity.getEntityName());
+                        navProperties.put(csdlPropertyRef.getName(), pkValue);
+                    }
+                }
+                Map<String, Object> primaryKey = new HashMap<>();
+                //获取主键
+                for (CsdlPropertyRef csdlPropertyRef : navOfbizCsdlEntityType.getKey()) {
+                    Object key = navProperties.get(csdlPropertyRef.getName());
+                    if (UtilValidate.isNotEmpty(key)) {
+                        primaryKey.put(csdlPropertyRef.getName(), key);
+                    }
+                }
+                Util.createNavDraftData(oDataContext, sapContextId,  primaryKey,  navigationProperty.getName(), navProperties);
+            }
         }
     }
 
@@ -1059,6 +1138,58 @@ public class ProcessorServices {
             List<GenericValue> findResult = delegator.findByAnd(modelEntity.getEntityName(), primaryKey, null, true);
             return UtilValidate.isNotEmpty(findResult);
         } catch (GenericEntityException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    /**
+     * 执行前置处理
+     */
+    private static void runBefore(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget,
+                                  Class<?> implInterface, String methodName) throws OfbizODataException {
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, HandlerEvent.class, implInterface);
+        try {
+            for (Class<?> clazz : classesWithAnnotation) {
+                HandlerEvent annotation = clazz.getAnnotation(HandlerEvent.class);
+                String annotationEntity = annotation.entityType();
+                String annotationApp = annotation.edmApp();
+                if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
+                    Method method = clazz.getMethod(methodName, Map.class, Map.class, EdmBindingTarget.class);
+                    Object obj = clazz.getDeclaredConstructor().newInstance();
+                    method.invoke(obj, oDataContext, actionParameters, edmBindingTarget);
+                }
+            }
+        } catch (Exception e) {
+            if (e.getCause() instanceof OfbizODataException) {
+                throw (OfbizODataException) e.getCause();
+            }
+            throw new OfbizODataException(e.getMessage());
+        }
+    }
+
+    /**
+     * 执行后置处理
+     */
+    private static void runAfter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, OdataOfbizEntity ofbizEntity, EdmBindingTarget edmBindingTarget,
+                                 Class<?> implInterface, String methodName) throws OfbizODataException {
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, HandlerEvent.class, implInterface);
+        try {
+            for (Class<?> clazz : classesWithAnnotation) {
+                HandlerEvent annotation = clazz.getAnnotation(HandlerEvent.class);
+                String annotationEntity = annotation.entityType();
+                String annotationApp = annotation.edmApp();
+                if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
+                    Method method = clazz.getMethod(methodName, Map.class, Map.class, OdataOfbizEntity.class);
+                    Object obj = clazz.getDeclaredConstructor().newInstance();
+                    method.invoke(obj, oDataContext, actionParameters, ofbizEntity);
+                }
+            }
+        } catch (Exception e) {
+            if (e.getCause() instanceof OfbizODataException) {
+                throw (OfbizODataException) e.getCause();
+            }
             throw new OfbizODataException(e.getMessage());
         }
     }

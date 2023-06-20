@@ -449,7 +449,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             OfbizCsdlEntityType lastCsdlEntity = cloneCsdlEntityType(navCsdlEntityType);
             OfbizCsdlProperty currProperty = (OfbizCsdlProperty) lastCsdlEntity.getProperty(propertyName);
             EntityTypeRelAlias relAlias = currProperty.getRelAlias();
-            dynamicViewHolder.addRelAlias(lastCsdlEntity, relAlias, null);
+            dynamicViewHolder.addRelAlias(lastCsdlEntity, relAlias, lastAlias);
             List<String> relations = relAlias.getRelations();
             String relPropertyName = dynamicViewHolder.addFilterProperty(relations.get(relations.size() - 1), currProperty.getOfbizFieldName());
             dynamicViewHolder.edmPropertyMap.put(relPropertyName, property);

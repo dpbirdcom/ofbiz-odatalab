@@ -1,11 +1,9 @@
 package com.dpbird.odata.edm;
 
-import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.entity.condition.*;
+import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class OfbizCsdlNavigationProperty extends CsdlNavigationProperty {
@@ -24,6 +22,7 @@ public class OfbizCsdlNavigationProperty extends CsdlNavigationProperty {
     private String handler;
     private String handlerNode;
     private boolean preCreate;
+    private boolean cascade;
 
     public boolean isAutoBinding() {
         return autoBinding;
@@ -145,4 +144,15 @@ public class OfbizCsdlNavigationProperty extends CsdlNavigationProperty {
         this.preCreate = preCreate;
     }
 
+    public boolean isPreCreate() {
+        return preCreate;
+    }
+
+    public boolean isCascade() {
+        return cascade;
+    }
+
+    public void setCascade(boolean cascade) {
+        this.cascade = cascade;
+    }
 }

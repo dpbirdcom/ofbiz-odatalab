@@ -14,7 +14,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.base.util.collections.ResourceBundleMapWrapper;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntity;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.*;
@@ -37,7 +36,6 @@ import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.apache.olingo.commons.api.ex.ODataRuntimeException;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
-import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDateTimeOffset;
 import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
@@ -50,11 +48,13 @@ import org.apache.olingo.server.api.uri.queryoption.apply.GroupBy;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.apache.olingo.server.api.uri.queryoption.expression.Member;
+import org.reflections.Reflections;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.*;
@@ -2685,6 +2685,30 @@ public class Util {
             }
         }
         return map;
+    }
+
+
+    /**
+     * 获取注解类
+     *
+     * @param packageName 要扫描的包名
+     * @param annotation 要扫描的注解
+     * @param implInterface 实现接口
+     * @return 所有匹配的Class
+     */
+    public static List<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation, Class<?> implInterface) {
+        List<Class<?>> result = new ArrayList<>();
+        Reflections reflections = new Reflections(packageName);
+        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(annotation);
+        for (Class<?> aClass : typesAnnotatedWith) {
+            if (UtilValidate.isNotEmpty(implInterface)) {
+                boolean assignableFrom = implInterface.isAssignableFrom(aClass);
+                if (assignableFrom) {
+                    result.add(aClass);
+                }
+            }
+        }
+        return result;
     }
 
 }

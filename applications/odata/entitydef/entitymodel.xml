@@ -401,13 +401,6 @@ under the License.
     	</relation>
     </entity>
 
-    <entity entity-name="OdataApp" package-name="com.dpbird.odata">
-        <field name="appId" type="id"></field>
-        <field name="appName" type="name"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="appId"/>
-    </entity>
-
     <entity entity-name="EdmConfig" package-name="com.dpbird.odata">
         <field name="edmConfigId" type="id"></field>
         <field name="appId" type="id"></field>
@@ -740,12 +733,47 @@ under the License.
         </relation>
     </entity>
 
-    <entity entity-name="TestEntity"
+    <entity entity-name="OdataApp" package-name="com.dpbird.odata">
+        <field name="appId" type="id"/>
+        <field name="appName" type="name"/>
+        <field name="description" type="description"/>
+        <prim-key field="appId"/>
+    </entity>
+
+    <entity entity-name="Tiles" package-name="com.dpbird.odata">
+        <field name="tilesId" type="id"/>
+        <field name="description" type="description"/>
+        <prim-key field="tilesId"/>
+    </entity>
+
+    <entity entity-name="OdataAppPermission"
             package-name="com.dpbird.odata"
-            title="TestEntity">
-        <field name="testId" type="id"/>
-        <field name="testField" type="id"/>
-        <prim-key field="testId"/>
+            title="Odata service permissions">
+        <field name="appId" type="id"/>
+        <field name="permissionId" type="id"/>
+        <prim-key field="appId"/>
+        <prim-key field="permissionId"/>
+        <relation type="one" rel-entity-name="OdataApp">
+            <key-map field-name="appId"/>
+        </relation>
+        <relation type="one" rel-entity-name="SecurityPermission">
+            <key-map field-name="permissionId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="TilesPermission"
+            package-name="com.dpbird.odata"
+            title="Tiles permissions">
+        <field name="tilesId" type="id"/>
+        <field name="permissionId" type="id"/>
+        <prim-key field="tilesId"/>
+        <prim-key field="permissionId"/>
+        <relation type="one" rel-entity-name="Tiles">
+            <key-map field-name="tilesId"/>
+        </relation>
+        <relation type="one" rel-entity-name="SecurityPermission">
+            <key-map field-name="permissionId"/>
+        </relation>
     </entity>
 
 

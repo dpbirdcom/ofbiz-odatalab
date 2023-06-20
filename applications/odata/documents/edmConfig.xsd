@@ -126,6 +126,7 @@
             <xs:attribute name="ReadOnly" type="xs:boolean"/>
             <xs:attribute name="HandlerNode" type="xs:anyURI"/>
             <xs:attribute name="PreCreate" type="xs:boolean"/>
+            <xs:attribute name="Cascade" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="EnumType">
