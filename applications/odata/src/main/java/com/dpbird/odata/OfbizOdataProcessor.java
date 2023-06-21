@@ -515,26 +515,31 @@ public class OfbizOdataProcessor {
                 AggregateExpression.StandardMethod standardMethod = aggregateExpression.getStandardMethod();
                 //返回字段别名
                 String expressionAlias = aggregateExpression.getAlias();
-                if (UtilValidate.isNotEmpty(standardMethod)) {
-                    //expression 字段名称或者子对象名称
-                    String expression = aggregateExpression.getExpression().toString();
-                    expression = expression.substring(1, expression.length() - 1);
-                    if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
-                        List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
-                        if (relationKeyList.size() > 1) {
-                            throw new OfbizODataException("Multiple field association is not supported.");
-                        }
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relationKeyList.get(0), null, false, null, AGGREGATE_MAP.get(standardMethod));
-                    } else {
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
-                    }
-                } else if (Util.isAggregateCount(aggregateExpression)) {
+                if (Util.isAggregateCount(aggregateExpression)) {
                     //这里处理aggregate的$count，使用统计主键数量的方式实现，多主键暂不支持
                     List<String> pkFieldNames = modelEntity.getPkFieldNames();
                     if (pkFieldNames.size() > 1) {
                         throw new OfbizODataException("Count queries with multiple primary keys are not supported.");
                     }
                     dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, modelEntity.getFirstPkFieldName(), null, false, null, "count");
+                } else {
+                    if (UtilValidate.isNotEmpty(standardMethod)) {
+                        //expression 字段名称或者子对象名称
+                        String expression = aggregateExpression.getExpression().toString();
+                        expression = expression.substring(1, expression.length() - 1);
+                        if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
+                            List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
+                            if (relationKeyList.size() > 1) {
+                                throw new OfbizODataException("Multiple field association is not supported.");
+                            }
+                            dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relationKeyList.get(0), null, false, null, AGGREGATE_MAP.get(standardMethod));
+                        } else {
+                            dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
+                        }
+                    } else {
+                        //default sum
+                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expressionAlias, null, false, null, "sum");
+                    }
                 }
                 if (applySelect == null) {
                     applySelect = new HashSet<>();

@@ -103,7 +103,8 @@ public class OdataProcessorHelper {
                 conditionMap = UtilMisc.toMap("draftUUID", keyMap.get("id"));
             }
             EntityCondition queryCondition = EntityCondition.makeCondition(conditionMap);
-            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr()) && !csdlEntityType.getEntityConditionStr().contains("/")) {
+                Debug.logWarning("Multi-segment conditions are not currently supported", module);
                 Map<String, Object> entityTypeCondition = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
                 queryCondition = Util.appendCondition(queryCondition, EntityCondition.makeCondition(entityTypeCondition));
             }
