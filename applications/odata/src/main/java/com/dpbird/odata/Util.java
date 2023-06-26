@@ -2062,15 +2062,16 @@ public class Util {
         return new EntityConditionList<>(entityConditionList, operator);
     }
 
-    public static Object parseVariable(String valueStr, GenericValue object) {
-        if (valueStr.contains("${")) {
+    public static Object parseVariable(Object valueObj, GenericValue object) {
+        if (valueObj.toString().contains("${")) {
             if (object == null) {
-                return valueStr;
+                return valueObj;
             }
-            String valueField = valueStr.substring(valueStr.indexOf('.') + 1, valueStr.length() - 1);
+            String strValue = valueObj.toString();
+            String valueField = strValue.substring(strValue.indexOf('.') + 1, strValue.length() - 1);
             return object.get(valueField);
         } else {
-            return valueStr;
+            return valueObj;
         }
     }
 
