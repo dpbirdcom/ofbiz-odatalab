@@ -2026,7 +2026,7 @@ public class Util {
                     String key = keyValue[0].trim();
                     String valueStr = keyValue[1].trim();
                     String realValue = "null".equals(valueStr) ?
-                            null : parseVariable(valueStr, userLogin);
+                            null : (String) parseVariable(valueStr, userLogin);
                     entityCondition = EntityCondition.makeCondition(key, EntityOperator.NOT_EQUAL, realValue);
                 }
             } else if (expression.contains("=")) {
@@ -2035,7 +2035,7 @@ public class Util {
                     String key = keyValue[0].trim();
                     String valueStr = keyValue[1].trim();
                     String realValue = "null".equals(valueStr) ?
-                            null : parseVariable(valueStr, userLogin);
+                            null : (String) parseVariable(valueStr, userLogin);
                     entityCondition = EntityCondition.makeCondition(key, realValue);
                 }
             } else if (expression.contains(" not in ")) {
@@ -2062,13 +2062,13 @@ public class Util {
         return new EntityConditionList<>(entityConditionList, operator);
     }
 
-    public static String parseVariable(String valueStr, GenericValue object) {
+    public static Object parseVariable(String valueStr, GenericValue object) {
         if (valueStr.contains("${")) {
             if (object == null) {
                 return valueStr;
             }
             String valueField = valueStr.substring(valueStr.indexOf('.') + 1, valueStr.length() - 1);
-            return object.getString(valueField);
+            return object.get(valueField);
         } else {
             return valueStr;
         }
@@ -2092,7 +2092,7 @@ public class Util {
                 if (UtilValidate.isNotEmpty(keyValue)) {
                     String key = keyValue[0].trim();
                     String valueStr = keyValue[1].trim();
-                    String realValue = parseVariable(valueStr, userLogin);
+                    String realValue = (String) parseVariable(valueStr, userLogin);
                     conditionMap.put(key, realValue);
                 }
             } else {

@@ -252,7 +252,7 @@ public class OfbizOdataProcessor {
                     String[] condition;
                     if (fieldCondition.contains("!=")) {
                         condition = fieldCondition.split("!=");
-                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), userLogin);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
@@ -260,7 +260,7 @@ public class OfbizOdataProcessor {
                         entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
                     } else if (fieldCondition.contains("=")) {
                         condition = fieldCondition.split("=");
-                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), userLogin);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
