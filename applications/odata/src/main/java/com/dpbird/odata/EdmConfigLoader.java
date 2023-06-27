@@ -934,7 +934,9 @@ public class EdmConfigLoader {
                 hasRelField = true;
             } else if (inEntityTagName.equals("Property")) {
                 OfbizCsdlProperty csdlProperty = loadPropertyFromElement(dispatcher, modelEntity, relAliases, inEntityElement, locale, labelPrefix, autoLabel);
-                if (UtilValidate.isNotEmpty(csdlProperty) && csdlProperties.stream().noneMatch(p -> p.getName().equals(csdlProperty.getName()))) {
+                if (UtilValidate.isNotEmpty(csdlProperty)) {
+                    //如果重复定义 单独定义的Property覆盖Properties中的定义
+                    csdlProperties.removeIf(p -> p.getName().equals(csdlProperty.getName()));
                     csdlProperties.add(csdlProperty);
                     if (UtilValidate.isNotEmpty(csdlProperty.getRelAlias())) {
                         hasRelField = true;

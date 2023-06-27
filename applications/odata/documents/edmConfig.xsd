@@ -289,12 +289,12 @@
     </xs:element>
     <xs:element name="Title">
         <xs:complexType>
-            <xs:attribute name="Path" type="xs:NCName"/>
+            <xs:attribute name="Path" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Description">
         <xs:complexType>
-            <xs:attribute name="Path" type="xs:NCName"/>
+            <xs:attribute name="Path" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataField">
