@@ -2,6 +2,7 @@ package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.HandlerFactory;
+import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -49,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 
@@ -466,31 +468,18 @@ public class OfbizOdataProcessor {
                             }
                             applySelect.add(segmentValue);
                             dynamicViewEntity.addAlias(ofbizCsdlEntityType.getOfbizEntity(), segmentValue, segmentValue, null, false, true, null);
-                        } else if (path.size() == 2) {
-                            //子对象字段
+                        } else {
+                            //多段式的子对象字段
                             //add MemberEntity
-                            UriResourceNavigation resourceNavigation = (UriResourceNavigation) path.get(0);
-                            EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-                            String navigationName = edmNavigationProperty.getName();
-                            String navigationEntityName = navCsdlEntityType.getOfbizEntity();
-                            if (!dynamicViewHolder.hasMemberEntity(navigationName, navigationEntityName)) {
-                                dynamicViewEntity.addMemberEntity(navigationName, navigationEntityName);
-                            }
-                            //add Alias
-                            UriResourcePrimitiveProperty resourcePrimitiveProperty = (UriResourcePrimitiveProperty) path.get(1);
-                            String segmentValue = resourcePrimitiveProperty.getSegmentValue();
-                            dynamicViewEntity.addAlias(navigationName, navigationName + segmentValue, segmentValue, null, false, true, null);
-                            //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
+                            UriResource groupByProperty = ListUtil.getLast(path);
+                            path = path.subList(0, path.size() - 1);
+                            List<String> resourceParts = path.stream().map(UriResource::getSegmentValue).collect(Collectors.toList());
+                            String memberAlias = dynamicViewHolder.addMultiParts(resourceParts, null);
+                            dynamicViewEntity.addAlias(memberAlias, memberAlias + groupByProperty.getSegmentValue(), groupByProperty.getSegmentValue(), null, false, true, null);
                             if (UtilValidate.isEmpty(applySelect)) {
                                 applySelect = new HashSet<>();
                             }
-                            applySelect.add(navigationName + segmentValue);
-                            //add ViewLink
-                            if (!dynamicViewHolder.hasViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName)) {
-                                ModelRelation relation = currModelEntity.getRelation(resourceNavigation.getSegmentValue());
-                                dynamicViewEntity.addViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName, false, relation.getKeyMaps());
-                            }
+                            applySelect.add(memberAlias + groupByProperty.getSegmentValue());
                         }
                     }
                 }
