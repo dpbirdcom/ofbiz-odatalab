@@ -174,7 +174,7 @@ public class OdataWriter extends OfbizOdataProcessor {
         }
         OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) this.edmProvider.getEntityContainer()
                 .getEntitySet(edmBindingTarget.getName());
-        Map<String, Object> conditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), userLogin);
+        Map<String, Object> conditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), httpServletRequest);
         if (UtilValidate.isNotEmpty(conditionMap)) {
             Set<Entry<String, Object>> entrySet = conditionMap.entrySet();
             for (Entry<String, Object> entry : entrySet) {

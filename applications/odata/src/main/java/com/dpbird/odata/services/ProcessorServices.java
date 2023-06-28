@@ -88,6 +88,7 @@ public class ProcessorServices {
         Delegator delegator = dispatcher.getDelegator();
         Locale locale = (Locale) context.get("locale");
         String sapContextId = (String) context.get("sapContextId");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) context.get("httpServletRequest");
         Entity entityToWrite = (Entity) context.get("entityToWrite");
         GenericValue userLogin = (GenericValue) context.get("userLogin");
         OdataOfbizEntity entity = (OdataOfbizEntity) context.get("entity");
@@ -99,7 +100,7 @@ public class ProcessorServices {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
         OfbizCsdlEntitySet navigationCsdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, navigationTargetEntitySet.getName());
-        Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin);
+        Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin, httpServletRequest);
         if (UtilValidate.isNotEmpty(sapContextId)) {
 //            DraftHandler draftHandler = new DraftHandler(delegator, dispatcher, edmProvider, csdlEntityType, sapContextId, userLogin, locale, edmBindingTarget.getEntityType());
 //            createdEntity = draftHandler.createRelatedEntityData(entity, entityToWrite, edmNavigationProperty);
@@ -152,6 +153,7 @@ public class ProcessorServices {
         Locale locale = (Locale) context.get("locale");
         String sapContextId = (String) context.get("sapContextId");
         Entity entityToWrite = (Entity) context.get("entityToWrite");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) context.get("httpServletRequest");
         GenericValue userLogin = (GenericValue) context.get("userLogin");
         OdataOfbizEntity entity = (OdataOfbizEntity) context.get("entity");
         Map<String, Object> primaryKey = UtilGenerics.checkMap(context.get("primaryKey"));
@@ -162,7 +164,7 @@ public class ProcessorServices {
         EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) context.get("edmNavigationProperty");
         EdmEntitySet navigationTargetEntitySet = Util.getNavigationTargetEntitySet(edmBindingTarget, edmNavigationProperty);
         OfbizCsdlEntitySet navigationCsdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntitySet(OfbizAppEdmProvider.CONTAINER, navigationTargetEntitySet.getName());
-        Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin);
+        Util.addEntitySetConditionToEntity(delegator, navigationCsdlEntitySet, entityToWrite, userLogin, httpServletRequest);
         if (UtilValidate.isNotEmpty(sapContextId)) {
 //            EdmEntityType navigationEdmEntityType = edmNavigationProperty.getType();
 //            OfbizCsdlEntityType navigationCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationEdmEntityType.getFullQualifiedName());
@@ -555,8 +557,8 @@ public class ProcessorServices {
         HttpServletRequest httpServletRequest = (HttpServletRequest) oDataContext.get("httpServletRequest");
         OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) edmProvider.getEntityContainer().getEntitySet(edmBindingTarget.getName());
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
-        Map<String, Object> entitySetConditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), userLogin);
-        Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+        Map<String, Object> entitySetConditionMap = Util.parseConditionMap(csdlEntitySet.getConditionStr(), httpServletRequest);
+        Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), httpServletRequest);
         String entityName = csdlEntityType.getOfbizEntity();
         String draftEntityName = csdlEntityType.getDraftEntityName();
         ModelEntity modelEntity = delegator.getModelEntity(entityName);
@@ -588,12 +590,12 @@ public class ProcessorServices {
         }
         //添加AutoValue
         for (Map.Entry<String, Object> entry : csdlEntityType.getAutoValueProperties().entrySet()) {
-            fieldMap.put(entry.getKey(), Util.parseVariable(entry.getValue(), userLogin));
+            fieldMap.put(entry.getKey(), Util.parseVariable(entry.getValue(), httpServletRequest));
         }
         //添加DefaultValue
         Map<String, Object> defaultValues = csdlEntityType.getDefaultValueProperties();
         for (Map.Entry<String, Object> entry : defaultValues.entrySet()) {
-            fieldMap.put(entry.getKey(), Util.parseVariable(entry.getValue(), userLogin));
+            fieldMap.put(entry.getKey(), Util.parseVariable(entry.getValue(), httpServletRequest));
         }
         fieldMap.putAll(internalKeyMap);
         //检查主键约束

@@ -530,7 +530,7 @@ public class OdataReader extends OfbizOdataProcessor {
             if (navCsdlEntityType.getEntityCondition() != null) {
                 if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
                     //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
-                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
+                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
                     condition = Util.appendCondition(condition, EntityCondition.makeCondition(entityTypeCondition));
                 } else {
                     Debug.logWarning("The EntityType condition is not supported", module);
@@ -617,7 +617,7 @@ public class OdataReader extends OfbizOdataProcessor {
         String entityConditionStr = navCsdlEntityType.getEntityConditionStr();
         if (UtilValidate.isNotEmpty(entityConditionStr)) {
             //添加navigation EntityType的Condition
-            Map<String, Object> conditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
+            Map<String, Object> conditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
             entityCondition = Util.appendCondition(entityCondition, EntityCondition.makeCondition(conditionMap));
         }
         //添加数据的范围条件

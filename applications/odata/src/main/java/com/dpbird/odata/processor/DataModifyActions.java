@@ -333,12 +333,12 @@ public class DataModifyActions {
             }
         }
         if (UtilValidate.isEmpty(pkMap)) {
-            pkMap = createEntityWithService(dispatcher, delegator, csdlEntityType, draftGenericValue, userLogin);
+            pkMap = createEntityWithService(dispatcher, delegator, csdlEntityType, draftGenericValue, userLogin, httpServletRequest);
             //创建DerivedEntity
             if (csdlEntityType.isHasDerivedEntity()) {
                 OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, draftGenericValue, csdlEntityType);
                 if (UtilValidate.isNotEmpty(derivedType)) {
-                    createEntityWithService(dispatcher, delegator, derivedType, draftGenericValue, userLogin);
+                    createEntityWithService(dispatcher, delegator, derivedType, draftGenericValue, userLogin, httpServletRequest);
                 }
             }
             try {
@@ -379,7 +379,7 @@ public class DataModifyActions {
     }
 
     private static Map<String, Object> createEntityWithService(LocalDispatcher dispatcher, Delegator delegator, OfbizCsdlEntityType csdlEntityType,
-                                                               GenericValue genericValue, GenericValue userLogin)
+                                                               GenericValue genericValue, GenericValue userLogin, HttpServletRequest request)
             throws GenericServiceException, OfbizODataException {
         String entityName = csdlEntityType.getOfbizEntity();
         String serviceName;
@@ -387,7 +387,7 @@ public class DataModifyActions {
         try {
             Map<String, Object> allFields = new HashMap<>(Util.propertyToField(genericValue.getAllFields(), csdlEntityType));
             //添加EntityType condition字段
-            Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+            Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), request);
             if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
                 allFields.putAll(entityTypeConditionMap);
             }
@@ -456,6 +456,7 @@ public class DataModifyActions {
         LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
         Delegator delegator = (Delegator) odataContext.get("delegator");
         Locale locale = (Locale) odataContext.get("locale");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
         String sapContextId = (String) odataContext.get("sapContextId");
         List<GenericValue> draftGenericValues = null;
@@ -464,7 +465,7 @@ public class DataModifyActions {
         try {
             Map<String, Object> edmParams = UtilMisc.toMap("edmBindingTarget", edmEntitySet);
             Map<String, Object> readerContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale);
+                    "edmProvider", edmProvider, "userLogin", userLogin, "locale", locale, "httpServletRequest", httpServletRequest);
             OdataReader reader = new OdataReader(readerContext, null, edmParams);
             OdataOfbizEntity entity = (OdataOfbizEntity) reader.findOne(keyMap, null);
             Map<String, Object> svcResult = dispatcher.runSync("dpbird.copyEntityToDraft",

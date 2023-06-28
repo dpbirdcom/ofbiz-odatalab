@@ -254,7 +254,7 @@ public class OfbizOdataProcessor {
                     String[] condition;
                     if (fieldCondition.contains("!=")) {
                         condition = fieldCondition.split("!=");
-                        String conValue = (String) Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), httpServletRequest);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
@@ -262,7 +262,7 @@ public class OfbizOdataProcessor {
                         entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
                     } else if (fieldCondition.contains("=")) {
                         condition = fieldCondition.split("=");
-                        String conValue = (String) Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), httpServletRequest);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
@@ -285,14 +285,14 @@ public class OfbizOdataProcessor {
                         entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, operator, values));
                     }
                 } else {
-                    entitySetConditionList.add(Util.parseEntityCondition(relString, userLogin));
+                    entitySetConditionList.add(Util.parseEntityCondition(relString, httpServletRequest));
                 }
             }
             if (entitySetConditionList.size() > 0) {
                 entityCondition = EntityCondition.makeCondition(entitySetConditionList, conditionsOperator);
             }
         } else {
-            entityCondition = Util.parseEntityCondition(conditionStr, userLogin);
+            entityCondition = Util.parseEntityCondition(conditionStr, httpServletRequest);
         }
         return entityCondition;
     }

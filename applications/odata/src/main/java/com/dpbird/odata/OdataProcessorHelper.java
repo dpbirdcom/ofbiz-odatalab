@@ -94,6 +94,7 @@ public class OdataProcessorHelper {
         Delegator delegator = (Delegator) odataContext.get("delegator");
         GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         String sapContextId = (String) odataContext.get("sapContextId");
         GenericValue genericValue = null;
         try {
@@ -105,7 +106,7 @@ public class OdataProcessorHelper {
             EntityCondition queryCondition = EntityCondition.makeCondition(conditionMap);
             if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr()) && !csdlEntityType.getEntityConditionStr().contains("/")) {
                 Debug.logWarning("Multi-segment conditions are not currently supported", module);
-                Map<String, Object> entityTypeCondition = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+                Map<String, Object> entityTypeCondition = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), httpServletRequest);
                 queryCondition = Util.appendCondition(queryCondition, EntityCondition.makeCondition(entityTypeCondition));
             }
             genericValue = EntityQuery.use(delegator).from(entityNameToFind).where(queryCondition).queryFirst();
@@ -750,7 +751,7 @@ public class OdataProcessorHelper {
 
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
                                                   OfbizCsdlEntityType csdlEntityType, Entity entityToCreate,
-                                                  OfbizAppEdmProvider edmProvider, GenericValue userLogin)
+                                                  OfbizAppEdmProvider edmProvider, GenericValue userLogin, HttpServletRequest request)
             throws OfbizODataException {
         GenericValue newGenericValue = null;
         String entityName = csdlEntityType.getOfbizEntity();
@@ -778,7 +779,7 @@ public class OdataProcessorHelper {
                         fieldMap.put("fromDate", UtilDateTime.nowTimestamp());
                     }
                 }
-                Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), userLogin);
+                Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(csdlEntityType.getEntityConditionStr(), request);
                 if (UtilValidate.isNotEmpty(entityTypeConditionMap)) {
                     fieldMap.putAll(entityTypeConditionMap);
                 }
@@ -1608,7 +1609,7 @@ public class OdataProcessorHelper {
     public static GenericValue createRelatedGenericValue(Entity entityToWrite, OdataOfbizEntity mainEntity,
                                                          EntityTypeRelAlias relAlias, OfbizCsdlEntityType navCsdlEntityType,
                                                          OfbizAppEdmProvider edmProvider, LocalDispatcher dispatcher, Delegator delegator,
-                                                         GenericValue userLogin) throws OfbizODataException {
+                                                         GenericValue userLogin, HttpServletRequest request) throws OfbizODataException {
         GenericValue genericValue = mainEntity.getGenericValue();
         List<String> relations = relAlias.getRelations();
         int relationSize = relations.size();
@@ -1636,7 +1637,7 @@ public class OdataProcessorHelper {
                 createEntityMap.putAll(fieldMap);
                 //添加EntityType的Condition
                 if (UtilValidate.isNotEmpty(navCsdlEntityType) && UtilValidate.isNotEmpty(navCsdlEntityType.getEntityConditionStr())) {
-                    Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
+                    Map<String, Object> entityTypeConditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), request);
                     createEntityMap.putAll(entityTypeConditionMap);
                 }
                 //添加DefaultValue
