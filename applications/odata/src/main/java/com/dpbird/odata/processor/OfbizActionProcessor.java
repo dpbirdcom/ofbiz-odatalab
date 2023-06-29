@@ -49,15 +49,15 @@ public class OfbizActionProcessor
         ActionPrimitiveProcessor, ActionPrimitiveCollectionProcessor, ActionComplexProcessor, ActionComplexCollectionProcessor {
 
     public static final String module = OfbizActionProcessor.class.getName();
-    private static OData odata;
-    private static ServiceMetadata serviceMetadata;
-    private static LocalDispatcher dispatcher;
-    private static Delegator delegator;
-    private static OfbizAppEdmProvider edmProvider;
-    private static HttpServletRequest httpServletRequest = null;
-    private static Locale locale = Locale.ROOT;
-    private static GenericValue userLogin;
-    private static String sapContextId = null;
+    private OData odata;
+    private ServiceMetadata serviceMetadata;
+    private LocalDispatcher dispatcher;
+    private Delegator delegator;
+    private OfbizAppEdmProvider edmProvider;
+    private HttpServletRequest httpServletRequest = null;
+    private Locale locale = Locale.ROOT;
+    private GenericValue userLogin;
+    private String sapContextId = null;
 
     public OfbizActionProcessor(HttpServletRequest requestConstr, Delegator delegatorConstr, LocalDispatcher dispatcherConstr,
                                 OfbizAppEdmProvider edmProviderConstr, GenericValue userLoginConstr, Locale localeConstr) {
@@ -527,7 +527,7 @@ public class OfbizActionProcessor
         GenericValue boundGenericValue = boundEntity.getGenericValue();
         String relContentEntity = boundGenericValue.getEntityName() + "Content";
         ModelEntity modelEntity = dispatcher.getDelegator().getModelEntity(relContentEntity);
-        String createService = Util.getEntityActionService(null, relContentEntity, "create", delegator);
+        String createService = Util.getEntityActionService(null, relContentEntity, "create", dispatcher.getDelegator());
         Map<String, Object> serviceMap = UtilMisc.toMap("userLogin", userLogin, "contentId", contentId);
         serviceMap.putAll(boundGenericValue.getPrimaryKey());
         String contentTypeField = modelEntity.getAllFieldNames().stream().filter(fd -> fd.endsWith("ContentTypeId")).findFirst().orElse(null);
