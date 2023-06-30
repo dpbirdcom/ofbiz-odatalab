@@ -96,7 +96,7 @@ public class OdataWriterHelper {
                 }
             }
             if (nestedGenericValue == null) {
-                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin);
+                nestedGenericValue = OdataProcessorHelper.createRelatedGenericValue(entityToWrite, entity, relAlias, navCsdlEntityType, edmProvider, dispatcher, delegator, userLogin, httpServletRequest);
                 if (nestedGenericValue == null) {
                     return null;
                 }
@@ -108,7 +108,7 @@ public class OdataWriterHelper {
                     OdataOfbizEntity ofbizEntity = (OdataOfbizEntity) entityToWrite;
                     Entity derivedEntity = Util.mapToEntity(derivedType, ofbizEntity.getGenericValue());
                     Util.addBasePrimaryKey(dispatcher, edmProvider, navCsdlEntityType, nestedGenericValue, derivedEntity);
-                    OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedType, derivedEntity, edmProvider, userLogin);
+                    OdataProcessorHelper.createGenericValue(dispatcher, delegator, derivedType, derivedEntity, edmProvider, userLogin, httpServletRequest);
                 }
             }
             OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());

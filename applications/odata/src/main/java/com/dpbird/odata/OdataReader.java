@@ -21,6 +21,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
@@ -529,7 +530,7 @@ public class OdataReader extends OfbizOdataProcessor {
             if (navCsdlEntityType.getEntityCondition() != null) {
                 if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
                     //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
-                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), userLogin);
+                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
                     condition = Util.appendCondition(condition, EntityCondition.makeCondition(entityTypeCondition));
                 } else {
                     Debug.logWarning("The EntityType condition is not supported", module);
@@ -612,6 +613,13 @@ public class OdataReader extends OfbizOdataProcessor {
         Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relations.get(0));
         //所有的查询条件
         EntityCondition entityCondition = Util.appendCondition(condition, getRangeCondition(genericValueList, relAlias));
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+        String entityConditionStr = navCsdlEntityType.getEntityConditionStr();
+        if (UtilValidate.isNotEmpty(entityConditionStr)) {
+            //添加navigation EntityType的Condition
+            Map<String, Object> conditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
+            entityCondition = Util.appendCondition(entityCondition, EntityCondition.makeCondition(conditionMap));
+        }
         //添加数据的范围条件
         try {
             if (relations.size() > 1) {

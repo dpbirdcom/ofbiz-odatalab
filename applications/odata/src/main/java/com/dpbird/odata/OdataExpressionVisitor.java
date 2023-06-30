@@ -31,6 +31,8 @@ import org.apache.olingo.server.core.uri.UriResourcePrimitivePropertyImpl;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
     public static final String module = OdataExpressionVisitor.class.getName();
@@ -115,7 +117,12 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
 
         //目前针对前端传来的string类型的时间进行格式化处理，其他则不处理
         try {
-            if (left instanceof EntityCondition) {
+            if (left instanceof EntityWhereString) {
+                if (right instanceof EntityCondition) {
+                    return Util.appendCondition((EntityCondition) left, (EntityCondition) right);
+                }
+                return EntityCondition.makeConditionWhere(left + COMPARISONOPERATORMAP.get(operator).getCode() + right);
+            } else if (left instanceof EntityCondition) {
                 EntityJoinOperator joinOperator = JOINOPERATORMAP.get(operator);
                 List<EntityCondition> exprs = new ArrayList<>();
                 exprs.add((EntityCondition) left);
@@ -243,6 +250,15 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             return methodCall == MethodKind.LENGTH ?
                     EntityFunction.LENGTH(entityFunction) : methodCall == MethodKind.TOUPPER ?
                     EntityFunction.UPPER(entityFunction) : EntityFunction.LOWER(entityFunction);
+        } else if (methodCall == MethodKind.CONCAT) {
+            if (parameters.size() < 2) {
+                throw new ODataApplicationException("Filter method needs two parameters of type Edm.String",
+                        HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
+            }
+            Object param1 = parameters.get(0), param2 = parameters.get(1);
+            String str1 = param1 instanceof EdmProperty ? convertProperty(((EdmProperty) param1).getName()) : param1.toString();
+            String str2 = param2 instanceof EdmProperty ? convertProperty(((EdmProperty) param2).getName()) : param2.toString();
+            return EntityCondition.makeConditionWhere("CONCAT(" + str1 + "," + str2 + ")");
         }
         return null;
     }
@@ -591,6 +607,17 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
             return EntityCondition.makeCondition(UtilMisc.toList(neStartCond, neEndCond), EntityOperator.OR);
         }
         return null;
+    }
+
+    private static String convertProperty(String propertyName) {
+        //将字段名称转为大写加下划线 符合数据库格式
+        Matcher matcher = Pattern.compile("[A-Z]").matcher(propertyName);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "_" + matcher.group(0));
+        }
+        matcher.appendTail(sb);
+        return sb.toString().toUpperCase();
     }
 
 }

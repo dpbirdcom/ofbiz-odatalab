@@ -327,6 +327,8 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
             if (UtilValidate.isNotEmpty(property.getDefaultValue())) {
                 if (property.getType().contains("Decimal")) {
                     defaultValue = new BigDecimal((String) defaultValue);
+                } else if (property.getType().contains("Edm.Int64")) {
+                    defaultValue = Long.valueOf((String) defaultValue);
                 }
                 defaultValueProperties.put(property.getName(), defaultValue);
             }
