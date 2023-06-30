@@ -385,6 +385,7 @@
             <xs:attribute name="MimeType" type="xs:anyURI"/>
             <xs:attribute name="DefaultValue" type="xs:anyURI"/>
             <xs:attribute name="AutoValue" type="xs:anyURI"/>
+            <xs:attribute name="FileNamePath" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">

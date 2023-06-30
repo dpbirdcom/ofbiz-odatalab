@@ -702,12 +702,12 @@
 	<EntityType Name="PartyGroup" BaseType="Party" AutoProperties="true"/>
 
 	<EntityType Name="ImageDataResource" AutoProperties="true" HasStream="true">
-		<Property Name="imageData" MimeType="image/jpeg"/>
+		<Property Name="imageData" MimeType="image/jpeg" FileNamePath="DataResource/dataResourceName"/>
 		<NavigationProperty Name="DataResource"/>
 	</EntityType>
 
 	<EntityType Name="VideoDataResource" AutoProperties="true" HasStream="true">
-		<Property Name="videoData" MimeType="video/mp4"/>
+		<Property Name="videoData" MimeType="video/mp4" />
 		<NavigationProperty Name="DataResource"/>
 	</EntityType>
 

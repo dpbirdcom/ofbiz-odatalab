@@ -31,6 +31,7 @@ public class OfbizCsdlProperty extends CsdlProperty {
     private String ofbizFieldName;
     private EntityTypeRelAlias relAlias;
     private String autoValue;
+    private String fileNamePath;
 
     public List<Term> getTerms() {
         return terms;
@@ -190,6 +191,14 @@ public class OfbizCsdlProperty extends CsdlProperty {
 
     public void setAutoValue(String autoValue) {
         this.autoValue = autoValue;
+    }
+
+    public String getFileNamePath() {
+        return fileNamePath;
+    }
+
+    public void setFileNamePath(String fileNamePath) {
+        this.fileNamePath = fileNamePath;
     }
 
     public boolean equals(Object o) {
