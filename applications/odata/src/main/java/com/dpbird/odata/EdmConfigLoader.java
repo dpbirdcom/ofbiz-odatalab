@@ -1559,7 +1559,9 @@ public class EdmConfigLoader {
         String fileNamePath = propertyElement.getAttribute("FileNamePath");
         // attribute for annotation
         String label = propertyElement.getAttribute("Label");
-        if (UtilValidate.isEmpty(label) && autoLabel) {
+        if (UtilValidate.isNotEmpty(label) && label.startsWith("${uiLabelMap.")) {
+            label = parseValue(label, locale);
+        } else if (UtilValidate.isEmpty(label) && autoLabel) {
             String labelKey = "${uiLabelMap." + labelPrefix + Util.firstUpperCase(name) + "}";
             label = parseValue(labelKey, locale);
         }
