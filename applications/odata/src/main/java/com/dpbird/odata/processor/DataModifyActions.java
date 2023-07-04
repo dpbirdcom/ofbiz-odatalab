@@ -132,7 +132,7 @@ public class DataModifyActions {
                     keyMap = createMainEntityFromDraft(dispatcher, delegator, httpServletRequest, csdlEntityType, edmProvider, draftGenericValue, userLogin, locale, draftEntity);
 //                    keyMap = createEntityWithService(dispatcher, delegator, entityName, draftGenericValue, userLogin);
                 } else if (draftChanged(modelEntity, genericValue, draftGenericValue)) {
-                    updateEntityFromDraft(dispatcher, delegator, edmProvider, csdlEntityType, keyMap, draftGenericValue, userLogin, locale);
+                    updateEntityFromDraft(dispatcher, delegator, edmProvider, csdlEntityType, keyMap, draftGenericValue, userLogin, locale, httpServletRequest);
                 }
                 // 刷新一下genericValue
                 genericValue = delegator.findOne(entityName, keyMap, false);
@@ -159,6 +159,7 @@ public class DataModifyActions {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) oDataContext.get("httpServletRequest");
         Locale locale = (Locale) oDataContext.get("locale");
         String draftUUID = navDraftAdminData.getString("draftUUID");
         Map<String, Object> keyMap = new HashMap<>(mainGenericValue.getPrimaryKey());
@@ -221,7 +222,7 @@ public class DataModifyActions {
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
                             csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
                 } else if (draftChanged(modelEntity, genericValue, draftGenericValue)) {
-                    updateEntityFromDraft(dispatcher, delegator, edmProvider, csdlEntityType, navKeyMap, draftGenericValue, userLogin, locale);
+                    updateEntityFromDraft(dispatcher, delegator, edmProvider, csdlEntityType, navKeyMap, draftGenericValue, userLogin, locale, httpServletRequest);
                 }
                 // 刷新一下genericValue
                 if (entityCreated != null) {
@@ -284,9 +285,9 @@ public class DataModifyActions {
                                               OfbizCsdlEntityType csdlEntityType,
                                               Map<String, Object> keyMap,
                                               GenericValue draftGenericValue,
-                                              GenericValue userLogin, Locale locale) throws ODataException {
+                                              GenericValue userLogin, Locale locale, HttpServletRequest request) throws ODataException {
         OdataOfbizEntity entityToWrite = OdataProcessorHelper.genericValueToEntity(dispatcher, edmProvider, csdlEntityType, draftGenericValue, locale);
-        OdataWriterHelper.updateEntityData(delegator, dispatcher, null, edmProvider,
+        OdataWriterHelper.updateEntityData(delegator, dispatcher, request, edmProvider,
                 csdlEntityType, keyMap, entityToWrite, userLogin, locale);
 
     }
