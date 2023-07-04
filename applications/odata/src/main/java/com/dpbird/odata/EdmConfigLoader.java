@@ -1557,6 +1557,8 @@ public class EdmConfigLoader {
         String defaultValue = propertyElement.getAttribute("DefaultValue");
         String autoValue = propertyElement.getAttribute("AutoValue");
         String fileNamePath = propertyElement.getAttribute("FileNamePath");
+        String only = propertyElement.getAttribute("Only");
+        String required = propertyElement.getAttribute("Required");
         // attribute for annotation
         String label = propertyElement.getAttribute("Label");
         if (UtilValidate.isNotEmpty(label) && label.startsWith("${uiLabelMap.")) {
@@ -1669,6 +1671,12 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(fileNamePath)) {
             property.setFileNamePath(fileNamePath);
+        }
+        if (UtilValidate.isNotEmpty(only)) {
+            property.setOnly(Boolean.valueOf(only));
+        }
+        if (UtilValidate.isNotEmpty(required)) {
+            property.setRequired(Boolean.valueOf(required));
         }
         List<? extends Element> propertyChildren = UtilXml.childElementList(propertyElement);
         List<CsdlAnnotation> annotations = new ArrayList<>();
