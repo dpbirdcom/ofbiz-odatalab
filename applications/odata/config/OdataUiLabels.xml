@@ -39,6 +39,16 @@ under the License.
         <value xml:lang="zh">不允许你浏览这个页面。</value>
         <value xml:lang="zh-TW">不允許您檢視這個頁面.</value>
     </property>
+    <property key="verifyMsg.property.required">
+        <value xml:lang="en">Required field: ${property}</value>
+        <value xml:lang="zh">缺少必填数据: ${property}</value>
+        <value xml:lang="zh-TW">缺少必填数据: ${property}</value>
+    </property>
+    <property key="verifyMsg.property.only">
+        <value xml:lang="en">Duplicate: ${property}</value>
+        <value xml:lang="zh">重复的数据: ${property}</value>
+        <value xml:lang="zh-TW">重复的数据: ${property}</value>
+    </property>
 
 	<!-- Order -->
     <property key="OrderCreatedBy">

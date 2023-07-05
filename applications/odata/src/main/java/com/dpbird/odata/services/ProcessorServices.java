@@ -12,16 +12,11 @@ import com.dpbird.odata.handler.draftEvent.DraftSaveAfter;
 import com.dpbird.odata.handler.draftEvent.DraftSaveBefore;
 import com.dpbird.odata.processor.DataModifyActions;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.UtilDateTime;
-import org.apache.ofbiz.base.util.UtilGenerics;
-import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
-import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
@@ -50,6 +45,7 @@ public class ProcessorServices {
 
 
     public final static String module = ProcessorServices.class.getName();
+    public final static String resource = "OdataUiLabels";
     //自定义Event注解要扫描的路径
 //    public final static String PACKAGE_NAME = "com.dpbird";
     public final static String PACKAGE_NAME = "com.banfftech";
@@ -689,16 +685,16 @@ public class ProcessorServices {
 
     // saveAction will load data from mem database and store into real database
     public static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws ODataException {
+        Locale locale = (Locale) oDataContext.get("locale");
         String sapContextId = (String) oDataContext.get("sapContextId");
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         //参数校验
-        verifyProperty(edmProvider, delegator, sapContextId, 0);
+        verifyProperty(edmProvider, delegator, sapContextId, 0, locale);
         //执行前置处理
         runBefore(oDataContext, actionParameters, edmBindingTarget, DraftSaveBefore.class, SAVE_BEFORE_METHOD);
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
-        Locale locale = (Locale) oDataContext.get("locale");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         String entityName = csdlEntityType.getOfbizEntity();
         if (sapContextId == null) {
@@ -1149,7 +1145,7 @@ public class ProcessorServices {
         }
     }
 
-    private static void verifyProperty(OfbizAppEdmProvider edmProvider, Delegator delegator, String sapContextId, int level) throws OfbizODataException {
+    private static void verifyProperty(OfbizAppEdmProvider edmProvider, Delegator delegator, String sapContextId, int level, Locale locale) throws OfbizODataException {
         try {
             GenericValue draftAdmin = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", sapContextId), false);
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(draftAdmin.getString("entityType")));
@@ -1162,7 +1158,9 @@ public class ProcessorServices {
                 OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) property;
                 String value = draftData.getString(csdlProperty.getName());
                 if (csdlProperty.isRequired() && UtilValidate.isEmpty(value)) {
-                    throw new OfbizODataException("Required field: " + csdlProperty.getLabel());
+                    String message = UtilProperties.getMessage(resource, "verifyMsg.property.required",
+                            UtilMisc.toMap("property", csdlProperty.getLabel()), locale);
+                    throw new OfbizODataException(message);
                 }
                 if (csdlProperty.isOnly() && UtilValidate.isNotEmpty(value)) {
                     String entityName = draftAdmin.getString("originEntityName");
@@ -1174,12 +1172,16 @@ public class ProcessorServices {
                     }
                     if (UtilValidate.isEmpty(draftKey)) {
                         if (genericValues.size() > 0) {
-                            throw new OfbizODataException("Duplicate field: " + csdlProperty.getLabel());
+                            String message = UtilProperties.getMessage(resource, "verifyMsg.property.only",
+                                    UtilMisc.toMap("property", csdlProperty.getLabel()), locale);
+                            throw new OfbizODataException(message);
                         } else {
                             continue;
                         }
                     } else if (genericValues.size() > 1){
-                        throw new OfbizODataException("Duplicate field: " + csdlProperty.getLabel());
+                        String message = UtilProperties.getMessage(resource, "verifyMsg.property.only",
+                                UtilMisc.toMap("property", csdlProperty.getLabel()), locale);
+                        throw new OfbizODataException(message);
                     }
                     GenericValue firstGV = EntityUtil.getFirst(genericValues);
                     if (UtilValidate.isNotEmpty(firstGV)) {
@@ -1187,7 +1189,9 @@ public class ProcessorServices {
                         boolean containsAll = draftKey.entrySet().stream()
                                 .allMatch(entry -> firstGV.containsKey(entry.getKey()) && firstGV.get(entry.getKey()).equals(entry.getValue()));
                         if (!containsAll) {
-                            throw new OfbizODataException("Duplicate field: " + csdlProperty.getLabel());
+                            String message = UtilProperties.getMessage(resource, "verifyMsg.property.only",
+                                    UtilMisc.toMap("property", csdlProperty.getLabel()), locale);
+                            throw new OfbizODataException(message);
                         }
                     }
 
@@ -1197,7 +1201,7 @@ public class ProcessorServices {
                 //check navigation
                 List<GenericValue> navDraftAdminList = EntityQuery.use(delegator).from("DraftAdministrativeData").where("parentDraftUUID", sapContextId).queryList();
                 for (GenericValue navDraft : navDraftAdminList) {
-                    verifyProperty(edmProvider, delegator, navDraft.getString("draftUUID"), ++ level);
+                    verifyProperty(edmProvider, delegator, navDraft.getString("draftUUID"), ++ level, locale);
                 }
             }
         } catch (GenericEntityException e) {
