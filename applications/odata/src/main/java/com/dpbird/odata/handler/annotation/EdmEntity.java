@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface EdmEntity {
     DraftAction action();
-    String entityType();
+    String[] entityTypes();
 }

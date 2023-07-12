@@ -1223,8 +1223,8 @@ public class ProcessorServices {
                             continue;
                         }
                         DraftAction action = edmEntityAnnot.action();
-                        String entityType = edmEntityAnnot.entityType();
-                        if (edmEntityTypeName.equals(entityType) && action.equals(draftAction)) {
+                        List<String> entityTypes = Arrays.asList(edmEntityAnnot.entityTypes());
+                        if (entityTypes.contains(edmEntityTypeName) && action.equals(draftAction)) {
                             Object obj = clazz.getDeclaredConstructor().newInstance();
                             method.invoke(obj, eventContext);
                         }
@@ -1259,8 +1259,8 @@ public class ProcessorServices {
                             continue;
                         }
                         DraftAction action = edmEntityAnnot.action();
-                        String entityType = edmEntityAnnot.entityType();
-                        if (edmEntityTypeName.equals(entityType) && action.equals(draftAction)) {
+                        List<String> entityTypes = Arrays.asList(edmEntityAnnot.entityTypes());
+                        if (entityTypes.contains(edmEntityTypeName) && action.equals(draftAction)) {
                             Object obj = clazz.getDeclaredConstructor().newInstance();
                             method.invoke(obj, eventContext);
                         }
