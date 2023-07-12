@@ -11,8 +11,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface HandlerEvent {
-    //必须的两个参数
+public @interface EdmService {
     String edmApp();
-    String entityType();
 }

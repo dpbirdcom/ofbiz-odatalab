@@ -5,11 +5,10 @@ import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.NavigationHandler;
-import com.dpbird.odata.handler.annotation.HandlerEvent;
-import com.dpbird.odata.handler.draftEvent.DraftNewAfter;
-import com.dpbird.odata.handler.draftEvent.DraftNewBefore;
-import com.dpbird.odata.handler.draftEvent.DraftSaveAfter;
-import com.dpbird.odata.handler.draftEvent.DraftSaveBefore;
+import com.dpbird.odata.handler.annotation.DraftAction;
+import com.dpbird.odata.handler.annotation.DraftEventContext;
+import com.dpbird.odata.handler.annotation.EdmEntity;
+import com.dpbird.odata.handler.annotation.EdmService;
 import com.dpbird.odata.processor.DataModifyActions;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.*;
@@ -49,11 +48,6 @@ public class ProcessorServices {
     //自定义Event注解要扫描的路径
 //    public final static String PACKAGE_NAME = "com.dpbird";
     public final static String PACKAGE_NAME = "com.banfftech";
-
-    private final static String NEW_BEFORE_METHOD = "newBefore";
-    private final static String NEW_AFTER_METHOD = "newAfter";
-    private final static String SAVE_BEFORE_METHOD = "saveBefore";
-    private final static String SAVE_AFTER_METHOD = "saveAfter";
 
     public static Map<String, Object> createEntity(DispatchContext dctx, Map<String, Object> context)
             throws OfbizODataException, ODataApplicationException {
@@ -548,7 +542,7 @@ public class ProcessorServices {
     }
 
     public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
-        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftNewBefore.class, NEW_BEFORE_METHOD);
+        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftAction.NEW_BEFORE);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
@@ -614,7 +608,7 @@ public class ProcessorServices {
         //create cascade navigation
         createCascade(oDataContext, ofbizEntity, csdlEntityType, sapContextId, actionParameters);
         //后置处理
-        runAfter(oDataContext, actionParameters, ofbizEntity, edmBindingTarget, DraftNewAfter.class, NEW_AFTER_METHOD);
+        runAfter(oDataContext, actionParameters, ofbizEntity, edmBindingTarget, DraftAction.NEW_AFTER);
         return ofbizEntity;
     }
 
@@ -692,7 +686,7 @@ public class ProcessorServices {
         //参数校验
         verifyProperty(edmProvider, delegator, sapContextId, 0, locale);
         //执行前置处理
-        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftSaveBefore.class, SAVE_BEFORE_METHOD);
+        runBefore(oDataContext, actionParameters, edmBindingTarget, DraftAction.SAVE_BEFORE);
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
@@ -718,7 +712,7 @@ public class ProcessorServices {
         OdataProcessorHelper.appendNonEntityFields(null, delegator, dispatcher, edmProvider,
                 null, UtilMisc.toList(updatedEntity), locale, userLogin);
         //执行后置处理
-        runAfter(oDataContext, actionParameters, updatedEntity, edmBindingTarget, DraftSaveAfter.class, SAVE_AFTER_METHOD);
+        runAfter(oDataContext, actionParameters, updatedEntity, edmBindingTarget, DraftAction.SAVE_AFTER);
         return updatedEntity;
     }
 
@@ -1213,19 +1207,28 @@ public class ProcessorServices {
     /**
      * 执行前置处理
      */
-    private static void runBefore(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget,
-                                  Class<?> implInterface, String methodName) throws OfbizODataException {
+    private static void runBefore(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget, DraftAction draftAction) throws OfbizODataException {
+        DraftEventContext eventContext = getEventContext(oDataContext, actionParameters, null, edmBindingTarget);
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
-        List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, HandlerEvent.class, implInterface);
+        String edmEntityTypeName = edmBindingTarget.getEntityType().getName();
+        Set<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, EdmService.class);
         try {
             for (Class<?> clazz : classesWithAnnotation) {
-                HandlerEvent annotation = clazz.getAnnotation(HandlerEvent.class);
-                String annotationEntity = annotation.entityType();
+                EdmService annotation = clazz.getAnnotation(EdmService.class);
                 String annotationApp = annotation.edmApp();
-                if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
-                    Method method = clazz.getMethod(methodName, Map.class, Map.class, EdmBindingTarget.class);
-                    Object obj = clazz.getDeclaredConstructor().newInstance();
-                    method.invoke(obj, oDataContext, actionParameters, edmBindingTarget);
+                if (annotationApp.equals(edmProvider.getWebapp())) {
+                    for (Method method : clazz.getMethods()) {
+                        EdmEntity edmEntityAnnot = method.getAnnotation(EdmEntity.class);
+                        if (UtilValidate.isEmpty(edmEntityAnnot)) {
+                            continue;
+                        }
+                        DraftAction action = edmEntityAnnot.action();
+                        String entityType = edmEntityAnnot.entityType();
+                        if (edmEntityTypeName.equals(entityType) && action.equals(draftAction)) {
+                            Object obj = clazz.getDeclaredConstructor().newInstance();
+                            method.invoke(obj, eventContext);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -1240,18 +1243,28 @@ public class ProcessorServices {
      * 执行后置处理
      */
     private static void runAfter(Map<String, Object> oDataContext, Map<String, Object> actionParameters, OdataOfbizEntity ofbizEntity, EdmBindingTarget edmBindingTarget,
-                                 Class<?> implInterface, String methodName) throws OfbizODataException {
+                                 DraftAction draftAction) throws OfbizODataException {
+        DraftEventContext eventContext = getEventContext(oDataContext, actionParameters, ofbizEntity, edmBindingTarget);
+        String edmEntityTypeName = edmBindingTarget.getEntityType().getName();
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
-        List<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, HandlerEvent.class, implInterface);
+        Set<Class<?>> classesWithAnnotation = Util.getClassesWithAnnotation(PACKAGE_NAME, EdmService.class);
         try {
             for (Class<?> clazz : classesWithAnnotation) {
-                HandlerEvent annotation = clazz.getAnnotation(HandlerEvent.class);
-                String annotationEntity = annotation.entityType();
+                EdmService annotation = clazz.getAnnotation(EdmService.class);
                 String annotationApp = annotation.edmApp();
-                if (annotationApp.equals(edmProvider.getWebapp()) && annotationEntity.equals(edmBindingTarget.getEntityType().getName())) {
-                    Method method = clazz.getMethod(methodName, Map.class, Map.class, OdataOfbizEntity.class);
-                    Object obj = clazz.getDeclaredConstructor().newInstance();
-                    method.invoke(obj, oDataContext, actionParameters, ofbizEntity);
+                if (annotationApp.equals(edmProvider.getWebapp())) {
+                    for (Method method : clazz.getMethods()) {
+                        EdmEntity edmEntityAnnot = method.getAnnotation(EdmEntity.class);
+                        if (UtilValidate.isEmpty(edmEntityAnnot)) {
+                            continue;
+                        }
+                        DraftAction action = edmEntityAnnot.action();
+                        String entityType = edmEntityAnnot.entityType();
+                        if (edmEntityTypeName.equals(entityType) && action.equals(draftAction)) {
+                            Object obj = clazz.getDeclaredConstructor().newInstance();
+                            method.invoke(obj, eventContext);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -1260,6 +1273,13 @@ public class ProcessorServices {
             }
             throw new OfbizODataException(e.getMessage());
         }
+    }
+
+    private static DraftEventContext getEventContext(Map<String, Object> oDataContext, Map<String, Object> actionParameters, OdataOfbizEntity ofbizEntity, EdmBindingTarget edmBindingTarget) {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        return new DraftEventContext(delegator, dispatcher, userLogin, oDataContext, actionParameters, edmBindingTarget, ofbizEntity);
     }
 
 }

@@ -757,7 +757,7 @@ under the License.
         <relation type="one" rel-entity-name="Tiles">
             <key-map field-name="tilesId"/>
         </relation>
-        <relation type="one" rel-entity-name="SecurityPermission">
+        <relation type="one" fk-name="TILES_PERMISSION_SECURITY" rel-entity-name="SecurityPermission">
             <key-map field-name="permissionId"/>
         </relation>
     </entity>
