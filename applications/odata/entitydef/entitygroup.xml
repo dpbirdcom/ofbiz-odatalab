@@ -33,26 +33,4 @@ under the License.
 <!--    <entity-group group="org.apache.ofbiz.memory" entity="FacilityPartyDraft"/>-->
 <!--    <entity-group group="org.apache.ofbiz.memory" entity="ModelPersonDraft"/>-->
 
-
-    <!-- ========================================================= -->
-    <!-- Dimensions                                                     -->
-    <!-- ========================================================= -->
-    <entity-group group="org.apache.ofbiz.olap" entity="CountryDimension"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="CurrencyDimension"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="DateDimension"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="ProductDimension"/>
-
-    <!-- ========================================================= -->
-    <!-- Facts                                                     -->
-    <!-- ========================================================= -->
-    <entity-group group="org.apache.ofbiz.olap" entity="SalesInvoiceItemFact"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="SalesOrderItemFact"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="InventoryItemFact"/>
-
-    <!-- ========================================================= -->
-    <!-- Star Schemas                                              -->
-    <!-- ========================================================= -->
-    <entity-group group="org.apache.ofbiz.olap" entity="SalesInvoiceItemStarSchema"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="SalesOrderItemStarSchema"/>
-    <entity-group group="org.apache.ofbiz.olap" entity="InventoryItemSchema"/>
 </entitygroup>
