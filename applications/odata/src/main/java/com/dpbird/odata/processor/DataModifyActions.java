@@ -196,7 +196,7 @@ public class DataModifyActions {
                 } else {
 //                    deleteEntityWithService(dispatcher, entityName, navKeyMap, userLogin);
                     deleteRelatedEntity(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
-                            csdlNavigationProperty.getName(), navKeyMap, userLogin, locale);
+                            csdlNavigationProperty.getName(), navKeyMap, userLogin, httpServletRequest, locale);
                 }
             } else {
                 List<String> noPkFieldNames = modelEntity.getNoPkFieldNames();
@@ -218,7 +218,7 @@ public class DataModifyActions {
                             csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
                 } else if (!draftHasSamePk(draftGenericValue, navKeyMap, navCsdlEntityType)) {
                     deleteRelatedEntity(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
-                            csdlNavigationProperty.getName(), navKeyMap, userLogin, locale);
+                            csdlNavigationProperty.getName(), navKeyMap, userLogin, httpServletRequest, locale);
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
                             csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
                 } else if (draftChanged(modelEntity, genericValue, draftGenericValue)) {
@@ -248,8 +248,8 @@ public class DataModifyActions {
                                             OfbizCsdlEntityType mainCsdlEntityType,
                                             String navigationPropertyName,
                                             Map<String, Object> navKeyMap,
-                                            GenericValue userLogin, Locale locale) throws OfbizODataException {
-        OdataWriterHelper.deleteEntitySetRelatedEntityData(delegator, dispatcher, null, edmProvider,
+                                            GenericValue userLogin, HttpServletRequest httpServletRequest, Locale locale) throws OfbizODataException {
+        OdataWriterHelper.deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
                 mainCsdlEntityType, navigationPropertyName, keyMap, navKeyMap, userLogin, locale);
     }
 
