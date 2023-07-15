@@ -2712,4 +2712,14 @@ public class Util {
 //        return result;
     }
 
+    /**
+     * 解析异常
+     */
+    public static Throwable getOriginalException(Throwable throwable) {
+        if (throwable.getCause() != null) {
+            return getOriginalException(throwable.getCause());
+        }
+        return throwable;
+    }
+
 }

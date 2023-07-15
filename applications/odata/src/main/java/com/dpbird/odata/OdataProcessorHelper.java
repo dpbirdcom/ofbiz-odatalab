@@ -965,7 +965,8 @@ public class OdataProcessorHelper {
             return genericValue;
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            throw new OfbizODataException(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode() + "", e.getMessage());
+            Throwable originalException = Util.getOriginalException(e);
+            throw new OfbizODataException(originalException.getMessage());
         }
     }
 
@@ -1284,7 +1285,8 @@ public class OdataProcessorHelper {
             dispatcher.runSync(deleteService, serviceParams);
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            throw new OfbizODataException(e.getMessage());
+            Throwable originalException = Util.getOriginalException(e);
+            throw new OfbizODataException(originalException.getMessage());
         }
     }
 
