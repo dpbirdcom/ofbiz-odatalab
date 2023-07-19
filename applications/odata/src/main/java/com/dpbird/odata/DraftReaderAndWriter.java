@@ -393,7 +393,7 @@ public class DraftReaderAndWriter {
                 }
 
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", null, "locale", locale);
+                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
