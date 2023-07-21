@@ -35,6 +35,7 @@ import java.util.*;
 //
 public class DataModifyActions {
     public static final String module = DataModifyActions.class.getName();
+    public final static String NEXT_ID_KEY = "StickySession";
     public static final String NEW_ACTION = "NEW_ACTION";
     public static final String EDIT_ACTION = "EDIT_ACTION";
     public static final String SAVE_ACTION = "SAVE_ACTION";

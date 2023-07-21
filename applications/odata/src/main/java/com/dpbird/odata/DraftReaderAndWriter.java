@@ -5,6 +5,7 @@ import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.processor.DataModifyActions;
 import com.dpbird.odata.services.ProcessorServices;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
@@ -213,7 +214,7 @@ public class DraftReaderAndWriter {
             CsdlPropertyRef csdlPropertyRef = navOfbizCsdlEntityType.getKey().get(0);
             Object primaryKeyValue = toCreatePropertyMap.get(csdlPropertyRef.getName());
             if (UtilValidate.isEmpty(primaryKeyValue)) {
-                String pkValue = "ID" + delegator.getNextSeqId(entityName);
+                String pkValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                 toCreatePropertyMap.put(csdlPropertyRef.getName(), pkValue);
             }
         }

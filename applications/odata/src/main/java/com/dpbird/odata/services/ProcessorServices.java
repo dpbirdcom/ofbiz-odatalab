@@ -323,7 +323,7 @@ public class ProcessorServices {
                 String ofbizFieldName = csdlProperty.getOfbizFieldName();
                 ModelField modelField = modelEntity.getField(ofbizFieldName);
                 if ("id".equals(modelField.getType())) {
-                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
+                    pkFieldValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                 }
             }
             draftFields.put(csdlPropertyRef.getName(), pkFieldValue);
@@ -566,7 +566,7 @@ public class ProcessorServices {
                 String ofbizFieldName = csdlProperty.getOfbizFieldName();
                 ModelField modelField = modelEntity.getField(ofbizFieldName);
                 if ("id".equals(modelField.getType())) {
-                    pkFieldValue = "ID" + delegator.getNextSeqId(entityName);
+                    pkFieldValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                 }
             }
             internalKeyMap.put(csdlPropertyRef.getName(), pkFieldValue);
@@ -827,7 +827,7 @@ public class ProcessorServices {
                     CsdlPropertyRef csdlPropertyRef = navOfbizCsdlEntityType.getKey().get(0);
                     Object primaryKeyValue = navProperties.get(csdlPropertyRef.getName());
                     if (UtilValidate.isEmpty(primaryKeyValue)) {
-                        String pkValue = "ID" + delegator.getNextSeqId(modelEntity.getEntityName());
+                        String pkValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                         navProperties.put(csdlPropertyRef.getName(), pkValue);
                     }
                 }
