@@ -309,7 +309,7 @@ public class OdataReader extends OfbizOdataProcessor {
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         HandlerResults handlerList = entityHandler.findList(odataContext, null, null,  queryOptions, navigationParam);
         List<? extends Map<String, Object>> resultData = handlerList.getResultData();
-        if (resultData == null) {
+        if (UtilValidate.isEmpty(resultData)) {
             return null;
         }
         EdmBindingTarget navBindingTarget = null;

@@ -386,6 +386,8 @@
             <xs:attribute name="DefaultValue" type="xs:anyURI"/>
             <xs:attribute name="AutoValue" type="xs:anyURI"/>
             <xs:attribute name="FileNamePath" type="xs:anyURI"/>
+            <xs:attribute name="Only" type="xs:boolean"/>
+            <xs:attribute name="Required" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">

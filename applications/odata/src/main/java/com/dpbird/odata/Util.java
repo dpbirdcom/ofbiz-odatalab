@@ -2695,22 +2695,31 @@ public class Util {
      *
      * @param packageName 要扫描的包名
      * @param annotation 要扫描的注解
-     * @param implInterface 实现接口
      * @return 所有匹配的Class
      */
-    public static List<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation, Class<?> implInterface) {
+    public static Set<Class<?>> getClassesWithAnnotation(String packageName, Class<? extends Annotation> annotation) {
         List<Class<?>> result = new ArrayList<>();
         Reflections reflections = new Reflections(packageName);
-        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(annotation);
-        for (Class<?> aClass : typesAnnotatedWith) {
-            if (UtilValidate.isNotEmpty(implInterface)) {
-                boolean assignableFrom = implInterface.isAssignableFrom(aClass);
-                if (assignableFrom) {
-                    result.add(aClass);
-                }
-            }
+        return reflections.getTypesAnnotatedWith(annotation);
+//        for (Class<?> aClass : typesAnnotatedWith) {
+//            if (UtilValidate.isNotEmpty(implInterface)) {
+//                boolean assignableFrom = implInterface.isAssignableFrom(aClass);
+//                if (assignableFrom) {
+//                    result.add(aClass);
+//                }
+//            }
+//        }
+//        return result;
+    }
+
+    /**
+     * 解析异常
+     */
+    public static Throwable getOriginalException(Throwable throwable) {
+        if (throwable.getCause() != null) {
+            return getOriginalException(throwable.getCause());
         }
-        return result;
+        return throwable;
     }
 
 }

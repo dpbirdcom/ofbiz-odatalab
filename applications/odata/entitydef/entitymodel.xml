@@ -27,20 +27,6 @@ under the License.
     <description>None</description>
     <copyright></copyright>
     <version></version>
-    <!-- 国际化与持久化的美妙结合 -->
-    <entity entity-name="Internationalization" package-name="com.dpbird.odata">
-        <field name="module" type="id-long"></field>
-        <field name="app" type="id-long"></field>
-        <field name="object" type="id-long"></field>
-        <field name="field" type="id-long"></field>
-        <field name="language" type="id-long"></field>
-        <field name="value" type="value"></field>
-        <prim-key field="module"/>
-        <prim-key field="app"/>
-        <prim-key field="object"/>
-        <prim-key field="field"/>
-        <prim-key field="language"/>
-    </entity>
 
     <extend-entity entity-name="Person">
         <relation type="many" rel-entity-name="PartyRole">
@@ -771,7 +757,7 @@ under the License.
         <relation type="one" rel-entity-name="Tiles">
             <key-map field-name="tilesId"/>
         </relation>
-        <relation type="one" rel-entity-name="SecurityPermission">
+        <relation type="one" fk-name="TILES_PERMISSION_SECURITY" rel-entity-name="SecurityPermission">
             <key-map field-name="permissionId"/>
         </relation>
     </entity>

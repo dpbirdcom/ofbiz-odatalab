@@ -96,7 +96,7 @@ public class LrepEvents {
         JSONArray jsonArray = jsonObject.getJSONArray("changes");
         addChanges(delegator, jsonArray, reference, userLogin);
         response.setContentType("application/json");
-        IOUtils.write(jsonObject.toString(), response.getOutputStream());
+        IOUtils.write(jsonObject.toString(), response.getOutputStream(), StandardCharsets.UTF_8);
         return "success";
     }
 
