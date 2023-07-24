@@ -2722,4 +2722,22 @@ public class Util {
         return throwable;
     }
 
+    public static int getTopOption(Map<String, QueryOption> queryOptions) {
+        if (UtilValidate.isNotEmpty(queryOptions)
+                && queryOptions.get("topOption") != null
+                && ((TopOption) queryOptions.get("topOption")).getValue() > 0) {
+            return ((TopOption) queryOptions.get("topOption")).getValue();
+        }
+        return OfbizOdataProcessor.MAX_ROWS;
+    }
+
+    public static int getSkipOption(Map<String, QueryOption> queryOptions) {
+        if (UtilValidate.isNotEmpty(queryOptions)
+                && queryOptions.get("skipOption") != null
+                && ((SkipOption) queryOptions.get("skipOption")).getValue() > 0) {
+            return ((SkipOption) queryOptions.get("skipOption")).getValue();
+        }
+        return 0;
+    }
+
 }

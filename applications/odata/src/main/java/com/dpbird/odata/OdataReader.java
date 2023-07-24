@@ -380,7 +380,7 @@ public class OdataReader extends OfbizOdataProcessor {
         if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
             Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
         }
-        Util.pageEntityCollection(entityCollection, skipValue, topValue);
+        Util.pageEntityCollection(entityCollection, Util.getSkipOption(queryOptions), Util.getTopOption(queryOptions));
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), entityCollection.getEntities(), navBindingTarget, edmNavigationProperty.getType());
         }
