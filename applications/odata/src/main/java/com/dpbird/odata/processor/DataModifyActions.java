@@ -217,12 +217,12 @@ public class DataModifyActions {
                 OdataOfbizEntity entityCreated = null;
                 if (genericValue == null) {
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
-                            csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
+                            csdlNavigationProperty.getName(), draftEntity, userLogin, httpServletRequest, locale);
                 } else if (!draftHasSamePk(draftGenericValue, navKeyMap, navCsdlEntityType)) {
                     deleteRelatedEntity(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
                             csdlNavigationProperty.getName(), navKeyMap, userLogin, httpServletRequest, locale);
                     entityCreated = createRelatedEntityFromDraft(dispatcher, delegator, edmProvider, keyMap, mainCsdlEntityType,
-                            csdlNavigationProperty.getName(), draftEntity, userLogin, locale);
+                            csdlNavigationProperty.getName(), draftEntity, userLogin, httpServletRequest, locale);
                 } else if (draftChanged(modelEntity, genericValue, draftGenericValue)) {
                     updateEntityFromDraft(dispatcher, delegator, edmProvider, csdlEntityType, navKeyMap, draftGenericValue, userLogin, locale, httpServletRequest);
                 }
@@ -365,9 +365,9 @@ public class DataModifyActions {
                                                                  Map<String, Object> keyMap,
                                                                  OfbizCsdlEntityType csdlEntityType,
                                                                  String navigationPropertyName,
-                                                                 Entity entityToWrite, GenericValue userLogin, Locale locale)
+                                                                 Entity entityToWrite, GenericValue userLogin, HttpServletRequest httpServletRequest, Locale locale)
             throws GenericServiceException, ODataException {
-        return OdataWriterHelper.createEntitySetRelatedEntityData(delegator, dispatcher, null, edmProvider,
+        return OdataWriterHelper.createEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
                 csdlEntityType, keyMap, navigationPropertyName, entityToWrite, null, userLogin, locale);
     }
 
