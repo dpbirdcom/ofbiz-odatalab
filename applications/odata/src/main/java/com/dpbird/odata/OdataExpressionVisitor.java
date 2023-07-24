@@ -156,7 +156,7 @@ public class OdataExpressionVisitor implements ExpressionVisitor<Object> {
                 if (UtilValidate.isEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlEntityType.getBaseType())) {
                     csdlProperty = (OfbizCsdlProperty) edmProvider.getEntityType(csdlEntityType.getBaseTypeFQN()).getProperty(leftEdmProperty.getName());
                 }
-                if (csdlProperty.getOfbizFieldName() != null) {
+                if (UtilValidate.isNotEmpty(csdlProperty) && UtilValidate.isNotEmpty(csdlProperty.getOfbizFieldName())) {
                     realFieldName = csdlProperty.getOfbizFieldName();
                 }
                 if (leftEdmProperty.getType() instanceof EdmDate && rightValue != null) {
