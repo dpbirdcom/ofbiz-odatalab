@@ -83,6 +83,7 @@ public class DraftReaderAndWriter {
         }
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
+        entity.setOdataParts(UtilMisc.toList(new OdataParts(null, edmEntityType, null, entity)));
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         //expand
@@ -93,7 +94,7 @@ public class DraftReaderAndWriter {
         return entity;
     }
 
-    public Entity findRelatedOne(Entity mainEntity, EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Entity findRelatedOne(OdataOfbizEntity mainEntity, EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", mainEntity);
@@ -104,6 +105,9 @@ public class DraftReaderAndWriter {
         Map<String, Object> result = draftHandler.finOne(odataContext, navEdmEntityType, navKeyMap, navigationParam);
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navEdmEntityType.getFullQualifiedName());
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmNavigationProperty.getType(), result);
+        ArrayList<OdataParts> odataParts = new ArrayList<>(mainEntity.getOdataParts());
+        odataParts.add(new OdataParts(null, edmNavigationProperty.getType(), null, entity));
+        entity.setOdataParts(odataParts);
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         //expand
@@ -114,7 +118,7 @@ public class DraftReaderAndWriter {
         return entity;
     }
 
-    public EntityCollection findRelatedList(Entity mainEntity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public EntityCollection findRelatedList(OdataOfbizEntity mainEntity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navEdmEntityType.getFullQualifiedName());
@@ -124,7 +128,11 @@ public class DraftReaderAndWriter {
         List<Entity> entities = entityCollection.getEntities();
         entityCollection.setCount(resultList.size());
         for (GenericValue genericValue : resultList) {
-            entities.add(findResultToEntity(navEdmEntityType, genericValue));
+            OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(navEdmEntityType, genericValue);
+            ArrayList<OdataParts> odataParts = new ArrayList<>(mainEntity.getOdataParts());
+            odataParts.add(new OdataParts(null, edmNavigationProperty.getType(), null, entity));
+            entity.setOdataParts(odataParts);
+            entities.add(entity);
         }
         //分页
         Util.pageEntityCollection(entityCollection, getSkipOption(queryOptions), getTopOption(queryOptions));
