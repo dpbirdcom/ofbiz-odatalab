@@ -22,6 +22,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
@@ -74,7 +75,7 @@ public class DraftReaderAndWriter {
      * @param queryOptions queryOptions
      * @return Entity
      */
-    public Entity findOne(Map<String, Object> keyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Entity findOne(Map<String, Object> keyMap, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         DraftHandler draftHandler = HandlerFactory.getDraftHandler(edmEntityType, edmProvider, delegator);
         Map<String, Object> resultMap = draftHandler.finOne(odataContext, edmEntityType, keyMap, null);
@@ -83,7 +84,7 @@ public class DraftReaderAndWriter {
         }
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
-        entity.setOdataParts(UtilMisc.toList(new OdataParts(null, edmEntityType, null, entity)));
+        entity.setOdataParts(UtilMisc.toList(new OdataParts(edmBindingTarget, edmEntityType, null, entity)));
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         //expand
