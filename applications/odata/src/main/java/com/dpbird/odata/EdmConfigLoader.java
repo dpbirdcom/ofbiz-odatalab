@@ -1898,6 +1898,7 @@ public class EdmConfigLoader {
         String name = parameterElement.getAttribute("Name");
         String type = parameterElement.getAttribute("Type");
         String precision = parameterElement.getAttribute("Precision");
+        String scale = parameterElement.getAttribute("Scale");
         String nullable = parameterElement.getAttribute("Nullable");
         String isCollection = parameterElement.getAttribute("IsCollection");
         FullQualifiedName paramFullQualifiedName;
@@ -1912,6 +1913,9 @@ public class EdmConfigLoader {
         parameter.setName(name);
         if (UtilValidate.isNotEmpty(precision)) {
             parameter.setPrecision(Integer.valueOf(precision));
+        }
+        if (UtilValidate.isNotEmpty(scale)) {
+            parameter.setScale(Integer.valueOf(scale));
         }
         parameter.setNullable(!"false".equals(nullable));
         parameter.setCollection("true".equals(isCollection));
