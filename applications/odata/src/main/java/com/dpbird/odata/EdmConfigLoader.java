@@ -912,6 +912,13 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(insertRequireAttr)) {
             insertRequireProperties.addAll(Arrays.asList(insertRequireAttr.split(",")));
         }
+        List<String> defaultOrderByProperties = new ArrayList<>();
+        String orderby = entityTypeElement.getAttribute("Orderby");
+        if (UtilValidate.isNotEmpty(orderby)) {
+            List<String> orderbyProperties = Arrays.stream(orderby.split(","))
+                    .map(element -> element + " NULLS LAST").collect(Collectors.toList());
+            defaultOrderByProperties.addAll(orderbyProperties);
+        }
         List<String> excludeProperties = new ArrayList<>();
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, name);
         List<? extends Element> entityTypeChildren = UtilXml.childElementList(entityTypeElement);
@@ -1005,6 +1012,7 @@ public class EdmConfigLoader {
         csdlEntityType.setActionList(actionList);
         csdlEntityType.setFunctionList(functionList);
         csdlEntityType.setInsertRequireProperties(insertRequireProperties);
+        csdlEntityType.setDefaultOrderByProperties(defaultOrderByProperties);
         return csdlEntityType;
     }
 

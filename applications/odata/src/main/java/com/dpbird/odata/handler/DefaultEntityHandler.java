@@ -20,6 +20,7 @@ import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,11 +62,15 @@ public class DefaultEntityHandler implements EntityHandler {
             EdmEntityType edmEntityType = (EdmEntityType) navigationParam.get("edmEntityType");
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) navigationParam.get("edmNavigationProperty");
             Map<String, Object> edmParam = UtilMisc.toMap("edmEntityType", edmEntityType);
-            OdataReader reader = new OdataReader(odataContext, new HashMap<>(), edmParam);
-            List<GenericValue> relatedList = reader.findRelatedGenericValue(entity, edmNavigationProperty, primaryKeyCond);
-            if (UtilValidate.isNotEmpty(relatedList)) {
-                handlerResults = new HandlerResults(relatedList.size(), relatedList);
+            //先根据relations查询
+            OdataReader odataReader = new OdataReader(odataContext, new HashMap<>(), edmParam);
+            List<GenericValue> relatedList = odataReader.findRelatedGenericValue(entity, edmNavigationProperty, primaryKeyCond);
+            if (UtilValidate.isEmpty(relatedList)) {
+                return new HandlerResults();
             }
+            //根据odata Options查询
+            OdataReader optionReader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmNavigationProperty.getType()));
+            handlerResults = optionReader.ofbizFindList(Util.getGenericValuesQueryCond(relatedList));
         }
         return handlerResults;
     }

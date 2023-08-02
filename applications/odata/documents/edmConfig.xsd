@@ -92,6 +92,7 @@
             <xs:attribute name="AutoSet" type="xs:boolean"/>
             <xs:attribute name="EntitySetName" type="xs:NCName"/>
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
+            <xs:attribute name="Orderby" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
@@ -404,6 +405,7 @@
             <xs:attribute name="Type" use="required" type="xs:NCName"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
+            <xs:attribute name="Scale" type="xs:integer"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">
