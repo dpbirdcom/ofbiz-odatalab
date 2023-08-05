@@ -132,6 +132,7 @@ configurations {
 
 dependencies {
     compile 'mysql:mysql-connector-java:5.1.41'
+    compile 'org.postgresql:postgresql:42.5.0'
     // ofbiz compile libs
     compile 'apache-xerces:xercesImpl:2.9.1'
     compile 'com.google.zxing:core:3.3.1'
