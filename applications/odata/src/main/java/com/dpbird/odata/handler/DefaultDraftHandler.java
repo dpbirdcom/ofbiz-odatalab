@@ -22,6 +22,7 @@ import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -92,7 +93,8 @@ public class DefaultDraftHandler implements DraftHandler {
             EntityCondition queryCondition = EntityCondition.makeCondition(entityConditionList, EntityOperator.OR);
             EntityCondition draftIdCondition = EntityCondition.makeCondition("draftUUID", EntityOperator.IN, navDraftIds);
             queryCondition = Util.appendCondition(queryCondition, draftIdCondition);
-            return EntityQuery.use(delegator).from(navCsdlEntityType.getDraftEntityName()).where(queryCondition).queryList();
+            return EntityQuery.use(delegator).from(navCsdlEntityType.getDraftEntityName()).orderBy(navCsdlEntityType.getDefaultOrderByProperties())
+                    .where(queryCondition).queryList();
         } catch (GenericEntityException e) {
             e.printStackTrace();
             throw new OfbizODataException(e.getMessage());

@@ -27,20 +27,6 @@ under the License.
     <description>None</description>
     <copyright></copyright>
     <version></version>
-    <!-- 国际化与持久化的美妙结合 -->
-    <entity entity-name="Internationalization" package-name="com.dpbird.odata">
-        <field name="module" type="id-long"></field>
-        <field name="app" type="id-long"></field>
-        <field name="object" type="id-long"></field>
-        <field name="field" type="id-long"></field>
-        <field name="language" type="id-long"></field>
-        <field name="value" type="value"></field>
-        <prim-key field="module"/>
-        <prim-key field="app"/>
-        <prim-key field="object"/>
-        <prim-key field="field"/>
-        <prim-key field="language"/>
-    </entity>
 
     <extend-entity entity-name="Person">
         <relation type="many" rel-entity-name="PartyRole">
@@ -401,13 +387,6 @@ under the License.
     	</relation>
     </entity>
 
-    <entity entity-name="OdataApp" package-name="com.dpbird.odata">
-        <field name="appId" type="id"></field>
-        <field name="appName" type="name"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="appId"/>
-    </entity>
-
     <entity entity-name="EdmConfig" package-name="com.dpbird.odata">
         <field name="edmConfigId" type="id"></field>
         <field name="appId" type="id"></field>
@@ -740,12 +719,47 @@ under the License.
         </relation>
     </entity>
 
-    <entity entity-name="TestEntity"
+    <entity entity-name="OdataApp" package-name="com.dpbird.odata">
+        <field name="appId" type="id"/>
+        <field name="appName" type="name"/>
+        <field name="description" type="description"/>
+        <prim-key field="appId"/>
+    </entity>
+
+    <entity entity-name="Tiles" package-name="com.dpbird.odata">
+        <field name="tilesId" type="id"/>
+        <field name="description" type="description"/>
+        <prim-key field="tilesId"/>
+    </entity>
+
+    <entity entity-name="OdataAppPermission"
             package-name="com.dpbird.odata"
-            title="TestEntity">
-        <field name="testId" type="id"/>
-        <field name="testField" type="id"/>
-        <prim-key field="testId"/>
+            title="Odata service permissions">
+        <field name="appId" type="id"/>
+        <field name="permissionId" type="id"/>
+        <prim-key field="appId"/>
+        <prim-key field="permissionId"/>
+        <relation type="one" rel-entity-name="OdataApp">
+            <key-map field-name="appId"/>
+        </relation>
+        <relation type="one" rel-entity-name="SecurityPermission">
+            <key-map field-name="permissionId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="TilesPermission"
+            package-name="com.dpbird.odata"
+            title="Tiles permissions">
+        <field name="tilesId" type="id"/>
+        <field name="permissionId" type="id"/>
+        <prim-key field="tilesId"/>
+        <prim-key field="permissionId"/>
+        <relation type="one" rel-entity-name="Tiles">
+            <key-map field-name="tilesId"/>
+        </relation>
+        <relation type="one" fk-name="TILES_PERMISSION_SECURITY" rel-entity-name="SecurityPermission">
+            <key-map field-name="permissionId"/>
+        </relation>
     </entity>
 
 

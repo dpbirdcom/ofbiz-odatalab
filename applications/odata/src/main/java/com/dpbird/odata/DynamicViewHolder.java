@@ -241,7 +241,8 @@ public class DynamicViewHolder {
             //处理 RelAlias
             returnEntityAlias = addRelAlias(null, relAlias, lastResourceParts);
             currentCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navigationProperty.getTypeFQN());
-            lastResourceParts = relAlias.getName();
+//            lastResourceParts = relAlias.getName();
+            lastResourceParts = returnEntityAlias;
         }
         return returnEntityAlias;
     }

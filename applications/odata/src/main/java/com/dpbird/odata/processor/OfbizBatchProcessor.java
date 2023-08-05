@@ -60,6 +60,11 @@ public class OfbizBatchProcessor implements BatchProcessor {
                         }
                     }
                 } // end try to retrieve SAP-ContextId
+                boolean isFail = responseParty.getResponses().stream().anyMatch(res -> res.getStatusCode() >= 400);
+                //If it fails, do not continue
+                if (isFail) {
+                    break;
+                }
             }
             // 5. Create a new boundary for the response
             final String responseBoundary = "batch_" + UUID.randomUUID().toString();

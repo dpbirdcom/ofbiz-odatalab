@@ -174,7 +174,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
         } catch (GenericServiceException e) {
             e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
+            Throwable originalException = Util.getOriginalException(e);
+            throw new ODataApplicationException(originalException.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
         }
         // 3. configure the response object
         oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());

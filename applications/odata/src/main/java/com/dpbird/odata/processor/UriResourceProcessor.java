@@ -97,7 +97,7 @@ public class UriResourceProcessor {
 //            DraftHandler draftHandler = new DraftHandler(odataContext, sapContextId, edmEntityType);
 //            entityData = draftHandler.readEntityData(edmEntityType, primaryKey, queryOptions);
             DraftReaderAndWriter draftReaderAndWriter = new DraftReaderAndWriter(odataContext, sapContextId, edmEntityType);
-            entityData = draftReaderAndWriter.findOne(primaryKey, queryOptions);
+            entityData = draftReaderAndWriter.findOne(primaryKey, edmEntitySet, queryOptions);
         } else {
             ExtraOdataReader reader = new ExtraOdataReader(odataContext, queryOptions, UtilMisc.toMap("edmBindingTarget", edmEntitySet));
             entityData = UtilValidate.isEmpty(primaryKey) ? reader.findList() : reader.findOne(primaryKey, queryOptions);

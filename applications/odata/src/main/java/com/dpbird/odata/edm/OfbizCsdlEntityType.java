@@ -55,6 +55,7 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
     private final Map<String, Object> defaultValueProperties = new HashMap<>();
     private final Map<String, Object> autoValueProperties = new HashMap<>();
     private List<String> insertRequireProperties = new ArrayList<>();
+    private List<String> defaultOrderByProperties = new ArrayList<>();
 
     public OfbizCsdlEntityType(String ofbizEntity, String handlerClass, boolean autoProperties, boolean autoEnum,
                                boolean filterByDate, String attrEntityName, String attrNumericEntityName, String attrDateEntityName, boolean hasDerivedEntity,
@@ -327,6 +328,8 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
             if (UtilValidate.isNotEmpty(property.getDefaultValue())) {
                 if (property.getType().contains("Decimal")) {
                     defaultValue = new BigDecimal((String) defaultValue);
+                } else if (property.getType().contains("Edm.Int64")) {
+                    defaultValue = Long.valueOf((String) defaultValue);
                 }
                 defaultValueProperties.put(property.getName(), defaultValue);
             }
@@ -382,6 +385,14 @@ public class OfbizCsdlEntityType extends CsdlEntityType implements Cloneable {
 
     public boolean isAutoSet() {
         return autoSet;
+    }
+
+    public List<String> getDefaultOrderByProperties() {
+        return defaultOrderByProperties;
+    }
+
+    public void setDefaultOrderByProperties(List<String> defaultOrderByProperties) {
+        this.defaultOrderByProperties = defaultOrderByProperties;
     }
 
     @Override

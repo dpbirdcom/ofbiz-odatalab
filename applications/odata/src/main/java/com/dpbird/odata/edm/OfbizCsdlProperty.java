@@ -2,14 +2,9 @@ package com.dpbird.odata.edm;
 
 import com.dpbird.odata.annotation.FieldControlType;
 import com.dpbird.odata.annotation.Term;
-import com.dpbird.odata.annotation.Text;
-import org.apache.commons.collections.map.LinkedMap;
-import org.apache.ofbiz.entity.condition.EntityCondition;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class OfbizCsdlProperty extends CsdlProperty {
     private boolean computed = false;
@@ -31,6 +26,10 @@ public class OfbizCsdlProperty extends CsdlProperty {
     private String ofbizFieldName;
     private EntityTypeRelAlias relAlias;
     private String autoValue;
+    private String fileNamePath;
+    //StickySession保存时的校验
+    private boolean only = false;
+    private boolean required = false;
 
     public List<Term> getTerms() {
         return terms;
@@ -190,6 +189,30 @@ public class OfbizCsdlProperty extends CsdlProperty {
 
     public void setAutoValue(String autoValue) {
         this.autoValue = autoValue;
+    }
+
+    public String getFileNamePath() {
+        return fileNamePath;
+    }
+
+    public void setFileNamePath(String fileNamePath) {
+        this.fileNamePath = fileNamePath;
+    }
+
+    public boolean isOnly() {
+        return only;
+    }
+
+    public void setOnly(boolean only) {
+        this.only = only;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     public boolean equals(Object o) {

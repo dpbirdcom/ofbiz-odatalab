@@ -3,7 +3,7 @@
     <title>Entity of an Apache OFBiz Component</title>
     <description>None</description>
     <version>1.0</version>
-    <default-resource-name>ProductEntityLabels</default-resource-name>
+<!--    <default-resource-name>ProductEntityLabels</default-resource-name>-->
 
 
     <entity entity-name="DraftAdministrativeData" package-name="com.dpbird.draft" no-auto-stamp="true">

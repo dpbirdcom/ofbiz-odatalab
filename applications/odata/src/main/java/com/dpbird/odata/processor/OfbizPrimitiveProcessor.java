@@ -1,6 +1,7 @@
 package com.dpbird.odata.processor;
 
 import com.dpbird.odata.*;
+import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlProperty;
@@ -12,6 +13,7 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.data.ContextURL;
@@ -37,6 +39,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -76,10 +80,12 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
         EdmProperty edmProperty = null;
         Property property;
         String mimeType;
+        String fileName;
         try {
             Map<String, Object> propertyInfo = readProperty(request, uriInfo.getUriResourceParts(), uriInfo.getAliases());
             property = (Property) propertyInfo.get("property");
             mimeType = (String) propertyInfo.get("mimeTypeId");
+            fileName = (String) propertyInfo.get("fileName");
             UriResource lastUriResource = ListUtil.getLast(uriInfo.getUriResourceParts());
             if (lastUriResource instanceof UriResourceFunction) {
                 //Function
@@ -104,6 +110,13 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
                 response.setContent(responseContent);
                 response.setStatusCode(HttpStatusCode.OK.getStatusCode());
                 response.setHeader(HttpHeader.CONTENT_TYPE, mimeType);
+                if (UtilValidate.isNotEmpty(fileName)) {
+                    try {
+                        response.setHeader("Content-Disposition", "filename=" + URLEncoder.encode(fileName,"UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
                 return;
             }
             Integer scale = returnType != null ? returnType.getScale() :  edmProperty.getScale();
@@ -182,6 +195,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(lastUriResource.getSegmentValue());
             property = entity.getProperty(lastUriResource.getSegmentValue());
             propertyInfo.put("property", property);
+            propertyInfo.put("fileName", getFileName(delegator, entity, csdlProperty));
             try {
                 if (UtilValidate.isNotEmpty(property) && "Edm.Stream".equals(property.getType())) {
                     String mimeType = csdlProperty.getMimeType();
@@ -205,6 +219,31 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
 
         }
         return propertyInfo;
+    }
+
+    private static String getFileName(Delegator delegator, OdataOfbizEntity entity, OfbizCsdlProperty csdlProperty) throws OfbizODataException {
+        String fileNamePath = csdlProperty.getFileNamePath();
+        if (UtilValidate.isEmpty(fileNamePath)) {
+            return null;
+        }
+        if (fileNamePath.contains("/")) {
+            String relations = fileNamePath.substring(0, fileNamePath.lastIndexOf("/"));
+            String fieldName = fileNamePath.substring(fileNamePath.lastIndexOf("/") + 1);
+            //关联对象存储
+            GenericValue genericValue = entity.getGenericValue();
+            EntityTypeRelAlias relAlias = EdmConfigLoader.loadRelAliasFromAttribute(delegator, genericValue.getModelEntity(), null, relations);
+            List<GenericValue> relatedGenericValues = OdataProcessorHelper.getRelatedGenericValues(delegator, genericValue, relAlias, false);
+            GenericValue relEntity = EntityUtil.getFirst(relatedGenericValues);
+            if (UtilValidate.isNotEmpty(relEntity)) {
+                return relEntity.getString(fieldName);
+            }
+        } else {
+            Property property = entity.getProperty(fileNamePath);
+            if (UtilValidate.isNotEmpty(property)) {
+                return (String) property.getValue();
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> getOdataContext() {

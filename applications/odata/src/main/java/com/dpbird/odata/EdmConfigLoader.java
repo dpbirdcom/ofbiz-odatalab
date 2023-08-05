@@ -3,6 +3,7 @@ package com.dpbird.odata;
 import com.dpbird.odata.annotation.*;
 import com.dpbird.odata.edm.*;
 import com.google.common.collect.Lists;
+import org.apache.ofbiz.base.location.FlexibleLocation;
 import org.apache.ofbiz.base.util.*;
 import org.apache.ofbiz.base.util.string.FlexibleStringExpander;
 import org.apache.ofbiz.entity.Delegator;
@@ -31,7 +32,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class EdmConfigLoader {
@@ -86,10 +86,13 @@ public class EdmConfigLoader {
             addToEdmWebConfig(delegator, dispatcher, edmWebConfig, globalRootElement, locale);
         }
         for (String importEdm : getImportEdm(rootElement)) {
-            URL importUrl = UtilURL.fromResource(importEdm + "EdmConfig.xml");
+            URL importUrl = FlexibleLocation.resolveLocation(importEdm);
             Document importDoc = UtilXml.readXmlDocument(importUrl, false);
             if (UtilValidate.isNotEmpty(importDoc)) {
                 addToEdmWebConfig(delegator, dispatcher, edmWebConfig, importDoc.getDocumentElement(), locale);
+            } else {
+                //无效的地址
+                Debug.logWarning("File not found: " + importEdm, module);
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
@@ -909,6 +912,13 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(insertRequireAttr)) {
             insertRequireProperties.addAll(Arrays.asList(insertRequireAttr.split(",")));
         }
+        List<String> defaultOrderByProperties = new ArrayList<>();
+        String orderby = entityTypeElement.getAttribute("Orderby");
+        if (UtilValidate.isNotEmpty(orderby)) {
+            List<String> orderbyProperties = Arrays.stream(orderby.split(","))
+                    .map(element -> element + " NULLS LAST").collect(Collectors.toList());
+            defaultOrderByProperties.addAll(orderbyProperties);
+        }
         List<String> excludeProperties = new ArrayList<>();
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, name);
         List<? extends Element> entityTypeChildren = UtilXml.childElementList(entityTypeElement);
@@ -931,9 +941,13 @@ public class EdmConfigLoader {
                 hasRelField = true;
             } else if (inEntityTagName.equals("Property")) {
                 OfbizCsdlProperty csdlProperty = loadPropertyFromElement(dispatcher, modelEntity, relAliases, inEntityElement, locale, labelPrefix, autoLabel);
-                csdlProperties.add(csdlProperty);
-                if (UtilValidate.isNotEmpty(csdlProperty.getRelAlias())) {
-                    hasRelField = true;
+                if (UtilValidate.isNotEmpty(csdlProperty)) {
+                    //如果重复定义 单独定义的Property覆盖Properties中的定义
+                    csdlProperties.removeIf(p -> p.getName().equals(csdlProperty.getName()));
+                    csdlProperties.add(csdlProperty);
+                    if (UtilValidate.isNotEmpty(csdlProperty.getRelAlias())) {
+                        hasRelField = true;
+                    }
                 }
             } else if (inEntityTagName.equals("NavigationProperty")) {
                 CsdlNavigationProperty csdlNavigationProperty = loadNavigationFromElement(delegator, modelEntity, inEntityElement);
@@ -998,6 +1012,7 @@ public class EdmConfigLoader {
         csdlEntityType.setActionList(actionList);
         csdlEntityType.setFunctionList(functionList);
         csdlEntityType.setInsertRequireProperties(insertRequireProperties);
+        csdlEntityType.setDefaultOrderByProperties(defaultOrderByProperties);
         return csdlEntityType;
     }
 
@@ -1185,6 +1200,11 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(filterByDateAttr)) {
             filterByDate = Boolean.valueOf(filterByDateAttr);
         }
+        boolean cascade = false;
+        String cascadeAttr = navigationPropertyElement.getAttribute("Cascade");
+        if (UtilValidate.isNotEmpty(cascadeAttr)) {
+            cascade = Boolean.valueOf(cascadeAttr);
+        }
         String containsTargetStr = navigationPropertyElement.getAttribute("ContainsTarget");
         boolean containsTarget = containsTargetStr != null && containsTargetStr.equals("true");
         String midEntity = navigationPropertyElement.getAttribute("MidEntity");
@@ -1240,6 +1260,7 @@ public class EdmConfigLoader {
         navigationProperty.setReadOnly(stickyReadOnly);
         navigationProperty.setPreCreate(preCreate);
         navigationProperty.setHandlerNode(handlerNode);
+        navigationProperty.setCascade(cascade);
         if (UtilValidate.isNotEmpty(midEntity)) {
             navigationProperty.setMidEntity(midEntity);
         }
@@ -1543,9 +1564,14 @@ public class EdmConfigLoader {
         String maxLength = propertyElement.getAttribute("MaxLength");
         String defaultValue = propertyElement.getAttribute("DefaultValue");
         String autoValue = propertyElement.getAttribute("AutoValue");
+        String fileNamePath = propertyElement.getAttribute("FileNamePath");
+        String only = propertyElement.getAttribute("Only");
+        String required = propertyElement.getAttribute("Required");
         // attribute for annotation
         String label = propertyElement.getAttribute("Label");
-        if (UtilValidate.isEmpty(label) && autoLabel) {
+        if (UtilValidate.isNotEmpty(label) && label.startsWith("${uiLabelMap.")) {
+            label = parseValue(label, locale);
+        } else if (UtilValidate.isEmpty(label) && autoLabel) {
             String labelKey = "${uiLabelMap." + labelPrefix + Util.firstUpperCase(name) + "}";
             label = parseValue(labelKey, locale);
         }
@@ -1650,6 +1676,15 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(autoValue)) {
             property.setAutoValue(autoValue);
+        }
+        if (UtilValidate.isNotEmpty(fileNamePath)) {
+            property.setFileNamePath(fileNamePath);
+        }
+        if (UtilValidate.isNotEmpty(only)) {
+            property.setOnly(Boolean.valueOf(only));
+        }
+        if (UtilValidate.isNotEmpty(required)) {
+            property.setRequired(Boolean.valueOf(required));
         }
         List<? extends Element> propertyChildren = UtilXml.childElementList(propertyElement);
         List<CsdlAnnotation> annotations = new ArrayList<>();
@@ -1871,6 +1906,7 @@ public class EdmConfigLoader {
         String name = parameterElement.getAttribute("Name");
         String type = parameterElement.getAttribute("Type");
         String precision = parameterElement.getAttribute("Precision");
+        String scale = parameterElement.getAttribute("Scale");
         String nullable = parameterElement.getAttribute("Nullable");
         String isCollection = parameterElement.getAttribute("IsCollection");
         FullQualifiedName paramFullQualifiedName;
@@ -1885,6 +1921,9 @@ public class EdmConfigLoader {
         parameter.setName(name);
         if (UtilValidate.isNotEmpty(precision)) {
             parameter.setPrecision(Integer.valueOf(precision));
+        }
+        if (UtilValidate.isNotEmpty(scale)) {
+            parameter.setScale(Integer.valueOf(scale));
         }
         parameter.setNullable(!"false".equals(nullable));
         parameter.setCollection("true".equals(isCollection));

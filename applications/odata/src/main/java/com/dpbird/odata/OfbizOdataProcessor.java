@@ -2,6 +2,7 @@ package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.HandlerFactory;
+import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.StringUtil;
 import org.apache.ofbiz.base.util.UtilMisc;
@@ -49,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 
@@ -252,7 +254,7 @@ public class OfbizOdataProcessor {
                     String[] condition;
                     if (fieldCondition.contains("!=")) {
                         condition = fieldCondition.split("!=");
-                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), httpServletRequest);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
@@ -260,7 +262,7 @@ public class OfbizOdataProcessor {
                         entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, EntityOperator.NOT_EQUAL, conValue));
                     } else if (fieldCondition.contains("=")) {
                         condition = fieldCondition.split("=");
-                        String conValue = Util.parseVariable(condition[1].trim(), userLogin);
+                        String conValue = (String) Util.parseVariable(condition[1].trim(), httpServletRequest);
                         if ("null".equals(conValue)) {
                             conValue = null;
                         }
@@ -283,14 +285,14 @@ public class OfbizOdataProcessor {
                         entitySetConditionList.add(EntityCondition.makeCondition(filterProperty, operator, values));
                     }
                 } else {
-                    entitySetConditionList.add(Util.parseEntityCondition(relString, userLogin));
+                    entitySetConditionList.add(Util.parseEntityCondition(relString, httpServletRequest));
                 }
             }
             if (entitySetConditionList.size() > 0) {
                 entityCondition = EntityCondition.makeCondition(entitySetConditionList, conditionsOperator);
             }
         } else {
-            entityCondition = Util.parseEntityCondition(conditionStr, userLogin);
+            entityCondition = Util.parseEntityCondition(conditionStr, httpServletRequest);
         }
         return entityCondition;
     }
@@ -466,31 +468,18 @@ public class OfbizOdataProcessor {
                             }
                             applySelect.add(segmentValue);
                             dynamicViewEntity.addAlias(ofbizCsdlEntityType.getOfbizEntity(), segmentValue, segmentValue, null, false, true, null);
-                        } else if (path.size() == 2) {
-                            //子对象字段
+                        } else {
+                            //多段式的子对象字段
                             //add MemberEntity
-                            UriResourceNavigation resourceNavigation = (UriResourceNavigation) path.get(0);
-                            EdmNavigationProperty edmNavigationProperty = resourceNavigation.getProperty();
-                            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
-                            String navigationName = edmNavigationProperty.getName();
-                            String navigationEntityName = navCsdlEntityType.getOfbizEntity();
-                            if (!dynamicViewHolder.hasMemberEntity(navigationName, navigationEntityName)) {
-                                dynamicViewEntity.addMemberEntity(navigationName, navigationEntityName);
-                            }
-                            //add Alias
-                            UriResourcePrimitiveProperty resourcePrimitiveProperty = (UriResourcePrimitiveProperty) path.get(1);
-                            String segmentValue = resourcePrimitiveProperty.getSegmentValue();
-                            dynamicViewEntity.addAlias(navigationName, navigationName + segmentValue, segmentValue, null, false, true, null);
-                            //要把这个字段加到selectField里 否则ofbiz不会进行groupBy处理
+                            UriResource groupByProperty = ListUtil.getLast(path);
+                            path = path.subList(0, path.size() - 1);
+                            List<String> resourceParts = path.stream().map(UriResource::getSegmentValue).collect(Collectors.toList());
+                            String memberAlias = dynamicViewHolder.addMultiParts(resourceParts, null);
+                            dynamicViewEntity.addAlias(memberAlias, memberAlias + groupByProperty.getSegmentValue(), groupByProperty.getSegmentValue(), null, false, true, null);
                             if (UtilValidate.isEmpty(applySelect)) {
                                 applySelect = new HashSet<>();
                             }
-                            applySelect.add(navigationName + segmentValue);
-                            //add ViewLink
-                            if (!dynamicViewHolder.hasViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName)) {
-                                ModelRelation relation = currModelEntity.getRelation(resourceNavigation.getSegmentValue());
-                                dynamicViewEntity.addViewLink(ofbizCsdlEntityType.getOfbizEntity(), navigationName, false, relation.getKeyMaps());
-                            }
+                            applySelect.add(memberAlias + groupByProperty.getSegmentValue());
                         }
                     }
                 }
@@ -515,26 +504,31 @@ public class OfbizOdataProcessor {
                 AggregateExpression.StandardMethod standardMethod = aggregateExpression.getStandardMethod();
                 //返回字段别名
                 String expressionAlias = aggregateExpression.getAlias();
-                if (UtilValidate.isNotEmpty(standardMethod)) {
-                    //expression 字段名称或者子对象名称
-                    String expression = aggregateExpression.getExpression().toString();
-                    expression = expression.substring(1, expression.length() - 1);
-                    if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
-                        List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
-                        if (relationKeyList.size() > 1) {
-                            throw new OfbizODataException("Multiple field association is not supported.");
-                        }
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relationKeyList.get(0), null, false, null, AGGREGATE_MAP.get(standardMethod));
-                    } else {
-                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
-                    }
-                } else if (Util.isAggregateCount(aggregateExpression)) {
+                if (Util.isAggregateCount(aggregateExpression)) {
                     //这里处理aggregate的$count，使用统计主键数量的方式实现，多主键暂不支持
                     List<String> pkFieldNames = modelEntity.getPkFieldNames();
                     if (pkFieldNames.size() > 1) {
                         throw new OfbizODataException("Count queries with multiple primary keys are not supported.");
                     }
                     dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, modelEntity.getFirstPkFieldName(), null, false, null, "count");
+                } else {
+                    if (UtilValidate.isNotEmpty(standardMethod)) {
+                        //expression 字段名称或者子对象名称
+                        String expression = aggregateExpression.getExpression().toString();
+                        expression = expression.substring(1, expression.length() - 1);
+                        if (standardMethod.equals(AggregateExpression.StandardMethod.COUNT_DISTINCT)) {
+                            List<String> relationKeyList = Util.getRelationKey(modelEntity, expression);
+                            if (relationKeyList.size() > 1) {
+                                throw new OfbizODataException("Multiple field association is not supported.");
+                            }
+                            dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, relationKeyList.get(0), null, false, null, AGGREGATE_MAP.get(standardMethod));
+                        } else {
+                            dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expression, null, false, null, AGGREGATE_MAP.get(standardMethod));
+                        }
+                    } else {
+                        //default sum
+                        dynamicViewEntity.addAlias(ofbizCsdlEntityType.getName(), expressionAlias, expressionAlias, null, false, null, "sum");
+                    }
                 }
                 if (applySelect == null) {
                     applySelect = new HashSet<>();

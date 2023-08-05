@@ -21,6 +21,7 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
@@ -93,10 +94,11 @@ public class OdataReader extends OfbizOdataProcessor {
         //从接口实例中读取数据
         EdmEntitySet edmEntitySet = (EdmEntitySet) edmParams.get("edmBindingTarget");
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
-        Map<String, Object> resultMap = entityHandler.findOne(odataContext, edmEntitySet, keyMap);
-        if (UtilValidate.isEmpty(resultMap)) {
+        HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, keyMap, null, null);
+        if (UtilValidate.isEmpty(results) || UtilValidate.isEmpty(results.getResultData())) {
             throw new OfbizODataException(String.valueOf(HttpStatus.SC_NOT_FOUND), "Not found.");
         }
+        Map<String, Object> resultMap = results.getResultData().get(0);
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, resultMap);
         entity.addOdataParts(new OdataParts(edmEntitySet, edmEntityType, null, entity));
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
@@ -127,7 +129,7 @@ public class OdataReader extends OfbizOdataProcessor {
         } else {
             //从接口实例获取数据
             EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmEntityType, edmProvider, delegator);
-            HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, queryOptions, null);
+            HandlerResults results = entityHandler.findList(odataContext, edmEntitySet, null, queryOptions, null);
             entityCollection.setCount(results.getResultCount());
             for (Map<String, Object> result : results.getResultData()) {
                 OdataOfbizEntity resultToEntity = (OdataOfbizEntity) findResultToEntity(edmEntitySet, edmEntityType, result);
@@ -150,6 +152,15 @@ public class OdataReader extends OfbizOdataProcessor {
      */
     public HandlerResults ofbizFindList(EntityCondition otherCondition) throws OfbizODataException {
         try {
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            List<String> defaultOrderby = csdlEntityType.getDefaultOrderByProperties();
+            //添加缺省排序
+            if (UtilValidate.isNotEmpty(defaultOrderby)) {
+                if (UtilValidate.isEmpty(orderBy)) {
+                    orderBy = new ArrayList<>();
+                }
+                orderBy.addAll(defaultOrderby);
+            }
             entityCondition = Util.appendCondition(entityCondition, otherCondition);
             if (dynamicViewHolder == null) {
                 OdataEntityQuery odataEntityQuery = (OdataEntityQuery) OdataEntityQuery.use(delegator).from(modelEntity.getEntityName())
@@ -305,9 +316,9 @@ public class OdataReader extends OfbizOdataProcessor {
         navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
-        HandlerResults handlerList = entityHandler.findList(odataContext, null, queryOptions, navigationParam);
+        HandlerResults handlerList = entityHandler.findList(odataContext, null, null,  queryOptions, navigationParam);
         List<? extends Map<String, Object>> resultData = handlerList.getResultData();
-        if (resultData == null) {
+        if (UtilValidate.isEmpty(resultData)) {
             return null;
         }
         EdmBindingTarget navBindingTarget = null;
@@ -345,7 +356,7 @@ public class OdataReader extends OfbizOdataProcessor {
         navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler navEntityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
-        HandlerResults results = navEntityHandler.findList(odataContext, null, queryOptions, navigationParam);
+        HandlerResults results = navEntityHandler.findList(odataContext, null, null, queryOptions, navigationParam);
         if (UtilValidate.isEmpty(results) || UtilValidate.isEmpty(results.getResultData())) {
             return entityCollection;
         }
@@ -362,23 +373,24 @@ public class OdataReader extends OfbizOdataProcessor {
             navigationEntity.setOdataParts(odataParts);
             entityCollection.getEntities().add(navigationEntity);
         }
-        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-        OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
-        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-        //filter、orderby、page
-        FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
-        OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
-        if (filterOption != null || orderbyOption != null) {
-            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, edmNavigationProperty.getType(),
-                    edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
-        }
+//        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+//        OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
+//        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+//        //filter、orderby、page
+//        FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
+//        OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
+//        List<String> defaultOrderBy = csdlEntityType.getDefaultOrderByProperties();
+//        if (filterOption != null || orderbyOption != null || UtilValidate.isNotEmpty(defaultOrderBy)) {
+//            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, edmNavigationProperty.getType(),
+//                    edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
+//        }
         entityCollection.setCount(entityCollection.getEntities().size());
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
-        if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
-            Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
-        }
-        Util.pageEntityCollection(entityCollection, skipValue, topValue);
+//        if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
+//            Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
+//        }
+//        Util.pageEntityCollection(entityCollection, Util.getSkipOption(queryOptions), Util.getTopOption(queryOptions));
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), entityCollection.getEntities(), navBindingTarget, edmNavigationProperty.getType());
         }
@@ -523,16 +535,17 @@ public class OdataReader extends OfbizOdataProcessor {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-            //添加Navigation对应EntityType的Condition
-            if (navCsdlEntityType.getEntityCondition() != null) {
-                if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
-                    //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
-                    condition = Util.appendCondition(condition, navCsdlEntityType.getEntityCondition());
-                } else {
-                    Debug.logWarning("The EntityType condition is not supported", module);
-                }
-            }
+//            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+//            //添加Navigation对应EntityType的Condition
+//            if (navCsdlEntityType.getEntityCondition() != null) {
+//                if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
+//                    //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
+//                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
+//                    condition = Util.appendCondition(condition, EntityCondition.makeCondition(entityTypeCondition));
+//                } else {
+//                    Debug.logWarning("The EntityType condition is not supported", module);
+//                }
+//            }
             List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(), csdlNavigationProperty.isFilterByDate());
             if (condition != null) {
                 relatedList = EntityUtil.filterByCondition(relatedList, condition);
@@ -610,6 +623,18 @@ public class OdataReader extends OfbizOdataProcessor {
         Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relations.get(0));
         //所有的查询条件
         EntityCondition entityCondition = Util.appendCondition(condition, getRangeCondition(genericValueList, relAlias));
+        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
+        String entityConditionStr = navCsdlEntityType.getEntityConditionStr();
+        List<String> defaultOrderByProperties = navCsdlEntityType.getDefaultOrderByProperties();
+        if (UtilValidate.isNotEmpty(entityConditionStr)) {
+            //添加navigation EntityType的Condition
+            Map<String, Object> conditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
+            entityCondition = Util.appendCondition(entityCondition, EntityCondition.makeCondition(conditionMap));
+        }
+        if (UtilValidate.isNotEmpty(defaultOrderByProperties)) {
+            //添加navigation EntityType的缺省排序
+            orderByList.addAll(defaultOrderByProperties);
+        }
         //添加数据的范围条件
         try {
             if (relations.size() > 1) {

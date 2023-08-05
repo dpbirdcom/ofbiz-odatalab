@@ -3,7 +3,6 @@ package com.dpbird.odata.services;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlAction;
-import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.processor.DataModifyActions;
 import com.dpbird.odata.processor.UriResourceProcessor;
 import org.apache.fop.util.ListUtil;
@@ -16,7 +15,10 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Parameter;
 import org.apache.olingo.commons.api.data.Property;
-import org.apache.olingo.commons.api.edm.*;
+import org.apache.olingo.commons.api.edm.EdmAction;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
+import org.apache.olingo.commons.api.edm.EdmEntitySet;
+import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.OData;
@@ -63,8 +65,9 @@ public class ActionService {
         Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
-            OdataParts odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
-            edmBindingTarget = odataParts.getEdmBindingTarget();
+            List<OdataParts> odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
+            edmBindingTarget = ListUtil.getLast(odataParts).getEdmBindingTarget();
+            odataContext.put("odataParts", odataParts);
         }
         ActionProcessor actionProcessor = new ActionProcessor(odataContext, null, null);
         actionProcessor.processActionVoid(uriResourceAction, parameters, edmBindingTarget);
@@ -90,14 +93,16 @@ public class ActionService {
         EdmEntityType edmEntityType = null;
         if (uriResourceAction.getAction().isBound()) {
             OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
-            OdataParts odataParts;
+            List<OdataParts> odataParts;
             if (csdlAction.isStickySessionEdit()) {
                 odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
             } else {
                 odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, sapContextId);
             }
-            edmBindingTarget = odataParts.getEdmBindingTarget();
-            edmEntityType = odataParts.getEdmEntityType();
+            odataContext.put("odataParts", odataParts);
+            OdataParts parts = ListUtil.getLast(odataParts);
+            edmBindingTarget = parts.getEdmBindingTarget();
+            edmEntityType = parts.getEdmEntityType();
         }
         Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
         OFbizEntityActionResult entityResult;
@@ -129,8 +134,9 @@ public class ActionService {
         EdmAction edmAction = uriResourceAction.getAction();
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
-            OdataParts odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
-            edmBindingTarget = odataParts.getEdmBindingTarget();
+            List<OdataParts> odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
+            edmBindingTarget = ListUtil.getLast(odataParts).getEdmBindingTarget();
+            odataContext.put("odataParts", odataParts);
         }
         ActionProcessor ofbizOdataWriter = new ActionProcessor(odataContext, queryOptions, null);
         EntityCollection resultCollection = ofbizOdataWriter.processActionEntityCollection(uriResourceAction, parameters, edmBindingTarget);
@@ -152,8 +158,9 @@ public class ActionService {
         EdmAction edmAction = uriResourceAction.getAction();
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
-            OdataParts odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
-            edmBindingTarget = odataParts.getEdmBindingTarget();
+            List<OdataParts> odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
+            edmBindingTarget = ListUtil.getLast(odataParts).getEdmBindingTarget();
+            odataContext.put("odataParts", odataParts);
         }
         ActionProcessor ofbizOdataWriter = new ActionProcessor(odataContext, null, null);
         Property property = ofbizOdataWriter.processActionProperty(uriResourceAction, parameters, edmBindingTarget);
@@ -187,7 +194,7 @@ public class ActionService {
     /**
      * 向action中添加bound参数，返回EdmBindingTarget
      */
-    private static OdataParts addBoundParam(List<UriResource> resourcePaths, Map<String, Object> odataContext,
+    private static List<OdataParts> addBoundParam(List<UriResource> resourcePaths, Map<String, Object> odataContext,
                                             Map<String, Object> parameters, EdmAction edmAction, String sapContextId) throws OfbizODataException, ODataApplicationException {
         UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(odataContext, new HashMap<>(), sapContextId);
         List<OdataParts> resourceDataInfos = uriResourceProcessor.readUriResource(resourcePaths, null);
@@ -201,7 +208,7 @@ public class ActionService {
             boundParam = boundCollection ? ((EntityCollection) entityData).getEntities() : entityData;
         }
         parameters.put(boundParamName, boundParam);
-        return odataParts;
+        return resourceDataInfos;
     }
 
     private static void checkActionIfMatch(OdataParts odataParts, Map<String, Object> odataContext) throws ODataApplicationException {

@@ -5,6 +5,7 @@ import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import com.dpbird.odata.handler.DraftHandler;
 import com.dpbird.odata.handler.HandlerFactory;
+import com.dpbird.odata.processor.DataModifyActions;
 import com.dpbird.odata.services.ProcessorServices;
 import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.util.Debug;
@@ -21,6 +22,7 @@ import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.*;
+import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
@@ -73,7 +75,7 @@ public class DraftReaderAndWriter {
      * @param queryOptions queryOptions
      * @return Entity
      */
-    public Entity findOne(Map<String, Object> keyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Entity findOne(Map<String, Object> keyMap, EdmBindingTarget edmBindingTarget, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         DraftHandler draftHandler = HandlerFactory.getDraftHandler(edmEntityType, edmProvider, delegator);
         Map<String, Object> resultMap = draftHandler.finOne(odataContext, edmEntityType, keyMap, null);
@@ -82,6 +84,7 @@ public class DraftReaderAndWriter {
         }
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmEntityType, resultMap);
+        entity.setOdataParts(UtilMisc.toList(new OdataParts(edmBindingTarget, edmEntityType, null, entity)));
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         //expand
@@ -92,7 +95,7 @@ public class DraftReaderAndWriter {
         return entity;
     }
 
-    public Entity findRelatedOne(Entity mainEntity, EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public Entity findRelatedOne(OdataOfbizEntity mainEntity, EdmNavigationProperty edmNavigationProperty, Map<String, Object> navKeyMap, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         Map<String, Object> navigationParam = new HashMap<>();
         navigationParam.put("entity", mainEntity);
@@ -103,6 +106,9 @@ public class DraftReaderAndWriter {
         Map<String, Object> result = draftHandler.finOne(odataContext, navEdmEntityType, navKeyMap, navigationParam);
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navEdmEntityType.getFullQualifiedName());
         OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(edmNavigationProperty.getType(), result);
+        ArrayList<OdataParts> odataParts = new ArrayList<>(mainEntity.getOdataParts());
+        odataParts.add(new OdataParts(null, edmNavigationProperty.getType(), null, entity));
+        entity.setOdataParts(odataParts);
         //添加语义化字段
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, UtilMisc.toList(entity), locale, userLogin);
         //expand
@@ -113,7 +119,7 @@ public class DraftReaderAndWriter {
         return entity;
     }
 
-    public EntityCollection findRelatedList(Entity mainEntity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
+    public EntityCollection findRelatedList(OdataOfbizEntity mainEntity, EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
         //从接口实例中读取数据
         EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
         OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(navEdmEntityType.getFullQualifiedName());
@@ -123,7 +129,11 @@ public class DraftReaderAndWriter {
         List<Entity> entities = entityCollection.getEntities();
         entityCollection.setCount(resultList.size());
         for (GenericValue genericValue : resultList) {
-            entities.add(findResultToEntity(navEdmEntityType, genericValue));
+            OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(navEdmEntityType, genericValue);
+            ArrayList<OdataParts> odataParts = new ArrayList<>(mainEntity.getOdataParts());
+            odataParts.add(new OdataParts(null, edmNavigationProperty.getType(), null, entity));
+            entity.setOdataParts(odataParts);
+            entities.add(entity);
         }
         //分页
         Util.pageEntityCollection(entityCollection, getSkipOption(queryOptions), getTopOption(queryOptions));
@@ -213,7 +223,7 @@ public class DraftReaderAndWriter {
             CsdlPropertyRef csdlPropertyRef = navOfbizCsdlEntityType.getKey().get(0);
             Object primaryKeyValue = toCreatePropertyMap.get(csdlPropertyRef.getName());
             if (UtilValidate.isEmpty(primaryKeyValue)) {
-                String pkValue = "ID" + delegator.getNextSeqId(entityName);
+                String pkValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                 toCreatePropertyMap.put(csdlPropertyRef.getName(), pkValue);
             }
         }
@@ -393,7 +403,7 @@ public class DraftReaderAndWriter {
                 }
 
                 Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", null, "locale", locale);
+                        "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest, "locale", locale);
                 Map<String, Object> edmParams = UtilMisc.toMap("edmEntityType", edmEntityType);
                 OdataReader reader = new OdataReader(odataContext, queryOptions, edmParams);
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
@@ -431,7 +441,7 @@ public class DraftReaderAndWriter {
     /**
      * 再向Draft添加数据时 获取一个SeqId
      */
-    private void addDraftNextSeqId(Delegator delegator, OfbizCsdlEntityType ofbizCsdlEntityType, Map<String, Object> fieldMap) {
+    public static void addDraftNextSeqId(Delegator delegator, OfbizCsdlEntityType ofbizCsdlEntityType, Map<String, Object> fieldMap) {
         //位数
         final int numericPadding = 5;
         //递增数
