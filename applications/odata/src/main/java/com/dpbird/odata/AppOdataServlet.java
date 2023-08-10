@@ -58,24 +58,24 @@ public class AppOdataServlet extends HttpServlet {
 			throw new ServletException("Cannot authorize user!");
 		}
 		long requestStartTime = System.currentTimeMillis();
-        LocalDispatcher dispatcher = (LocalDispatcher) req.getAttribute("dispatcher");
-        Delegator delegator = (Delegator) req.getAttribute("delegator");
-        HttpSession session = req.getSession();
+		LocalDispatcher dispatcher = (LocalDispatcher) req.getAttribute("dispatcher");
+		Delegator delegator = (Delegator) req.getAttribute("delegator");
+		HttpSession session = req.getSession();
 		String componentName =  Util.getRequestComponentName(req);
 		String componentPath =Util.getRequestComponentPath(req,componentName);
-        if (delegator == null) {
-            String delegatorName = (String) session.getAttribute("delegatorName");
-            if (UtilValidate.isNotEmpty(delegatorName)) {
-                delegator = DelegatorFactory.getDelegator(delegatorName);
-            }
-            dispatcher = ServiceContainer.getLocalDispatcher(delegator.getDelegatorName(), delegator);
-            if (UtilValidate.isEmpty(delegator) || UtilValidate.isEmpty(dispatcher)) {
-                Debug.logError("----------------+++++++++++++++++++++++++++++========================= delegator dispatcher isEmpty", module);
-                //直接返回 不做处理 zhuwenchao
-                return;
-            }
-            Debug.logInfo("----------------+++++++++++++++++++++++++++++========================= delegatorName: " + delegatorName + " dispatcher:" + dispatcher.getName(), module);
-        }
+		if (delegator == null) {
+			String delegatorName = (String) session.getAttribute("delegatorName");
+			if (UtilValidate.isNotEmpty(delegatorName)) {
+				delegator = DelegatorFactory.getDelegator(delegatorName);
+			}
+			dispatcher = ServiceContainer.getLocalDispatcher(delegator.getDelegatorName(), delegator);
+			if (UtilValidate.isEmpty(delegator) || UtilValidate.isEmpty(dispatcher)) {
+				Debug.logError("----------------+++++++++++++++++++++++++++++========================= delegator dispatcher isEmpty", module);
+				//直接返回 不做处理 zhuwenchao
+				return;
+			}
+			Debug.logInfo("----------------+++++++++++++++++++++++++++++========================= delegatorName: " + delegatorName + " dispatcher:" + dispatcher.getName(), module);
+		}
 		GenericValue userLogin = (GenericValue) session.getAttribute("userLogin");
 		String odataApp = req.getParameter("app");
 		String reloadStr = req.getParameter("reload");
@@ -116,17 +116,22 @@ public class AppOdataServlet extends HttpServlet {
 		}
 
 		/**
-		InputStream edmConfigInputStream = getServletContext().getResourceAsStream("/WEB-INF/edmconfig/" + odataApp + "EdmConfig.xml");
-		List<InputStream> edmReferenceInputStreams = new ArrayList<InputStream>();
-		Map<String, InputStream> edmReferenceInputStreamMap = new HashMap<String, InputStream>();
-		edmReferenceInputStreamMap.put("Core", getServletContext().getResourceAsStream("/vocabularies/Core.xml"));
-		edmReferenceInputStreamMap.put("Capabilities", getServletContext().getResourceAsStream("/vocabularies/Capabilities.xml"));
-		edmReferenceInputStreamMap.put("Common", getServletContext().getResourceAsStream("/vocabularies/Common.xml"));
-		edmReferenceInputStreamMap.put("UI", getServletContext().getResourceAsStream("/vocabularies/UI.xml"));
-		**/
+		 InputStream edmConfigInputStream = getServletContext().getResourceAsStream("/WEB-INF/edmconfig/" + odataApp + "EdmConfig.xml");
+		 List<InputStream> edmReferenceInputStreams = new ArrayList<InputStream>();
+		 Map<String, InputStream> edmReferenceInputStreamMap = new HashMap<String, InputStream>();
+		 edmReferenceInputStreamMap.put("Core", getServletContext().getResourceAsStream("/vocabularies/Core.xml"));
+		 edmReferenceInputStreamMap.put("Capabilities", getServletContext().getResourceAsStream("/vocabularies/Capabilities.xml"));
+		 edmReferenceInputStreamMap.put("Common", getServletContext().getResourceAsStream("/vocabularies/Common.xml"));
+		 edmReferenceInputStreamMap.put("UI", getServletContext().getResourceAsStream("/vocabularies/UI.xml"));
+		 **/
 		OData odata = OData.newInstance();
-		OfbizAppEdmProvider edmProvider = new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin,
-				locale,componentName,componentPath);
+		OfbizAppEdmProvider edmProvider = null;
+		try {
+			edmProvider = new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin,
+					locale,componentName,componentPath);
+		} catch (OfbizODataException e) {
+			e.printStackTrace();
+		}
 
 		List<EdmxReference> edmxReferences = new ArrayList<EdmxReference>();
 
