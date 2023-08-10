@@ -1027,7 +1027,7 @@ public class OfbizOdataProcessor {
      * 判断一个Navigation查询的整个流程是否缺省的
      */
     protected boolean isDefaultQuery(EdmEntityType edmEntityType, EdmNavigationProperty edmNavigationProperty, OfbizAppEdmProvider edmProvider) {
-        String edmEntityHandler = HandlerFactory.getHandlerImpl(edmProvider, UtilMisc.toList(edmNavigationProperty.getName()), delegator);
+        String edmEntityHandler = HandlerFactory.getHandlerImpl(edmProvider, UtilMisc.toList(edmNavigationProperty.getType().getName()), delegator);
         String edmNavigationHandler = HandlerFactory.getHandlerImpl(edmProvider, UtilMisc.toList(edmEntityType.getName(), edmNavigationProperty.getName()), delegator);
         return UtilValidate.isEmpty(edmEntityHandler) && UtilValidate.isEmpty(edmNavigationHandler);
     }
