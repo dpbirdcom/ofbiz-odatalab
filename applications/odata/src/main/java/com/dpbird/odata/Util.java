@@ -969,26 +969,35 @@ public class Util {
                 if (property.getType() != null && property.getType().equals("Edm.Boolean")) {
                     if ((boolean) value) {
                         result.put(name, "Y");
+                        continue;
                     } else {
                         result.put(name, "N");
+                        continue;
                     }
                 } else if (property.getType() != null && property.getType().equals(OfbizMapOdata.NAMESPACE + ".MaritalStatus")) {
                     if ((Integer) value == 1) {
                         result.put(name, "S");
+                        continue;
                     } else if ((Integer) value == 2) {
                         result.put(name, "M");
+                        continue;
                     } else if ((Integer) value == 3) {
                         result.put(name, "P");
+                        continue;
                     } else if ((Integer) value == 4) {
                         result.put(name, "D");
+                        continue;
                     } else if ((Integer) value == 5) {
                         result.put(name, "W");
+                        continue;
                     }
                 } else if (property.getType() != null && property.getType().equals(OfbizMapOdata.NAMESPACE + ".Gender")) {
                     if ((Integer) value == 1) {
                         result.put(name, "M");
+                        continue;
                     } else if ((Integer) value == 2) {
                         result.put(name, "F");
+                        continue;
                     }
                 }
             }
@@ -2738,6 +2747,33 @@ public class Util {
             return ((SkipOption) queryOptions.get("skipOption")).getValue();
         }
         return 0;
+    }
+
+
+    public static GenericValue getDraftRelatedOne(Delegator delegator, String draftUUID, String navDraftTable) throws GenericEntityException {
+        //排序标记为删除的数据
+        List<GenericValue> navDraftUUIDs = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                .where("parentDraftUUID", draftUUID, "draftEntityName", navDraftTable).getFieldList("draftUUID");
+        if (UtilValidate.isEmpty(navDraftUUIDs)) {
+            return null;
+        }
+        EntityCondition queryCondition = EntityCondition.makeCondition(UtilMisc.toList(EntityCondition.makeCondition("isActiveEntity", EntityOperator.EQUALS, "Y"),
+                EntityCondition.makeCondition("hasDraftEntity", EntityOperator.EQUALS, "Y")), EntityOperator.OR);
+        queryCondition = appendCondition(queryCondition, EntityCondition.makeCondition("draftUUID", EntityOperator.IN, navDraftUUIDs));
+        return EntityQuery.use(delegator).from(navDraftTable).where(queryCondition).queryFirst();
+    }
+
+    public static List<GenericValue> getDraftRelatedList(Delegator delegator, String draftUUID, String navDraftTable) throws GenericEntityException {
+        //排序标记为删除的数据
+        List<GenericValue> navDraftUUIDs = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                .where("parentDraftUUID", draftUUID, "draftEntityName", navDraftTable).getFieldList("draftUUID");
+        if (UtilValidate.isEmpty(navDraftUUIDs)) {
+            return null;
+        }
+        EntityCondition queryCondition = EntityCondition.makeCondition(UtilMisc.toList(EntityCondition.makeCondition("isActiveEntity", EntityOperator.EQUALS, "Y"),
+                EntityCondition.makeCondition("hasDraftEntity", EntityOperator.EQUALS, "Y")), EntityOperator.OR);
+        queryCondition = appendCondition(queryCondition, EntityCondition.makeCondition("draftUUID", EntityOperator.IN, navDraftUUIDs));
+        return EntityQuery.use(delegator).from(navDraftTable).where(queryCondition).queryList();
     }
 
 }
