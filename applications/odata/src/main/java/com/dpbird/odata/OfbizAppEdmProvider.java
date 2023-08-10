@@ -66,7 +66,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     Map<String, CsdlSchema> referenceSchemaMap = new HashMap<String, CsdlSchema>();
 
     public OfbizAppEdmProvider(Delegator delegator, LocalDispatcher dispatcher, String appName,
-                               boolean reload, GenericValue userLogin, Locale locale, String componentName, String componentPath) {
+                               boolean reload, GenericValue userLogin, Locale locale, String componentName, String componentPath) throws OfbizODataException {
         super();
         Debug.logInfo("=============================== constructor OfbizAppEdmProvider", module);
         this.delegator = delegator;
@@ -76,8 +76,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         this.locale = locale;
         this.componentName = componentName;
 //		this.edmConfigInputStream = edmConfigInputStream;
-        CsdlSchemaCache csdlSchemaCache;
-        csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
+        CsdlSchemaCache csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
         cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
         Iterator<Map.Entry<String, String>> it = edmReferencePath.entrySet().iterator();
         while (it.hasNext()) { // 获取所有的reference schema从cache里
@@ -85,24 +84,9 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             this.referenceSchemaMap.put(entry.getKey(), csdlSchemaCache.get(entry.getKey()));
         }
         if (cachedSchema == null || reload) {
-            try {
-                this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
-                this.reloadAppSchema(csdlSchemaCache, Locale.SIMPLIFIED_CHINESE);
-                this.cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
-                // 先前的方案，会把需要内存数据库的Entity全量copy到内存数据库，但是数据量大会导致内存不够
-                // 现在的方案，会把当前编辑的对象copy到内存数据库，以及当前对象关联的其它对象copy到内存数据库
-                // refreshDraftData(webapp, cachedSchema);
-            } catch (ODataException e) {
-                e.printStackTrace();
-                referenceSchemaMap = new HashMap<>();
-                //读缓存的reference
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    this.referenceSchemaMap.put(entry.getKey(), csdlSchemaCache.get(entry.getKey()));
-                }
-                //清空缓存
-                cachedSchema = null;
-            }
+            this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
+            this.reloadAppSchema(csdlSchemaCache, Locale.SIMPLIFIED_CHINESE);
+            this.cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
             eTag = String.valueOf(UtilDateTime.nowTimestamp().getTime());
         }
     }
@@ -115,8 +99,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         return componentName;
     }
 
-    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws ODataException {
-
+    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws OfbizODataException {
         String prefix = "component://" ;
         String filePath = prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml";
         InputStream edmConfigInputStream = getFileInputStream(filePath);
@@ -139,21 +122,9 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
                 csdlSchemaCache.put(entry.getKey(), referenceSchema);
                 referenceSchemaMap.put(entry.getKey(), referenceSchema);
             }
-        } catch (SAXException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (GenericEntityException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
