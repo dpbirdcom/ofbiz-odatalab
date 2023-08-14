@@ -335,13 +335,6 @@ public class EdmConfigLoader {
         List<CsdlExpression> csdlExpressions = new ArrayList<>();
         List<String> displayOnlyParameters = valueList.getParameterDisplayOnly();
         CsdlRecord parameterRecord;
-        for (String displayOnlyParameter : displayOnlyParameters) {
-            parameterRecord = new CsdlRecord();
-            parameterRecord.setType("Common.ValueListParameterDisplayOnly");
-            CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", displayOnlyParameter);
-            parameterRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
-            csdlExpressions.add(parameterRecord);
-        }
         List<ValueList.Parameter> parameters = valueList.getParameters();
         if (UtilValidate.isNotEmpty(parameters)) {
             //指定了Parameter
@@ -383,8 +376,13 @@ public class EdmConfigLoader {
                 }
             }
         }
-
-
+        for (String displayOnlyParameter : displayOnlyParameters) {
+            parameterRecord = new CsdlRecord();
+            parameterRecord.setType("Common.ValueListParameterDisplayOnly");
+            CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", displayOnlyParameter);
+            parameterRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
+            csdlExpressions.add(parameterRecord);
+        }
         csdlCollection.setItems(csdlExpressions);
         propertyValue.setValue(csdlCollection);
         propertyValues.add(propertyValue);
