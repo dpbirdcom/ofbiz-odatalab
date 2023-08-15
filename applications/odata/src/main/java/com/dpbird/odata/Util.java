@@ -2106,10 +2106,11 @@ public class Util {
                     String realValue = (String) parseVariable(valueStr, request);
                     conditionMap.put(key, realValue);
                 }
-            } else {
-                conditionMap.clear();
-                return conditionMap;
             }
+//            else {
+//                conditionMap.clear();
+//                return conditionMap;
+//            }
         }
         return conditionMap;
     }
