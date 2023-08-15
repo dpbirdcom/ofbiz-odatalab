@@ -628,8 +628,8 @@ public class OdataReader extends OfbizOdataProcessor {
         List<String> defaultOrderByProperties = navCsdlEntityType.getDefaultOrderByProperties();
         if (UtilValidate.isNotEmpty(entityConditionStr)) {
             //添加navigation EntityType的Condition
-            Map<String, Object> conditionMap = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
-            entityCondition = Util.appendCondition(entityCondition, EntityCondition.makeCondition(conditionMap));
+            EntityCondition navEntityCondition = Util.parseEntityCondition(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
+            entityCondition = Util.appendCondition(entityCondition, navEntityCondition);
         }
         if (UtilValidate.isNotEmpty(defaultOrderByProperties)) {
             //添加navigation EntityType的缺省排序

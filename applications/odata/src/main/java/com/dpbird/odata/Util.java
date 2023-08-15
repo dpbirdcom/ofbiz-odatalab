@@ -2098,7 +2098,7 @@ public class Util {
         }
         for (String expression : expressions) {
             expression = expression.trim();
-            if (expression.contains("=")) {
+            if (expression.contains("=") && !expression.contains("!=")) {
                 String[] keyValue = expression.split("=");
                 if (UtilValidate.isNotEmpty(keyValue)) {
                     String key = keyValue[0].trim();
