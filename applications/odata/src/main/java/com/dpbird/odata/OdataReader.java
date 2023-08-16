@@ -384,7 +384,7 @@ public class OdataReader extends OfbizOdataProcessor {
 //            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, edmNavigationProperty.getType(),
 //                    edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
 //        }
-//        entityCollection.setCount(entityCollection.getEntities().size());
+        entityCollection.setCount(results.getResultCount());
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
 //        if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
