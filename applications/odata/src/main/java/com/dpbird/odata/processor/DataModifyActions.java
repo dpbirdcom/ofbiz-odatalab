@@ -13,8 +13,12 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.condition.EntityCondition;
+import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -531,23 +535,52 @@ public class DataModifyActions {
     // 将主对象及其自对象从内存数据库中删除
     public static void clearEntityDraft(Map<String, Object> odataContext, String sapContextId)
             throws OfbizODataException, GenericEntityException {
-//        String sapContextId = (String) odataContext.get("sapContextId");
         // 找到主对象
         Delegator delegator = (Delegator) odataContext.get("delegator");
         GenericValue mainDraftAdminData = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", sapContextId), false);
         if (mainDraftAdminData == null) {
             return;
         }
-        String mainDraftEntityName = mainDraftAdminData.getString("draftEntityName");
+        //待删除的DraftAdministrativeData
+        List<GenericValue> draftAdminList = new ArrayList<>();
+        draftAdminList.add(mainDraftAdminData);
+        //Navigation待删除的Draft
         List<GenericValue> subDraftAdminDataList = delegator.findByAnd("DraftAdministrativeData", UtilMisc.toMap("parentDraftUUID", sapContextId), null, false);
-        for (GenericValue subDraftAdminData : subDraftAdminDataList) {
-            delegator.removeByAnd(subDraftAdminData.getString("draftEntityName"),
-                    UtilMisc.toMap("draftUUID", subDraftAdminData.getString("draftUUID")));
-            clearEntityDraft(odataContext, subDraftAdminData.getString("draftUUID"));
-            subDraftAdminData.remove();
+        draftAdminList.addAll(subDraftAdminDataList);
+        //下一次层Navigation待删除的Draft
+        List<String> navDraftUUIDs = EntityUtil.getFieldListFromEntityList(subDraftAdminDataList, "draftUUID", false);
+        List<GenericValue> subDraftAdminDataList2 = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                .where(EntityCondition.makeCondition("parentDraftUUID", EntityOperator.IN, navDraftUUIDs)).queryList();
+        draftAdminList.addAll(subDraftAdminDataList2);
+
+        for (GenericValue draftAdmin : draftAdminList) {
+            //删除Draft
+            delegator.removeByAnd(draftAdmin.getString("draftEntityName"), UtilMisc.toMap("draftUUID", draftAdmin.getString("draftUUID")));
+            //删除DraftAdmin
+            draftAdmin.remove();
         }
-        delegator.removeByAnd(mainDraftEntityName,
-                UtilMisc.toMap("draftUUID", sapContextId));
-        mainDraftAdminData.remove();
     }
+
+//    // 将主对象及其自对象从内存数据库中删除
+//    public static void clearEntityDraft(Map<String, Object> odataContext, String sapContextId)
+//            throws OfbizODataException, GenericEntityException {
+////        String sapContextId = (String) odataContext.get("sapContextId");
+//        // 找到主对象
+//        Delegator delegator = (Delegator) odataContext.get("delegator");
+//        GenericValue mainDraftAdminData = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", sapContextId), false);
+//        if (mainDraftAdminData == null) {
+//            return;
+//        }
+//        String mainDraftEntityName = mainDraftAdminData.getString("draftEntityName");
+//        List<GenericValue> subDraftAdminDataList = delegator.findByAnd("DraftAdministrativeData", UtilMisc.toMap("parentDraftUUID", sapContextId), null, false);
+//        for (GenericValue subDraftAdminData : subDraftAdminDataList) {
+//            delegator.removeByAnd(subDraftAdminData.getString("draftEntityName"),
+//                    UtilMisc.toMap("draftUUID", subDraftAdminData.getString("draftUUID")));
+//            clearEntityDraft(odataContext, subDraftAdminData.getString("draftUUID"));
+//            subDraftAdminData.remove();
+//        }
+//        delegator.removeByAnd(mainDraftEntityName,
+//                UtilMisc.toMap("draftUUID", sapContextId));
+//        mainDraftAdminData.remove();
+//    }
 }
