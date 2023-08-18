@@ -148,7 +148,7 @@ public class DraftReaderAndWriter {
         return entityCollection;
     }
 
-    public Entity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite) throws OfbizODataException {
+    public synchronized Entity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite) throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
         Map<String, Object> toUpdateFields = Util.entityToMap(entityToWrite);
@@ -191,7 +191,7 @@ public class DraftReaderAndWriter {
      * Draft创建实体
      * 在编辑模式下主实体是通过NewAction创建，所以这个方法只有多段式创建会进入
      */
-    public Entity createEntityData(Entity mainEntity, Entity entityToWrite, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
+    public synchronized Entity createEntityData(Entity mainEntity, Entity entityToWrite, EdmNavigationProperty edmNavigationProperty) throws OfbizODataException {
         EdmEntityType navEdmEntityType = edmNavigationProperty.getType();
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
@@ -254,7 +254,7 @@ public class DraftReaderAndWriter {
      *
      * @param primaryKey 要删除的数据主键
      */
-    public void deleteEntityData(Map<String, Object> primaryKey) throws OfbizODataException {
+    public synchronized void deleteEntityData(Map<String, Object> primaryKey) throws OfbizODataException {
         //将Draft数据标记为删除
         DraftHandler draftHandler = HandlerFactory.getDraftHandler(edmEntityType, edmProvider, delegator);
         draftHandler.deleteEntity(odataContext, edmEntityType, primaryKey);
