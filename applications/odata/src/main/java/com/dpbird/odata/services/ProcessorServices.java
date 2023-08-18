@@ -541,7 +541,7 @@ public class ProcessorServices {
         return draftAdminData;
     }
 
-    public static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
+    public synchronized static Object stickySessionNewAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws GenericEntityException, GenericServiceException, ODataException {
         runBefore(oDataContext, actionParameters, edmBindingTarget, DraftAction.NEW_BEFORE);
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
@@ -612,7 +612,7 @@ public class ProcessorServices {
         return ofbizEntity;
     }
 
-    public static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
+    public synchronized static Object stickySessionEditAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
@@ -678,7 +678,7 @@ public class ProcessorServices {
     }
 
     // saveAction will load data from mem database and store into real database
-    public static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws ODataException {
+    public synchronized static Object stickySessionSaveAction(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget) throws ODataException {
         Locale locale = (Locale) oDataContext.get("locale");
         String sapContextId = (String) oDataContext.get("sapContextId");
         Delegator delegator = (Delegator) oDataContext.get("delegator");
