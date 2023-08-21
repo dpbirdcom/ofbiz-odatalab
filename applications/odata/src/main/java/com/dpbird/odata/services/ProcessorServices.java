@@ -1142,6 +1142,10 @@ public class ProcessorServices {
     private static void verifyProperty(OfbizAppEdmProvider edmProvider, Delegator delegator, String sapContextId, int level, Locale locale) throws OfbizODataException {
         try {
             GenericValue draftAdmin = delegator.findOne("DraftAdministrativeData", UtilMisc.toMap("draftUUID", sapContextId), false);
+            if (UtilValidate.isEmpty(draftAdmin)) {
+                String message = UtilProperties.getMessage(resource, "verifyMsg.stickySession.draftMissing", locale);
+                throw new OfbizODataException(message);
+            }
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(new FullQualifiedName(draftAdmin.getString("entityType")));
             GenericValue draftData = delegator.findOne(draftAdmin.getString("draftEntityName"), UtilMisc.toMap("draftUUID", sapContextId), false);
             if (UtilValidate.isEmpty(draftData) || (!draftData.getBoolean("isActiveEntity") && !draftData.getBoolean("hasDraftEntity"))) {
@@ -1282,4 +1286,14 @@ public class ProcessorServices {
         return new DraftEventContext(delegator, dispatcher, userLogin, oDataContext, actionParameters, edmBindingTarget, ofbizEntity);
     }
 
+    public static Map<String, Object> clearDraft(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException {
+        Delegator delegator = dctx.getDelegator();
+        List<GenericValue> draftAdminList = EntityQuery.use(delegator).from("DraftAdministrativeData").select("draftUUID", "draftEntityName").queryList();
+        for (GenericValue draftAdmin : draftAdminList) {
+            delegator.removeByAnd(draftAdmin.getString("draftEntityName"), UtilMisc.toMap("draftUUID", draftAdmin.getString("draftUUID")));
+        }
+        int count = delegator.removeAll("DraftAdministrativeData");
+        Debug.logInfo("Cleaned up: " + count, module);
+        return ServiceUtil.returnSuccess();
+    }
 }

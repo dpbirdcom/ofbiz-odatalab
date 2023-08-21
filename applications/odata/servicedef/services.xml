@@ -211,6 +211,11 @@ under the License.
         <attribute name="bindPrimaryKey" type="Map" mode="IN"/>
     </service>
 
+    <service name="dpbird.clearDraft" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="clearDraft">
+        <description>Clean up draft data</description>
+    </service>
+
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->
