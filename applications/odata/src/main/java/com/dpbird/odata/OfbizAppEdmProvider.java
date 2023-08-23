@@ -24,6 +24,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
 
@@ -81,7 +82,11 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         Iterator<Map.Entry<String, String>> it = edmReferencePath.entrySet().iterator();
         while (it.hasNext()) { // 获取所有的reference schema从cache里
             Map.Entry<String, String> entry = it.next();
-            this.referenceSchemaMap.put(entry.getKey(), csdlSchemaCache.get(entry.getKey()));
+            CsdlSchema csdlSchema = csdlSchemaCache.get(entry.getKey());
+            this.referenceSchemaMap.put(entry.getKey(), csdlSchema);
+            if (csdlSchema == null) {
+                reload = true;
+            }
         }
         if (cachedSchema == null || reload) {
             this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
@@ -115,12 +120,15 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             Iterator<Map.Entry<String, String>> referenceIt = edmReferencePath.entrySet().iterator();
             while (referenceIt.hasNext()) {
                 Map.Entry<String, String> entry = referenceIt.next();
-                InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
-                EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
-                this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
-                CsdlSchema referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
-                csdlSchemaCache.put(entry.getKey(), referenceSchema);
-                referenceSchemaMap.put(entry.getKey(), referenceSchema);
+                CsdlSchema referenceSchema = referenceSchemaMap.get(entry.getKey());
+                if (referenceSchema == null) {
+                    InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
+                    EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
+                    this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
+                    referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
+                    csdlSchemaCache.put(entry.getKey(), referenceSchema);
+                    referenceSchemaMap.put(entry.getKey(), referenceSchema);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -394,7 +402,16 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             if (csdlTerm != null) {
                 Debug.logInfo("+++++++++++++++++++++++++ will get Term, " + termName.getFullQualifiedNameAsString() + ", from reference cache", module);
                 return csdlTerm;
+            } else {
+                //打印当前的term
+                List<String> allTermName = referenceSchema.getTerms().stream().map(CsdlTerm::getName).collect(Collectors.toList());
+                Debug.logInfo("++++++++++++++++++++++++++++ " + referenceSchema.getNamespace() + " >> " + allTermName, module);
             }
+        } else {
+            //打印当前的schema
+            Collection<CsdlSchema> values = this.referenceSchemaMap.values();
+            List<String> allSchema = values.stream().map(CsdlSchema::getNamespace).collect(Collectors.toList());
+            Debug.logInfo("++++++++++++++++++++++++++++ " + allSchema, module);
         }
         Debug.logInfo("++++++++++++++++++++++++++++ not a term of the system " + termName, module);
         return null;
