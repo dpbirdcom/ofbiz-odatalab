@@ -216,6 +216,12 @@ under the License.
         <description>Clean up draft data</description>
     </service>
 
+    <service name="dpbird.deleteDraftTable" engine="java"
+             location="com.dpbird.odata.services.ProcessorServices" invoke="deleteDraftTable">
+        <description>Delete the in-memory database table</description>
+        <attribute name="entityNames" type="List" mode="IN" optional="false"/>
+    </service>
+
     <!-- end services for odata -->
 
 <!--    <service name="dpbird.loadDraftData" engine="java"-->

@@ -16,6 +16,8 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.datasource.GenericHelperInfo;
+import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
 import org.apache.ofbiz.entity.model.ModelEntity;
 import org.apache.ofbiz.entity.model.ModelField;
 import org.apache.ofbiz.entity.model.ModelKeyMap;
@@ -1294,6 +1296,26 @@ public class ProcessorServices {
         }
         int count = delegator.removeAll("DraftAdministrativeData");
         Debug.logInfo("Cleaned up: " + count, module);
+        return ServiceUtil.returnSuccess();
+    }
+
+    public static Map<String, Object> deleteDraftTable(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException {
+        Delegator delegator = dctx.getDelegator();
+        List<String> entityNames = UtilGenerics.checkList(context.get("entityNames"));
+        //只能删除在memory这个组的表
+        GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
+        DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
+        for (String entityName : entityNames) {
+            ModelEntity modelEntity = delegator.getModelEntity(entityName);
+            //删除数据库表
+            databaseUtil.deleteTable(modelEntity, null);
+            //删除ofbiz实体缓存
+            Map<String, ModelEntity> entityCache = delegator.getModelReader().getEntityCache();
+            entityCache.remove(modelEntity.getEntityName(), modelEntity);
+            //删除ofbiz实体组缓存
+            Map<String, String> groupCache = delegator.getModelGroupReader().getGroupCache(delegator.getDelegatorBaseName());
+            groupCache.remove(modelEntity.getEntityName());
+        }
         return ServiceUtil.returnSuccess();
     }
 }
