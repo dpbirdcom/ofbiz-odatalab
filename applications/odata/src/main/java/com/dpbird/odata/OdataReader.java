@@ -351,6 +351,7 @@ public class OdataReader extends OfbizOdataProcessor {
         NavigationHandler navigationHandler = HandlerFactory.getNavigationHandler(edmEntityType, edmNavigationProperty, edmProvider, delegator);
         Map<String, Object> navigationParam = navigationHandler.getNavigationParam(odataContext, (OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, queryOptions);
         navigationParam.put("primaryKey", navPrimaryKey);
+        navigationParam.put("edmBindingTarget", edmParams.get("edmBindingTarget"));
         navigationParam.put("edmNavigationProperty", edmNavigationProperty);
         //根据调用参数从Handler获取数据
         EntityHandler navEntityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
