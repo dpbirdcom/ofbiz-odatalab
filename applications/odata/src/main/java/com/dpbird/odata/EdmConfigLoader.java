@@ -101,6 +101,7 @@ public class EdmConfigLoader {
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
         createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
+        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 
@@ -2694,14 +2695,9 @@ public class EdmConfigLoader {
         GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
         DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
         TreeSet<String> tableNames = databaseUtil.getTableNames(null);
-        Set<String> draftTableSet = new HashSet<>();
         for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
             String draftEntityName = entityType.getDraftEntityName();
-            if (UtilValidate.isEmpty(draftEntityName)) {
-                continue;
-            }
-            if(UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
-                draftTableSet.add(draftEntityName);
+            if (UtilValidate.isEmpty(draftEntityName) || UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
                 continue;
             }
             if (tableNames.contains(ModelUtil.javaNameToDbName(draftEntityName))) {
@@ -2790,10 +2786,23 @@ public class EdmConfigLoader {
             //创建之后需要加到entity缓存列表和group缓存列表中，否则实体引擎会查不到这个实体，ofbiz提供的一些find方法也查不到
             entityCache.put(modelEntity.getEntityName(), modelEntity);
             groupCache.put(modelEntity.getEntityName(), "org.apache.ofbiz.memory");
-            draftTableSet.add(draftEntityName);
         }
-        delegator.createOrStore(delegator.makeValue("SystemProperty", UtilMisc.toMap("systemResourceId", "draft",
-                "systemPropertyId", webapp, "systemPropertyValue", draftTableSet.toString())));
+    }
+
+    public static void saveDraftToSystemProperty(EdmWebConfig edmWebConfig, String webapp, Delegator delegator) {
+        Set<String> draftTableSet = new HashSet<>();
+        for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
+            if (UtilValidate.isNotEmpty(entityType.getDraftEntityName())) {
+                draftTableSet.add(entityType.getDraftEntityName());
+            }
+        }
+        try {
+            delegator.createOrStore(delegator.makeValue("SystemProperty", UtilMisc.toMap("systemResourceId", "draft",
+                    "systemPropertyId", webapp, "systemPropertyValue", draftTableSet.toString())));
+        } catch (GenericEntityException e) {
+            Debug.logError("Store draft err: " + e.getMessage(), module);
+        }
+
     }
 
     private static void addDerivedModelElement(OfbizCsdlEntityType baseCsdlEntityType, EdmWebConfig edmWebConfig, Delegator delegator, ModelEntity baseDraftModelEntity) {
