@@ -6,7 +6,6 @@ import com.dpbird.odata.handler.HandlerFactory;
 import com.dpbird.odata.handler.HandlerResults;
 import com.dpbird.odata.handler.NavigationHandler;
 import org.apache.http.HttpStatus;
-import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.GenericEntityException;
@@ -21,7 +20,6 @@ import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.edm.*;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
@@ -466,15 +464,22 @@ public class OdataReader extends OfbizOdataProcessor {
         recursionExpand(entityList, expandDataMap, navBindingTarget, edmNavigationProperty, relAlias, fieldNames, relFieldNames);
         //将查询出来的数据根据主外键进行匹配
         if (edmNavigationProperty.isCollection()) {
-            Map<String, Entity> mainEntityMap = new HashMap<>();
+            Map<String, List<Entity>> mainEntityMap = new HashMap<>();
             for (Entity entity : entityList) {
                 OdataOfbizEntity mainEntity = (OdataOfbizEntity) entity;
                 String fkString = getFieldShortValue(fieldNames, mainEntity.getGenericValue());
-                mainEntityMap.put(fkString, entity);
+//                mainEntityMap.put(fkString, entity);
+                if (UtilValidate.isNotEmpty(mainEntityMap.get(fkString))) {
+                    mainEntityMap.get(fkString).add(entity);
+                } else {
+                    mainEntityMap.put(fkString, UtilMisc.toList(entity));
+                }
             }
             for (Map.Entry<GenericValue, Entity> entry : expandDataMap.entrySet()) {
                 String fkString = getFieldShortValue(relFieldNames, entry.getKey());
-                addEntityToLink(mainEntityMap.get(fkString), edmNavigationProperty, entry.getValue());
+                for (Entity entity : mainEntityMap.get(fkString)) {
+                    addEntityToLink(entity, edmNavigationProperty, entry.getValue());
+                }
             }
             //分页InlineEntitySet
             if (queryOptions.get("skipOption") != null || queryOptions.get("topOption") != null) {
