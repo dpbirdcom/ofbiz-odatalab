@@ -24,8 +24,8 @@ under the License.
     <!-- ========================================================= -->
     <!-- org.apache.ofbiz.entity.tenant -->
     <!-- ========================================================= -->
-    <entity-group group="org.apache.ofbiz.memory" entity="DemoDraft"/>
-<!--    <entity-group group="org.apache.ofbiz.memory" entity="DraftAdministrativeData"/>-->
+<!--    <entity-group group="org.apache.ofbiz.memory" entity="DemoDraft"/>-->
+    <entity-group group="org.apache.ofbiz.memory" entity="DraftAdministrativeData"/>
 <!--    <entity-group group="org.apache.ofbiz.memory" entity="ProductDraft"/>-->
 <!--    <entity-group group="org.apache.ofbiz.memory" entity="ProductPriceDraft"/>-->
 <!--    <entity-group group="org.apache.ofbiz.memory" entity="OrderHeaderDraft"/>-->
