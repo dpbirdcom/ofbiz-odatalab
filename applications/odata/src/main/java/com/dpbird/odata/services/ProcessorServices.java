@@ -24,6 +24,7 @@ import org.apache.ofbiz.entity.model.ModelKeyMap;
 import org.apache.ofbiz.entity.model.ModelViewEntity;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
+import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.ofbiz.service.*;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.*;
@@ -1301,11 +1302,21 @@ public class ProcessorServices {
 
     public static Map<String, Object> deleteDraftTable(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException {
         Delegator delegator = dctx.getDelegator();
-        List<String> entityNames = UtilGenerics.checkList(context.get("entityNames"));
+        List<String> entityNameList = new ArrayList<>();
+        Object entityNames = context.get("entityNames");
+        String edmName = (String) context.get("edmName");
+        if (UtilValidate.isNotEmpty(entityNames)) {
+            entityNameList = UtilGenerics.checkList(context.get("entityNames"));
+        } else if (UtilValidate.isNotEmpty(edmName)) {
+            String propertyValue = EntityUtilProperties.getPropertyValue("draft", edmName, delegator);
+            if (UtilValidate.isNotEmpty(propertyValue)) {
+                entityNameList = StringUtil.toList(propertyValue);
+            }
+        }
         //只能删除在memory这个组的表
         GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
         DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
-        for (String entityName : entityNames) {
+        for (String entityName : entityNameList) {
             ModelEntity modelEntity = delegator.getModelEntity(entityName);
             //删除数据库表
             databaseUtil.deleteTable(modelEntity, null);
