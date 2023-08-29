@@ -17,9 +17,7 @@ import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.*;
 import org.apache.olingo.commons.api.ex.ODataException;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
@@ -34,12 +32,6 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     // private InputStream edmConfigInputStream;
     public static final FullQualifiedName CONTAINER = new FullQualifiedName(OfbizMapOdata.NAMESPACE, OfbizMapOdata.CONTAINER_NAME);
 
-    public static final Set<String> entityNames = new HashSet<String>();
-    public static final Map<String, FullQualifiedName> OFBIZ_SERVICE_MAP = new HashMap<String, FullQualifiedName>();
-    public static Set<String> serviceNames = null;
-    public static final Set<String> possibleActionNames = new HashSet<String>();
-    public static final Set<String> actionNames = new HashSet<String>();
-    public static final Set<String> functionNames = new HashSet<String>();
     private static final Map<String, String> edmReferencePath = new HashMap<String, String>() {
         {
             put("Core", "/vocabularies/Core.xml");
@@ -50,21 +42,14 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             put("Session", "/vocabularies/Session.xml");
         }
     };
-
-    // Bound actions and functions support overloading
-    // (multiple actions having the same name within the same namespace) by binding parameter type.
-    // The combination of action name and the binding parameter type MUST be unique within a namespace.
-    public Map<String, Object> boundActionsMap = new HashMap<String, Object>();
-    public Map<String, Object> boundFunctionsMap = new HashMap<String, Object>();
-
     private final Delegator delegator;
     private static LocalDispatcher dispatcher;
     private final GenericValue userLogin;
     private final Locale locale;
     private static String eTag = null;
-    private String componentName = null;
+    private String componentName;
     CsdlSchema cachedSchema;
-    Map<String, CsdlSchema> referenceSchemaMap = new HashMap<String, CsdlSchema>();
+    Map<String, CsdlSchema> referenceSchemaMap = new HashMap<>();
 
     public OfbizAppEdmProvider(Delegator delegator, LocalDispatcher dispatcher, String appName,
                                boolean reload, GenericValue userLogin, Locale locale, String componentName, String componentPath) throws OfbizODataException {
@@ -76,7 +61,6 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         this.userLogin = userLogin;
         this.locale = locale;
         this.componentName = componentName;
-//		this.edmConfigInputStream = edmConfigInputStream;
         CsdlSchemaCache csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
         cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
         Iterator<Map.Entry<String, String>> it = edmReferencePath.entrySet().iterator();
