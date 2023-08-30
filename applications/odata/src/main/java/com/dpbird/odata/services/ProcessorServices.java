@@ -1293,6 +1293,11 @@ public class ProcessorServices {
         Delegator delegator = dctx.getDelegator();
         List<GenericValue> draftAdminList = EntityQuery.use(delegator).from("DraftAdministrativeData").select("draftUUID", "draftEntityName").queryList();
         for (GenericValue draftAdmin : draftAdminList) {
+            ModelEntity modelEntity = delegator.getModelReader().getEntityCache().get(draftAdmin.getString("draftEntityName"));
+            if (UtilValidate.isEmpty(modelEntity)) {
+                draftAdmin.remove();
+                continue;
+            }
             delegator.removeByAnd(draftAdmin.getString("draftEntityName"), UtilMisc.toMap("draftUUID", draftAdmin.getString("draftUUID")));
         }
         int count = delegator.removeAll("DraftAdministrativeData");
