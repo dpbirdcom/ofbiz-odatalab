@@ -789,7 +789,8 @@ public class OdataProcessorHelper {
                 newGenericValue.create();
             }
         } catch (GenericServiceException | GenericEntityException e) {
-            throw new OfbizODataException(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode() + "", e.getMessage());
+            Throwable originalException = Util.getOriginalException(e);
+            throw new OfbizODataException(originalException.getMessage());
         }
 
         if (newGenericValue == null) {
