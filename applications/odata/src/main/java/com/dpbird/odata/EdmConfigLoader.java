@@ -101,7 +101,7 @@ public class EdmConfigLoader {
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
         createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
-        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
+//        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 

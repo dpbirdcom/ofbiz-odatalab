@@ -219,8 +219,7 @@ under the License.
     <service name="dpbird.deleteDraftTable" engine="java"
              location="com.dpbird.odata.services.ProcessorServices" invoke="deleteDraftTable">
         <description>Delete the in-memory database table</description>
-        <attribute name="edmName" type="String" mode="IN" optional="true"><description>删除指定Edm的所有草稿表</description></attribute>
-        <attribute name="entityNames" type="List" mode="IN" optional="true"><description>删除指定的草稿表</description></attribute>
+        <attribute name="entityNames" type="List" mode="IN" optional="false"><description>删除指定的草稿表</description></attribute>
     </service>
 
     <!-- end services for odata -->

@@ -57,7 +57,7 @@ public class DataModifyActions {
         }
         GenericValue draftAdminData;
         try {
-            draftAdminData = delegator.findOne("DraftAdministrativeData", true,
+            draftAdminData = delegator.findOne("DraftAdministrativeData", false,
                     UtilMisc.toMap("draftUUID", sapContextId));
             if (draftAdminData == null) {
                 return null;
