@@ -66,18 +66,6 @@ public class OdataProcessorHelper {
         }
     }
 
-    public static GenericValue readEntityData(Map<String, Object> odataContext,
-                                              EdmBindingTarget edmBindingTarget, Map<String, Object> keyMap) throws OfbizODataException {
-        EdmEntityType edmEntityType = edmBindingTarget.getEntityType();
-        EntitySetHandler entitySetHandler = EntitySetHandlerFactory.getEntitySetHandler(edmBindingTarget.getName());
-        EntityCondition entitySetCondition = entitySetHandler.getEntitySetCondition();
-        GenericValue genericValue = readEntityData(odataContext, edmEntityType, keyMap);
-        if (entitySetCondition == null || entitySetCondition.entityMatches(genericValue)) {
-            return genericValue;
-        } else {
-            return null;
-        }
-    }
 
     public static GenericValue readEntityData(Map<String, Object> odataContext,
                                               EdmEntityType edmEntityType, Map<String, Object> keyMap)
@@ -934,18 +922,8 @@ public class OdataProcessorHelper {
                                                   GenericValue userLogin) throws OfbizODataException {
         try {
             GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
-            String serviceName;
-            try {
-                serviceName = Util.getEntityActionService(csdlEntityType, entityName, "update", delegator);
-            } catch (OfbizODataException e) {
-                Debug.logInfo(e.getMessage(), module);
-                if (delegator.getModelEntity(entityName) instanceof ModelViewEntity) {
-                    serviceName = "dpbird.saveViewEntityData";
-                    fieldMap = UtilMisc.toMap("viewEntityName", entityName, "fieldMap", fieldMap, "userLogin", userLogin);
-                } else {
-                    throw e;
-                }
-            }
+            String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "update", delegator);
+
             ModelService modelService = dispatcher.getDispatchContext().getModelService(serviceName);
             if (csdlEntityType != null) {
                 fieldMap = Util.propertyToField(fieldMap, csdlEntityType);
@@ -1670,7 +1648,7 @@ public class OdataProcessorHelper {
                 }
                 createEntityMap.putAll(relationPossibleKeyMap);
             }
-            String createService = null;
+            String createService;
             Map<String, Object> serviceParams;
             try {
                 createService = Util.getEntityActionService(navEntityType, entityName, "create", dispatcher.getDelegator());
@@ -1679,14 +1657,8 @@ public class OdataProcessorHelper {
                     createEntityMap = Util.propertyToField(createEntityMap, csdlEntityType);
                 }
                 serviceParams = Util.prepareServiceParameters(dispatcher.getDispatchContext().getModelService(createService), createEntityMap);
-            } catch (OfbizODataException | GenericServiceException e) {
-                //没有定义service的viewEntity，尝试view通用的service
-                if (delegator.getModelEntity(entityName) instanceof ModelViewEntity) {
-                    createService = "dpbird.saveViewEntityData";
-                    serviceParams = UtilMisc.toMap("viewEntityName", entityName, "fieldMap", createEntityMap, "userLogin", userLogin);
-                } else {
-                    throw new OfbizODataException(e.getMessage());
-                }
+            } catch (GenericServiceException e) {
+                throw new OfbizODataException(e.getMessage());
             }
             try {
                 //如果当前主键完整并且已经存在这条数据就不再创建

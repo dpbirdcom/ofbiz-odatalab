@@ -1256,50 +1256,9 @@ public class Util {
             }
             targetFields.put(targetEntityFieldName, sourceGenericValue.get(targetEntityFieldName));
         }
-        GenericValue targetGenericValue = GenericValue.create(delegator, targetModelEntity, targetFields);
-        return targetGenericValue;
+        return GenericValue.create(delegator, targetModelEntity, targetFields);
     }
 
-    public static Map<String, Object> getRelationKeyMap(Delegator delegator, String entityName,
-                                                        String relationName, OdataOfbizEntity entity, String relEntityName) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        boolean isOdataView = OdataView.isOdataView(delegator, entityName);
-
-        GenericValue genericValue = null;
-        try {
-            genericValue = entityToGenericValue(delegator, entity, entityName);
-        } catch (OfbizODataException e) {
-            e.printStackTrace();
-        }
-
-        if (isOdataView) {
-            List<Map<String, Object>> viewKeyMaps = OdataView.getRelationKeyMap(delegator, entityName, relationName);
-            for (Map<String, Object> map : viewKeyMaps) {
-                String fieldName = (String) map.get("fieldName");
-                String relFieldName = (String) map.get("relFieldName");
-                Object fieldValue = genericValue.get(fieldName);
-                result.put(relFieldName, fieldValue);
-            }
-        } else {
-            ModelEntity modelEntity = delegator.getModelEntity(entityName);
-            ModelRelation modelRelation = modelEntity.getRelation(relationName);
-            if (modelRelation == null) {
-                if (relEntityName != null) {
-                    modelRelation = modelEntity.getRelation(relEntityName);
-                }
-            }
-            if (modelRelation != null) {
-                List<ModelKeyMap> modelKeyMaps = modelRelation.getKeyMaps();
-                for (ModelKeyMap modelKeyMap : modelKeyMaps) {
-                    String fieldName = modelKeyMap.getFieldName();
-                    String relFieldName = modelKeyMap.getRelFieldName();
-                    Object fieldValue = genericValue.get(fieldName);
-                    result.put(relFieldName, fieldValue);
-                }
-            }
-        }
-        return result;
-    }
 
     public static File getFile(byte[] bfile, String filePath, String fileName) throws IOException {
         BufferedOutputStream bos = null;

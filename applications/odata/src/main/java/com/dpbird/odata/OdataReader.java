@@ -372,24 +372,9 @@ public class OdataReader extends OfbizOdataProcessor {
             navigationEntity.setOdataParts(odataParts);
             entityCollection.getEntities().add(navigationEntity);
         }
-//        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-//        OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
-//        OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-//        //filter、orderby、page
-//        FilterOption filterOption = (FilterOption) queryOptions.get("filterOption");
-//        OrderByOption orderbyOption = (OrderByOption) queryOptions.get("orderByOption");
-//        List<String> defaultOrderBy = csdlEntityType.getDefaultOrderByProperties();
-//        if (filterOption != null || orderbyOption != null || UtilValidate.isNotEmpty(defaultOrderBy)) {
-//            Util.filterEntityCollection(entityCollection, filterOption, orderbyOption, edmNavigationProperty.getType(),
-//                    edmProvider, delegator, dispatcher, userLogin, locale, csdlNavigationProperty.isFilterByDate());
-//        }
         entityCollection.setCount(results.getResultCount());
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider,
                 UtilMisc.toMap("selectOption", queryOptions.get("selectOption")), entityCollection.getEntities(), locale, userLogin);
-//        if (Util.isExtraOrderby(orderbyOption, navCsdlEntityType, delegator)) {
-//            Util.orderbyEntityCollection(entityCollection, orderbyOption, edmNavigationProperty.getType(), edmProvider);
-//        }
-//        Util.pageEntityCollection(entityCollection, Util.getSkipOption(queryOptions), Util.getTopOption(queryOptions));
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             addExpandOption((ExpandOption) queryOptions.get("expandOption"), entityCollection.getEntities(), navBindingTarget, edmNavigationProperty.getType());
         }
@@ -406,7 +391,6 @@ public class OdataReader extends OfbizOdataProcessor {
         EntityCondition condition = null;
         //filter的条件
         if (filterOption != null) {
-//            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
             OdataExpressionVisitor expressionVisitor = new OdataExpressionVisitor(csdlEntityType, delegator, dispatcher, userLogin, edmProvider);
             try {
@@ -541,17 +525,6 @@ public class OdataReader extends OfbizOdataProcessor {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-//            OfbizCsdlEntityType navCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlNavigationProperty.getTypeFQN());
-//            //添加Navigation对应EntityType的Condition
-//            if (navCsdlEntityType.getEntityCondition() != null) {
-//                if(!navCsdlEntityType.getEntityConditionStr().contains("/")) {
-//                    //TODO: 暂不持支持expand查询嵌入EntityType的多段式条件
-//                    Map<String, Object> entityTypeCondition = Util.parseConditionMap(navCsdlEntityType.getEntityConditionStr(), httpServletRequest);
-//                    condition = Util.appendCondition(condition, EntityCondition.makeCondition(entityTypeCondition));
-//                } else {
-//                    Debug.logWarning("The EntityType condition is not supported", module);
-//                }
-//            }
             List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(), csdlNavigationProperty.isFilterByDate());
             if (condition != null) {
                 relatedList = EntityUtil.filterByCondition(relatedList, condition);

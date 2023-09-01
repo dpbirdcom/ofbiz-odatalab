@@ -49,9 +49,6 @@ public class OdataWriter extends OfbizOdataProcessor {
         this.serviceMetadata = (ServiceMetadata) odataContext.get("serviceMetadata");
         this.edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
         this.rawServiceUri = (String) odataContext.get("rawServiceUri");
-        if (this.entityToWrite != null) {
-            processEntitySetValues();
-        }
     }
 
     public OdataOfbizEntity createEntityData(Entity entityToWrite) throws OfbizODataException {
@@ -139,32 +136,6 @@ public class OdataWriter extends OfbizOdataProcessor {
         //删除
         EntityHandler entityHandler = HandlerFactory.getEntityHandler(edmNavigationProperty.getType(), edmProvider, delegator);
         entityHandler.delete(entityToDelete, odataContext, edmBindingTarget, deleteParam);
-    }
-
-    private void processEntitySetValues() {
-        EntitySetHandler entitySetHandler = EntitySetHandlerFactory.getEntitySetHandler(this.edmBindingTarget.getName());
-        String fullQualifiedTypeName = this.edmBindingTarget.getEntityType().getFullQualifiedName().getFullQualifiedNameAsString();
-        if (!entityToWrite.getType().equals(fullQualifiedTypeName)) {
-            return;
-        }
-        this.isCreatable = entitySetHandler.isCreatable();
-        Map<String, Object> defaultValues = entitySetHandler.defaultFieldValues();
-        if (UtilValidate.isNotEmpty(defaultValues)) {
-            Set<Entry<String, Object>> entrySet = defaultValues.entrySet();
-            for (Entry<String, Object> entry : entrySet) {
-                Property property = new Property();
-                property.setName(entry.getKey());
-                EdmElement edmProperty = this.edmBindingTarget.getEntityType().getProperty(entry.getKey());
-                if (UtilValidate.isEmpty(edmProperty)) {
-                    entityToWrite.addProperty(new Property(null, entry.getKey(), ValueType.PRIMITIVE, entry.getValue()));
-                    continue;
-                }
-                String typeFullQualifiedNameStr = edmProperty.getType().getFullQualifiedName().toString();
-                property.setType(typeFullQualifiedNameStr);
-                property.setValue(ValueType.PRIMITIVE, entry.getValue());
-                entityToWrite.addProperty(property);
-            }
-        }
     }
 
     private void addEntitySetCondition(Entity entityToWrite) throws OfbizODataException {

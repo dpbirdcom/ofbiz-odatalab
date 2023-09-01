@@ -50,26 +50,6 @@ public class OdataWriterHelper {
                 genericValue, navigationPropertyName, entityToWrite, queryOptions, userLogin, locale);
     }
 
-    public static OdataOfbizEntity createSingletonRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,
-                                                                    HttpServletRequest httpServletRequest,
-                                                                    OfbizAppEdmProvider edmProvider,
-                                                                    OfbizCsdlEntityType csdlEntityType,
-                                                                    String singletonName, String navigationPropertyName,
-                                                                    Entity entityToWrite,
-                                                                    Map<String, QueryOption> queryOptions,
-                                                                    GenericValue userLogin,
-                                                                    Locale locale) throws OfbizODataException {
-
-        GenericValue genericValue;
-        genericValue = (GenericValue) OdataProcessorHelper.readSingletonObject(dispatcher, edmProvider,
-                singletonName, httpServletRequest, userLogin);
-        if (genericValue == null) {
-            throw new OfbizODataException(csdlEntityType.getName() + " with singleton " + singletonName + " was not found.");
-        }
-        return createGenericValueRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider,
-                csdlEntityType, genericValue, navigationPropertyName, entityToWrite, queryOptions, userLogin, locale);
-    }
-
     public static OdataOfbizEntity createGenericValueRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,
                                                                        HttpServletRequest httpServletRequest,
                                                                        OfbizAppEdmProvider edmProvider,
@@ -211,31 +191,6 @@ public class OdataWriterHelper {
             entityToWrite.addProperty(property);
         }
         return updatedEntity;
-    }
-
-    public static void deleteSingletonRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,
-                                                        HttpServletRequest httpServletRequest,
-                                                        OfbizAppEdmProvider edmProvider,
-                                                        OfbizCsdlEntityType csdlEntityType,
-                                                        String navigationPropertyName,
-                                                        String singletonName,
-                                                        Map<String, Object> navKeyMap,
-                                                        GenericValue userLogin,
-                                                        Locale locale) throws OfbizODataException {
-        GenericValue genericValue = (GenericValue) OdataProcessorHelper.readSingletonObject(dispatcher, edmProvider,
-                singletonName, httpServletRequest, userLogin);
-        if (genericValue == null) {
-            throw new OfbizODataException(csdlEntityType.getName() + " with singleton " + singletonName + " was not found.");
-        }
-        GenericValue nestedGenericValue = null;
-        OfbizCsdlEntityType nestedCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlEntityType.getNavigationProperty(navigationPropertyName).getTypeFQN());
-        if (UtilValidate.isNotEmpty(navKeyMap)) { // navigation为非collection的时候，navKeyMap为null
-            Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-                    "edmProvider", edmProvider, "httpServletRequest", httpServletRequest);
-            nestedGenericValue = OdataProcessorHelper.readEntityData(odataContext, nestedCsdlEntityType, navKeyMap);
-        }
-        deleteEntitySetRelatedEntityData(delegator, dispatcher, httpServletRequest, edmProvider, csdlEntityType,
-                navigationPropertyName, genericValue, nestedGenericValue, userLogin, locale);
     }
 
     public static void deleteEntitySetRelatedEntityData(Delegator delegator, LocalDispatcher dispatcher,

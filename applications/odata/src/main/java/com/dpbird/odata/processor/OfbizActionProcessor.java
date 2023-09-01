@@ -123,22 +123,10 @@ public class OfbizActionProcessor
         response.addHeader("sap-messages", "[" + jsonObject.toString() + "]");
     }
 
-//    private static DraftActionProcessor getDraftActionProcessor(ODataRequest oDataRequest, ODataResponse oDataResponse,
-//                                                                Map<String, QueryOption> queryOptions, Map<String, Object> edmParams) throws OfbizODataException {
-//        Map<String, Object> odataContext = UtilMisc.toMap("delegator", delegator, "dispatcher", dispatcher,
-//                "edmProvider", edmProvider, "userLogin", userLogin, "httpServletRequest", httpServletRequest,
-//                "oDataRequest", oDataRequest, "oDataResponse", oDataResponse, "oData", odata,
-//                "serviceMetadata", serviceMetadata, "sapContextId", sapContextId, "locale", locale);
-//        EdmEntityType edmEntityType = (EdmEntityType) edmParams.get("edmEntityType");
-//        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-//        return new DraftActionProcessor(queryOptions, odataContext, csdlEntityType, edmEntityType);
-//    }
-
-
     @Override
     public void processActionEntityCollection(ODataRequest oDataRequest, ODataResponse oDataResponse, UriInfo uriInfo,
                                               ContentType requestFormat, ContentType contentType)
-            throws ODataApplicationException, ODataLibraryException {
+            throws ODataApplicationException {
         Debug.logInfo("------------------------------------------------------------ in processActionEntityCollection", module);
         // Get the action from the resource path
         if (contentType == null) {
