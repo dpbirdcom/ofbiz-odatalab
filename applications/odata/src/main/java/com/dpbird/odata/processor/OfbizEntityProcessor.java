@@ -128,7 +128,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (GenericServiceException | OfbizODataException e) {
             e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            Throwable originalException = Util.getOriginalException(e);
+            throw new ODataApplicationException(originalException.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         } finally {
             if (UtilValidate.isNotEmpty(sapContextId)) {
                 DataModifyActions.setResponseSessionContext(oDataResponse, sapContextId);
@@ -310,7 +311,8 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (GenericServiceException | OfbizODataException e) {
             e.printStackTrace();
-            throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            Throwable originalException = Util.getOriginalException(e);
+            throw new ODataApplicationException(originalException.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         } finally {
             if (UtilValidate.isNotEmpty(sapContextId)) {
                 oDataResponse.setHeader("SAP-ContextId", sapContextId);

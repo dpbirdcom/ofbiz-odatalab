@@ -67,7 +67,11 @@ public class OdataOfbizEntity extends Entity {
 	}
 
 	public Object getPropertyValue(String propertyName) {
-		return getProperty(propertyName).getValue();
+		if (getProperty(propertyName) == null) {
+			return null;
+		} else {
+			return getProperty(propertyName).getValue();
+		}
 	}
 
 	public List<OdataParts> getOdataParts() {

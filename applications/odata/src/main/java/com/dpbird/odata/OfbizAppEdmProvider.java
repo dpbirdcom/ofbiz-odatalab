@@ -17,13 +17,12 @@ import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.*;
 import org.apache.olingo.commons.api.ex.ODataException;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
 
@@ -33,12 +32,6 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     // private InputStream edmConfigInputStream;
     public static final FullQualifiedName CONTAINER = new FullQualifiedName(OfbizMapOdata.NAMESPACE, OfbizMapOdata.CONTAINER_NAME);
 
-    public static final Set<String> entityNames = new HashSet<String>();
-    public static final Map<String, FullQualifiedName> OFBIZ_SERVICE_MAP = new HashMap<String, FullQualifiedName>();
-    public static Set<String> serviceNames = null;
-    public static final Set<String> possibleActionNames = new HashSet<String>();
-    public static final Set<String> actionNames = new HashSet<String>();
-    public static final Set<String> functionNames = new HashSet<String>();
     private static final Map<String, String> edmReferencePath = new HashMap<String, String>() {
         {
             put("Core", "/vocabularies/Core.xml");
@@ -49,24 +42,17 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             put("Session", "/vocabularies/Session.xml");
         }
     };
-
-    // Bound actions and functions support overloading
-    // (multiple actions having the same name within the same namespace) by binding parameter type.
-    // The combination of action name and the binding parameter type MUST be unique within a namespace.
-    public Map<String, Object> boundActionsMap = new HashMap<String, Object>();
-    public Map<String, Object> boundFunctionsMap = new HashMap<String, Object>();
-
     private final Delegator delegator;
     private static LocalDispatcher dispatcher;
     private final GenericValue userLogin;
     private final Locale locale;
     private static String eTag = null;
-    private String componentName = null;
+    private String componentName;
     CsdlSchema cachedSchema;
-    Map<String, CsdlSchema> referenceSchemaMap = new HashMap<String, CsdlSchema>();
+    Map<String, CsdlSchema> referenceSchemaMap = new HashMap<>();
 
     public OfbizAppEdmProvider(Delegator delegator, LocalDispatcher dispatcher, String appName,
-                               boolean reload, GenericValue userLogin, Locale locale, String componentName, String componentPath) {
+                               boolean reload, GenericValue userLogin, Locale locale, String componentName, String componentPath) throws OfbizODataException {
         super();
         Debug.logInfo("=============================== constructor OfbizAppEdmProvider", module);
         this.delegator = delegator;
@@ -75,34 +61,21 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         this.userLogin = userLogin;
         this.locale = locale;
         this.componentName = componentName;
-//		this.edmConfigInputStream = edmConfigInputStream;
-        CsdlSchemaCache csdlSchemaCache;
-        csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
+        CsdlSchemaCache csdlSchemaCache = new CsdlSchemaCache(this.delegator.getDelegatorName());
         cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
         Iterator<Map.Entry<String, String>> it = edmReferencePath.entrySet().iterator();
         while (it.hasNext()) { // 获取所有的reference schema从cache里
             Map.Entry<String, String> entry = it.next();
-            this.referenceSchemaMap.put(entry.getKey(), csdlSchemaCache.get(entry.getKey()));
+            CsdlSchema csdlSchema = csdlSchemaCache.get(entry.getKey());
+            this.referenceSchemaMap.put(entry.getKey(), csdlSchema);
+            if (csdlSchema == null) {
+                reload = true;
+            }
         }
         if (cachedSchema == null || reload) {
-            try {
-                this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
-                this.reloadAppSchema(csdlSchemaCache, Locale.SIMPLIFIED_CHINESE);
-                this.cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
-                // 先前的方案，会把需要内存数据库的Entity全量copy到内存数据库，但是数据量大会导致内存不够
-                // 现在的方案，会把当前编辑的对象copy到内存数据库，以及当前对象关联的其它对象copy到内存数据库
-                // refreshDraftData(webapp, cachedSchema);
-            } catch (ODataException e) {
-                e.printStackTrace();
-                referenceSchemaMap = new HashMap<>();
-                //读缓存的reference
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    this.referenceSchemaMap.put(entry.getKey(), csdlSchemaCache.get(entry.getKey()));
-                }
-                //清空缓存
-                cachedSchema = null;
-            }
+            this.reloadAppSchema(csdlSchemaCache, Locale.ENGLISH);
+            this.reloadAppSchema(csdlSchemaCache, Locale.SIMPLIFIED_CHINESE);
+            this.cachedSchema = csdlSchemaCache.get(locale.getLanguage() + this.webapp);
             eTag = String.valueOf(UtilDateTime.nowTimestamp().getTime());
         }
     }
@@ -115,8 +88,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         return componentName;
     }
 
-    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws ODataException {
-
+    private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws OfbizODataException {
         String prefix = "component://" ;
         String filePath = prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml";
         InputStream edmConfigInputStream = getFileInputStream(filePath);
@@ -132,28 +104,19 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             Iterator<Map.Entry<String, String>> referenceIt = edmReferencePath.entrySet().iterator();
             while (referenceIt.hasNext()) {
                 Map.Entry<String, String> entry = referenceIt.next();
-                InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
-                EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
-                this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
-                CsdlSchema referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
-                csdlSchemaCache.put(entry.getKey(), referenceSchema);
-                referenceSchemaMap.put(entry.getKey(), referenceSchema);
+                CsdlSchema referenceSchema = referenceSchemaMap.get(entry.getKey());
+                if (referenceSchema == null) {
+                    InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
+                    EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
+                    this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
+                    referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
+                    csdlSchemaCache.put(entry.getKey(), referenceSchema);
+                    referenceSchemaMap.put(entry.getKey(), referenceSchema);
+                }
             }
-        } catch (SAXException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
-        } catch (GenericEntityException e) {
-            e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ODataException(e.getMessage(), e);
+            throw new OfbizODataException(e.getMessage());
         }
     }
 
@@ -423,7 +386,16 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             if (csdlTerm != null) {
                 Debug.logInfo("+++++++++++++++++++++++++ will get Term, " + termName.getFullQualifiedNameAsString() + ", from reference cache", module);
                 return csdlTerm;
+            } else {
+                //打印当前的term
+                List<String> allTermName = referenceSchema.getTerms().stream().map(CsdlTerm::getName).collect(Collectors.toList());
+                Debug.logInfo("++++++++++++++++++++++++++++ " + referenceSchema.getNamespace() + " >> " + allTermName, module);
             }
+        } else {
+            //打印当前的schema
+            Collection<CsdlSchema> values = this.referenceSchemaMap.values();
+            List<String> allSchema = values.stream().map(CsdlSchema::getNamespace).collect(Collectors.toList());
+            Debug.logInfo("++++++++++++++++++++++++++++ " + allSchema, module);
         }
         Debug.logInfo("++++++++++++++++++++++++++++ not a term of the system " + termName, module);
         return null;

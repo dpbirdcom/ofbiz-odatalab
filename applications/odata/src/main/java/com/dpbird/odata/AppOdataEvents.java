@@ -4,6 +4,7 @@ import com.dpbird.odata.processor.*;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.ofbiz.base.conversion.ConversionException;
 import org.apache.ofbiz.base.conversion.JSONConverters;
 import org.apache.ofbiz.base.lang.JSON;
@@ -40,7 +41,7 @@ import java.util.Map;
 public class AppOdataEvents {
     public static final String module = AppOdataEvents.class.getName();
 
-    public static String odataSvc(HttpServletRequest req, HttpServletResponse resp) {
+    public static String odataSvc(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LocalDispatcher dispatcher = (LocalDispatcher) req.getAttribute("dispatcher");
         final Delegator delegator = (Delegator) req.getAttribute("delegator");
         GenericValue userLogin = (GenericValue) req.getAttribute("userLogin");
@@ -84,7 +85,7 @@ public class AppOdataEvents {
             }
             OData odata = OData.newInstance();
             OfbizAppEdmProvider edmProvider =
-					new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
+                    new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
 
             List<EdmxReference> edmxReferences = new ArrayList<EdmxReference>();
 
@@ -135,14 +136,20 @@ public class AppOdataEvents {
             handler.process(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
+            resp.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            resp.setContentType("application/json; charset=utf-8");
+            try (PrintWriter out = resp.getWriter()) {
+                out.append(JSONObject.fromObject(UtilMisc.toMap("ErrorMsg", e.getMessage())).toString());
+            }
+            return "error";
         }
         return "success";
     }
 
-    public static String odataAppSvc(HttpServletRequest req, HttpServletResponse resp) {
+    public static String odataAppSvc(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LocalDispatcher dispatcher = (LocalDispatcher) req.getAttribute("dispatcher");
         final Delegator delegator = (Delegator) req.getAttribute("delegator");
-		ServletContext servletCtx = (ServletContext) req.getAttribute("servletContext");
+        ServletContext servletCtx = (ServletContext) req.getAttribute("servletContext");
         String componentName =  Util.getRequestComponentName(req);
         String componentPath =Util.getRequestComponentPath(req,componentName);
         GenericValue userLogin = (GenericValue) req.getAttribute("userLogin");
@@ -172,7 +179,7 @@ public class AppOdataEvents {
             }
             OData odata = OData.newInstance();
             OfbizAppEdmProvider edmProvider =
-					new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
+                    new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
 
             List<EdmxReference> edmxReferences = new ArrayList<EdmxReference>();
 
@@ -229,6 +236,12 @@ public class AppOdataEvents {
             handler.process(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
+            resp.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            resp.setContentType("application/json; charset=utf-8");
+            try (PrintWriter out = resp.getWriter()) {
+                out.append(JSONObject.fromObject(UtilMisc.toMap("ErrorMsg", e.getMessage())).toString());
+            }
+            return "error";
         }
         return "success";
     }
@@ -387,7 +400,7 @@ public class AppOdataEvents {
             // InputStream edmConfigInputStream = getFileInputStream(odataApp + "EdmConfig.xml");
             OData odata = OData.newInstance();
             OfbizAppEdmProvider edmProvider =
-					new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
+                    new OfbizAppEdmProvider(delegator, dispatcher, odataApp, reload, userLogin, locale,componentName,componentPath);
 
 
             ServiceMetadataETagSupport eTagSupport = new ETagSupportImpl(edmProvider.getETag());

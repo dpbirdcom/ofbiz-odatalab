@@ -42,4 +42,6 @@ rm -f $OFBIZ_LOG
 ./gradlew generateConfigFile
 ./gradlew build
 ./gradlew -stop
+find /root/ofbiz/applications  -type d -name "src" -exec rm -r {} +
+find /root/ofbiz/framework  -type d -name "src" -exec rm -r {} +
 java -Xms128M -Xmx512M -Dfile.encoding=UTF-8 -Duser.country=CN -Duser.language=en -Duser.variant -cp ./build/libs/ofbiz.jar org.apache.ofbiz.base.start.Start

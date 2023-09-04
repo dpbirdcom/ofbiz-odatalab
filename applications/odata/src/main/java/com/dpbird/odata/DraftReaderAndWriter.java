@@ -383,7 +383,8 @@ public class DraftReaderAndWriter {
             try {
                 //子对象不使用draft, 或者是saveAction的返回, 读真实数据库
                 //pk是id就是第二段Draft数据的expand
-                Object pkValue = keyMap.size() == 1 && keyMap.containsKey("id") ? keyMap.get("id") : sapContextId;
+//                Object pkValue = keyMap.size() == 1 && keyMap.containsKey("id") ? keyMap.get("id") : sapContextId;
+                Object pkValue = entity.getPropertyValue("draftUUID") != null ? entity.getPropertyValue("draftUUID") : sapContextId;
                 GenericValue mainGenericValue = delegator.findOne(csdlEntityType.getDraftEntityName(), UtilMisc.toMap("draftUUID", pkValue), false);
                 //saveAction之后的expand
                 if (UtilValidate.isEmpty(mainGenericValue)) {

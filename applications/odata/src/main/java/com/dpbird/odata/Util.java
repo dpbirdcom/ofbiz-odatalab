@@ -969,26 +969,35 @@ public class Util {
                 if (property.getType() != null && property.getType().equals("Edm.Boolean")) {
                     if ((boolean) value) {
                         result.put(name, "Y");
+                        continue;
                     } else {
                         result.put(name, "N");
+                        continue;
                     }
                 } else if (property.getType() != null && property.getType().equals(OfbizMapOdata.NAMESPACE + ".MaritalStatus")) {
                     if ((Integer) value == 1) {
                         result.put(name, "S");
+                        continue;
                     } else if ((Integer) value == 2) {
                         result.put(name, "M");
+                        continue;
                     } else if ((Integer) value == 3) {
                         result.put(name, "P");
+                        continue;
                     } else if ((Integer) value == 4) {
                         result.put(name, "D");
+                        continue;
                     } else if ((Integer) value == 5) {
                         result.put(name, "W");
+                        continue;
                     }
                 } else if (property.getType() != null && property.getType().equals(OfbizMapOdata.NAMESPACE + ".Gender")) {
                     if ((Integer) value == 1) {
                         result.put(name, "M");
+                        continue;
                     } else if ((Integer) value == 2) {
                         result.put(name, "F");
+                        continue;
                     }
                 }
             }
@@ -1247,50 +1256,9 @@ public class Util {
             }
             targetFields.put(targetEntityFieldName, sourceGenericValue.get(targetEntityFieldName));
         }
-        GenericValue targetGenericValue = GenericValue.create(delegator, targetModelEntity, targetFields);
-        return targetGenericValue;
+        return GenericValue.create(delegator, targetModelEntity, targetFields);
     }
 
-    public static Map<String, Object> getRelationKeyMap(Delegator delegator, String entityName,
-                                                        String relationName, OdataOfbizEntity entity, String relEntityName) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        boolean isOdataView = OdataView.isOdataView(delegator, entityName);
-
-        GenericValue genericValue = null;
-        try {
-            genericValue = entityToGenericValue(delegator, entity, entityName);
-        } catch (OfbizODataException e) {
-            e.printStackTrace();
-        }
-
-        if (isOdataView) {
-            List<Map<String, Object>> viewKeyMaps = OdataView.getRelationKeyMap(delegator, entityName, relationName);
-            for (Map<String, Object> map : viewKeyMaps) {
-                String fieldName = (String) map.get("fieldName");
-                String relFieldName = (String) map.get("relFieldName");
-                Object fieldValue = genericValue.get(fieldName);
-                result.put(relFieldName, fieldValue);
-            }
-        } else {
-            ModelEntity modelEntity = delegator.getModelEntity(entityName);
-            ModelRelation modelRelation = modelEntity.getRelation(relationName);
-            if (modelRelation == null) {
-                if (relEntityName != null) {
-                    modelRelation = modelEntity.getRelation(relEntityName);
-                }
-            }
-            if (modelRelation != null) {
-                List<ModelKeyMap> modelKeyMaps = modelRelation.getKeyMaps();
-                for (ModelKeyMap modelKeyMap : modelKeyMaps) {
-                    String fieldName = modelKeyMap.getFieldName();
-                    String relFieldName = modelKeyMap.getRelFieldName();
-                    Object fieldValue = genericValue.get(fieldName);
-                    result.put(relFieldName, fieldValue);
-                }
-            }
-        }
-        return result;
-    }
 
     public static File getFile(byte[] bfile, String filePath, String fileName) throws IOException {
         BufferedOutputStream bos = null;
@@ -2089,7 +2057,7 @@ public class Util {
         }
         for (String expression : expressions) {
             expression = expression.trim();
-            if (expression.contains("=")) {
+            if (expression.contains("=") && !expression.contains("!=")) {
                 String[] keyValue = expression.split("=");
                 if (UtilValidate.isNotEmpty(keyValue)) {
                     String key = keyValue[0].trim();
@@ -2097,10 +2065,11 @@ public class Util {
                     String realValue = (String) parseVariable(valueStr, request);
                     conditionMap.put(key, realValue);
                 }
-            } else {
-                conditionMap.clear();
-                return conditionMap;
             }
+//            else {
+//                conditionMap.clear();
+//                return conditionMap;
+//            }
         }
         return conditionMap;
     }
@@ -2738,6 +2707,33 @@ public class Util {
             return ((SkipOption) queryOptions.get("skipOption")).getValue();
         }
         return 0;
+    }
+
+
+    public static GenericValue getDraftRelatedOne(Delegator delegator, String draftUUID, String navDraftTable) throws GenericEntityException {
+        //排序标记为删除的数据
+        List<GenericValue> navDraftUUIDs = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                .where("parentDraftUUID", draftUUID, "draftEntityName", navDraftTable).getFieldList("draftUUID");
+        if (UtilValidate.isEmpty(navDraftUUIDs)) {
+            return null;
+        }
+        EntityCondition queryCondition = EntityCondition.makeCondition(UtilMisc.toList(EntityCondition.makeCondition("isActiveEntity", EntityOperator.EQUALS, "Y"),
+                EntityCondition.makeCondition("hasDraftEntity", EntityOperator.EQUALS, "Y")), EntityOperator.OR);
+        queryCondition = appendCondition(queryCondition, EntityCondition.makeCondition("draftUUID", EntityOperator.IN, navDraftUUIDs));
+        return EntityQuery.use(delegator).from(navDraftTable).where(queryCondition).queryFirst();
+    }
+
+    public static List<GenericValue> getDraftRelatedList(Delegator delegator, String draftUUID, String navDraftTable) throws GenericEntityException {
+        //排序标记为删除的数据
+        List<GenericValue> navDraftUUIDs = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                .where("parentDraftUUID", draftUUID, "draftEntityName", navDraftTable).getFieldList("draftUUID");
+        if (UtilValidate.isEmpty(navDraftUUIDs)) {
+            return null;
+        }
+        EntityCondition queryCondition = EntityCondition.makeCondition(UtilMisc.toList(EntityCondition.makeCondition("isActiveEntity", EntityOperator.EQUALS, "Y"),
+                EntityCondition.makeCondition("hasDraftEntity", EntityOperator.EQUALS, "Y")), EntityOperator.OR);
+        queryCondition = appendCondition(queryCondition, EntityCondition.makeCondition("draftUUID", EntityOperator.IN, navDraftUUIDs));
+        return EntityQuery.use(delegator).from(navDraftTable).where(queryCondition).queryList();
     }
 
 }

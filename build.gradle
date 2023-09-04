@@ -985,6 +985,7 @@ task generateConfigFile(group: ofbizServer, description: 'MySQL OR Derby') {
     def entityEngineTemplateFile = "${rootDir}/framework/resources/templates/TemplateEntityengine.xml"
     def securityPropertiesTemplateFile = "${rootDir}/framework/resources/templates/TemplateSecurity.properties"
     def jndiPropertiesTemplateFile = "${rootDir}/framework/resources/templates/TemplateJNDI.properties"
+    def gradlePropertiesTemplateFile = "${rootDir}/framework/resources/templates/TemplateGrdle.properties"
     doLast {
         def dbPlatform = System.getenv("DB_PLAT_FORM")
         if (dbPlatform != null) {
@@ -1033,6 +1034,15 @@ task generateConfigFile(group: ofbizServer, description: 'MySQL OR Derby') {
                     'framework/base/config/',javaNamingProviderUrlInfo,'jndi.properties')
             println 'generated jndi.properties complete !'
         }
+        def distributionUrl = System.getenv("DISTRIBUTION_URL")
+        if(distributionUrl != null){
+            def distributionUrlInfo = [
+                    'distributionUrl':distributionUrl
+            ]
+            generateFileFromTemplate(gradlePropertiesTemplateFile,
+                    'gradle/wrapper/',distributionUrlInfo,'gradle-wrapper.properties')
+            println 'generated gradle-wrapper.properties complete !'
+        }
     }
 }
 
@@ -1051,6 +1061,8 @@ task getConfigFileEvn {
         println System.getenv("HOST_HEADERS_ALLOWED")
         println '=====jndi.properties Info====='
         println System.getenv("JAVA_NAMING_PROVIDER_URL")
+        println '=====gradle-wrapper.properties Info====='
+        println System.getenv("DISTRIBUTION_URL")
 
 
     }

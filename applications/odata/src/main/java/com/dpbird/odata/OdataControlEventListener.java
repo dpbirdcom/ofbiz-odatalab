@@ -65,8 +65,8 @@ public class OdataControlEventListener extends ControlEventListener {
             }
 
             countDestroySession();
-            if (userLogin != null && visit != null){
-                clearUserDraftData(visit.getDelegator(), userLogin);
+            if (userLogin != null){
+                clearUserDraftData(userLogin.getDelegator(), userLogin);
             }
             Debug.logInfo("Destroying session: " + ControlActivationEventListener.showSessionId(session), module);
             this.logStats(session, visit);
@@ -107,6 +107,7 @@ public class OdataControlEventListener extends ControlEventListener {
      * 清除当前用户所有正在编辑的draft数据
      */
     private void clearUserDraftData(Delegator delegator, GenericValue userLogin) throws OfbizODataException {
+        Debug.log("====================== Clear current draft data");
         EntityCondition entityCondition = EntityCondition.makeCondition(UtilMisc.toList(
                 EntityCondition.makeCondition("createdByUser", EntityOperator.EQUALS, userLogin.getString("userLoginId")),
                 EntityCondition.makeCondition("parentDraftUUID", EntityOperator.EQUALS, null)));

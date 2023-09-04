@@ -49,6 +49,11 @@ under the License.
         <value xml:lang="zh">重复的数据: ${property}</value>
         <value xml:lang="zh-TW">重复的数据: ${property}</value>
     </property>
+    <property key="verifyMsg.stickySession.draftMissing">
+        <value xml:lang="en">The draft is missing or has already been saved</value>
+        <value xml:lang="zh">草稿丢失或已经被保存</value>
+        <value xml:lang="zh-TW">草稿丢失或已经被保存</value>
+    </property>
 
 	<!-- Order -->
     <property key="OrderCreatedBy">

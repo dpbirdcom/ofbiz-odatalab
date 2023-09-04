@@ -20,7 +20,6 @@ import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -60,6 +59,7 @@ public class DefaultEntityHandler implements EntityHandler {
         } else if (navigationParam.containsKey("entity")) {
             OdataOfbizEntity entity = (OdataOfbizEntity) navigationParam.get("entity");
             EdmEntityType edmEntityType = (EdmEntityType) navigationParam.get("edmEntityType");
+            EdmBindingTarget mainEdmBindingTarget = (EdmBindingTarget) navigationParam.get("edmBindingTarget");
             EdmNavigationProperty edmNavigationProperty = (EdmNavigationProperty) navigationParam.get("edmNavigationProperty");
             Map<String, Object> edmParam = UtilMisc.toMap("edmEntityType", edmEntityType);
             //先根据relations查询
@@ -69,7 +69,11 @@ public class DefaultEntityHandler implements EntityHandler {
                 return new HandlerResults();
             }
             //根据odata Options查询
-            OdataReader optionReader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmNavigationProperty.getType()));
+            EdmBindingTarget navEdmBindingTarget = null;
+            if (UtilValidate.isNotEmpty(mainEdmBindingTarget)) {
+                navEdmBindingTarget = Util.getNavigationTargetEntitySet(mainEdmBindingTarget, edmNavigationProperty);
+            }
+            OdataReader optionReader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmNavigationProperty.getType(), "edmBindingTarget", navEdmBindingTarget));
             handlerResults = optionReader.ofbizFindList(Util.getGenericValuesQueryCond(relatedList));
         }
         return handlerResults;

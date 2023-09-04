@@ -15,6 +15,7 @@ import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.datasource.GenericHelperInfo;
 import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
 import org.apache.ofbiz.entity.model.*;
+import org.apache.ofbiz.entity.transaction.TransactionFactoryLoader;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -30,6 +31,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -96,7 +100,8 @@ public class EdmConfigLoader {
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
-        createDraftTable(edmWebConfig, webapp, delegator);
+        createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
+//        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 
@@ -335,13 +340,6 @@ public class EdmConfigLoader {
         List<CsdlExpression> csdlExpressions = new ArrayList<>();
         List<String> displayOnlyParameters = valueList.getParameterDisplayOnly();
         CsdlRecord parameterRecord;
-        for (String displayOnlyParameter : displayOnlyParameters) {
-            parameterRecord = new CsdlRecord();
-            parameterRecord.setType("Common.ValueListParameterDisplayOnly");
-            CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", displayOnlyParameter);
-            parameterRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
-            csdlExpressions.add(parameterRecord);
-        }
         List<ValueList.Parameter> parameters = valueList.getParameters();
         if (UtilValidate.isNotEmpty(parameters)) {
             //指定了Parameter
@@ -383,8 +381,13 @@ public class EdmConfigLoader {
                 }
             }
         }
-
-
+        for (String displayOnlyParameter : displayOnlyParameters) {
+            parameterRecord = new CsdlRecord();
+            parameterRecord.setType("Common.ValueListParameterDisplayOnly");
+            CsdlPropertyValue parameterPropertyValue = createPropertyValueString("ValueListProperty", displayOnlyParameter);
+            parameterRecord.setPropertyValues(UtilMisc.toList(parameterPropertyValue));
+            csdlExpressions.add(parameterRecord);
+        }
         csdlCollection.setItems(csdlExpressions);
         propertyValue.setValue(csdlCollection);
         propertyValues.add(propertyValue);
@@ -2685,13 +2688,30 @@ public class EdmConfigLoader {
         return propertyValue;
     }
 
-    public synchronized static void createDraftTable(EdmWebConfig edmWebConfig, String webapp, Delegator delegator) throws GenericEntityException {
+    public synchronized static void createDraftTable(EdmWebConfig edmWebConfig, String webapp, Delegator delegator, LocalDispatcher dispatcher) throws GenericEntityException {
         ModelReader modelReader = delegator.getModelReader();
         Map<String, ModelEntity> entityCache = modelReader.getEntityCache();
+        Map<String, String> groupCache = delegator.getModelGroupReader().getGroupCache(delegator.getDelegatorBaseName());
+        GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
+        DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
+        TreeSet<String> tableNames = databaseUtil.getTableNames(null);
         for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
             String draftEntityName = entityType.getDraftEntityName();
             if (UtilValidate.isEmpty(draftEntityName) || UtilValidate.isNotEmpty(entityCache.get(draftEntityName))) {
                 continue;
+            }
+            if (tableNames.contains(ModelUtil.javaNameToDbName(draftEntityName))) {
+                //ofbiz启动后第一次执行 数据库中有但ofbiz读取不到 需要重新创建
+                StringBuilder sqlBuf = new StringBuilder("DROP TABLE ");
+                sqlBuf.append(ModelUtil.javaNameToDbName(draftEntityName));
+                try (Connection connection = TransactionFactoryLoader.getInstance().getConnection(helperInfo);
+                    Statement stmt = connection.createStatement()) {
+                    stmt.executeUpdate(sqlBuf.toString());
+                    Debug.logInfo("[deleteTable] sql=" + sqlBuf, module);
+                } catch (SQLException e) {
+                    String errMsg = "SQL Exception while executing the following:\n" + sqlBuf + "\nError was: " + e;
+                    Debug.logError(errMsg, module);
+                }
             }
 //            String draftEntityName = webapp + entityType.getName() + "Draft";
             //没有定义Draft或者已经创建过了 跳过
@@ -2705,7 +2725,7 @@ public class EdmConfigLoader {
             //根据这个EntityType创建一个内存数据库表
             ModelEntity modelEntity = new ModelEntity();
             modelEntity.setEntityName(draftEntityName);
-            modelEntity.setTableName(draftEntityName);
+            modelEntity.setTableName(ModelUtil.javaNameToDbName(draftEntityName));
             modelEntity.setPackageName("com.dpbird.draft");
             modelEntity.setNoAutoStamp(true);
             //Draft固定字段
@@ -2760,17 +2780,29 @@ public class EdmConfigLoader {
                 }
             }
             entityType.setDraftEntityName(draftEntityName);
-            GenericHelperInfo helperInfo = delegator.getGroupHelperInfo("org.apache.ofbiz.memory");
-            DatabaseUtil databaseUtil = new DatabaseUtil(helperInfo);
             //创建
             databaseUtil.createTable(modelEntity, UtilMisc.toMap(modelEntity.getEntityName(), modelEntity), false);
             Debug.logInfo("========= Created a draft table: " + modelEntity.getEntityName(), module);
-
             //创建之后需要加到entity缓存列表和group缓存列表中，否则实体引擎会查不到这个实体，ofbiz提供的一些find方法也查不到
             entityCache.put(modelEntity.getEntityName(), modelEntity);
-            Map<String, String> groupCache = delegator.getModelGroupReader().getGroupCache(delegator.getDelegatorBaseName());
             groupCache.put(modelEntity.getEntityName(), "org.apache.ofbiz.memory");
         }
+    }
+
+    public static void saveDraftToSystemProperty(EdmWebConfig edmWebConfig, String webapp, Delegator delegator) {
+        Set<String> draftTableSet = new HashSet<>();
+        for (OfbizCsdlEntityType entityType : edmWebConfig.getEntityTypes()) {
+            if (UtilValidate.isNotEmpty(entityType.getDraftEntityName())) {
+                draftTableSet.add(entityType.getDraftEntityName());
+            }
+        }
+        try {
+            delegator.createOrStore(delegator.makeValue("SystemProperty", UtilMisc.toMap("systemResourceId", "draft",
+                    "systemPropertyId", webapp, "systemPropertyValue", draftTableSet.toString())));
+        } catch (GenericEntityException e) {
+            Debug.logError("Store draft err: " + e.getMessage(), module);
+        }
+
     }
 
     private static void addDerivedModelElement(OfbizCsdlEntityType baseCsdlEntityType, EdmWebConfig edmWebConfig, Delegator delegator, ModelEntity baseDraftModelEntity) {

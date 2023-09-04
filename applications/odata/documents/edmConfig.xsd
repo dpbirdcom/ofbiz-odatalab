@@ -272,20 +272,20 @@
     </xs:element>
     <xs:element name="ParameterInOut">
         <xs:complexType>
-            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
-            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+            <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
+            <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ParameterIn">
         <xs:complexType>
-            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
-            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+            <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
+            <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ParameterOut">
         <xs:complexType>
-            <xs:attribute name="ValueListProperty" type="xs:NCName"/>
-            <xs:attribute name="LocalDataProperty" type="xs:NCName"/>
+            <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
+            <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Title">
