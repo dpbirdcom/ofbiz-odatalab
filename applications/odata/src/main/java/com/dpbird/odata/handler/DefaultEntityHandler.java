@@ -220,7 +220,7 @@ public class DefaultEntityHandler implements EntityHandler {
                 dispatcher.runSync(serviceName, serviceParam);
             } catch (GenericServiceException e) {
                 e.printStackTrace();
-                throw new OfbizODataException(e.getMessage());
+                throw new OfbizODataException(Util.getExceptionMsg(e));
             }
         } else {
             //多段式delete

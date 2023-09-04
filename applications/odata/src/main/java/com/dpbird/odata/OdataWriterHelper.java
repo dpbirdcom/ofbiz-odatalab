@@ -105,8 +105,7 @@ public class OdataWriterHelper {
             return entityCreated;
         } catch (GenericEntityException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new OfbizODataException(originalException.getMessage());
+            throw new OfbizODataException(Util.getExceptionMsg(e));
         }
     }
 

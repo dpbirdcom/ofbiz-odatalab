@@ -725,7 +725,7 @@ public class OdataProcessorHelper {
             throws GenericServiceException, GenericEntityException, OfbizODataException {
         Map<String, Object> result = dispatcher.runSync(serviceName, fieldMap);
         if (ServiceUtil.isError(result)) {
-            throw new OfbizODataException(ServiceUtil.getErrorMessage(result));
+            throw new GenericServiceException(ServiceUtil.getErrorMessage(result));
         }
         // 光运行了创建entity的service，我们都还不知道是哪个具体的数据被创建了，所以需要获取新创建的entity的pk，然后从数据库获取这个新创建的GenericValue
         Map<String, Object> pkMap;
@@ -777,8 +777,7 @@ public class OdataProcessorHelper {
                 newGenericValue.create();
             }
         } catch (GenericServiceException | GenericEntityException e) {
-            Throwable originalException = Util.getOriginalException(e);
-            throw new OfbizODataException(originalException.getMessage());
+            throw new OfbizODataException(Util.getExceptionMsg(e));
         }
 
         if (newGenericValue == null) {
@@ -944,8 +943,7 @@ public class OdataProcessorHelper {
             return genericValue;
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new OfbizODataException(originalException.getMessage());
+            throw new OfbizODataException(Util.getExceptionMsg(e));
         }
     }
 
@@ -1264,8 +1262,7 @@ public class OdataProcessorHelper {
             dispatcher.runSync(deleteService, serviceParams);
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new OfbizODataException(originalException.getMessage());
+            throw new OfbizODataException(Util.getExceptionMsg(e));
         }
     }
 
@@ -1682,7 +1679,7 @@ public class OdataProcessorHelper {
                     createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
                 }
             } catch (GenericServiceException | GenericEntityException e) {
-                throw new OfbizODataException(e.getMessage());
+                throw new OfbizODataException(Util.getExceptionMsg(e));
             }
             if (destGenericValue == null) { // 第一个产生的createdGenericValue，就是目标GenericValue，要返回
                 destGenericValue = createdGenericValue;

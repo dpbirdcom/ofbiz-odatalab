@@ -128,8 +128,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (GenericServiceException | OfbizODataException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new ODataApplicationException(originalException.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            throw new ODataApplicationException(Util.getExceptionMsg(e), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         } finally {
             if (UtilValidate.isNotEmpty(sapContextId)) {
                 DataModifyActions.setResponseSessionContext(oDataResponse, sapContextId);
@@ -175,8 +174,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), locale);
         } catch (GenericServiceException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new ODataApplicationException(originalException.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
+            throw new ODataApplicationException(Util.getExceptionMsg(e), HttpStatus.SC_INTERNAL_SERVER_ERROR, locale);
         }
         // 3. configure the response object
         oDataResponse.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
@@ -311,8 +309,7 @@ public class OfbizEntityProcessor implements MediaEntityProcessor {
             oDataResponse.setHeader(HttpHeader.CONTENT_TYPE, responseContentType.toContentTypeString());
         } catch (GenericServiceException | OfbizODataException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new ODataApplicationException(originalException.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
+            throw new ODataApplicationException(Util.getExceptionMsg(e), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         } finally {
             if (UtilValidate.isNotEmpty(sapContextId)) {
                 oDataResponse.setHeader("SAP-ContextId", sapContextId);

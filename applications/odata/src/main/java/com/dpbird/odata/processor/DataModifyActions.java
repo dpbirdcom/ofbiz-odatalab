@@ -122,8 +122,7 @@ public class DataModifyActions {
             return genericValue;
         } catch (GenericEntityException | GenericServiceException | ODataException e) {
             e.printStackTrace();
-            Throwable originalException = Util.getOriginalException(e);
-            throw new OfbizODataException(originalException.getMessage());
+            throw new OfbizODataException(Util.getExceptionMsg(e));
         }
     }
 
