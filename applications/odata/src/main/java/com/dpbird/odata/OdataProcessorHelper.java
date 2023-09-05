@@ -777,7 +777,7 @@ public class OdataProcessorHelper {
                 newGenericValue.create();
             }
         } catch (GenericServiceException | GenericEntityException e) {
-            throw new OfbizODataException(Util.getExceptionMsg(e));
+            throw new OfbizODataException(Util.getExceptionMsg(e, request.getLocale()));
         }
 
         if (newGenericValue == null) {
@@ -908,17 +908,17 @@ public class OdataProcessorHelper {
 
     public static void removeGenericValueFK(LocalDispatcher dispatcher, Delegator delegator, String entityName,
                                             Map<String, Object> keyMap, ModelRelation modelRelation, OfbizCsdlEntityType csdlEntityType,
-                                            GenericValue userLogin) throws OfbizODataException {
+                                            GenericValue userLogin, Locale locale) throws OfbizODataException {
         Map<String, Object> serviceMap = new HashMap<>();
         for (ModelKeyMap relationKeyMap : modelRelation.getKeyMaps()) {
             serviceMap.put(relationKeyMap.getFieldName(), null);
         }
-        OdataProcessorHelper.updateGenericValue(dispatcher, delegator, entityName, keyMap, serviceMap, csdlEntityType, userLogin);
+        OdataProcessorHelper.updateGenericValue(dispatcher, delegator, entityName, keyMap, serviceMap, csdlEntityType, userLogin, locale);
     }
 
     public static GenericValue updateGenericValue(LocalDispatcher dispatcher, Delegator delegator, String entityName,
                                                   Map<String, Object> keyMap, Map<String, Object> fieldMap, OfbizCsdlEntityType csdlEntityType,
-                                                  GenericValue userLogin) throws OfbizODataException {
+                                                  GenericValue userLogin, Locale locale) throws OfbizODataException {
         try {
             GenericValue genericValue = delegator.findOne(entityName, keyMap, true);
             String serviceName = Util.getEntityActionService(csdlEntityType, entityName, "update", delegator);
@@ -943,7 +943,7 @@ public class OdataProcessorHelper {
             return genericValue;
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            throw new OfbizODataException(Util.getExceptionMsg(e));
+            throw new OfbizODataException(Util.getExceptionMsg(e, locale));
         }
     }
 
@@ -1033,7 +1033,7 @@ public class OdataProcessorHelper {
             if (!aliasPropertiesChanged(entityToWrite, entityUpdated, csdlEntityType, relAlias)) {
                 continue;
             }
-            updateRelAliasFields(entityToWrite, entityUpdated, csdlEntityType, relAlias, dispatcher, userLogin);
+            updateRelAliasFields(entityToWrite, entityUpdated, csdlEntityType, relAlias, dispatcher, userLogin, locale);
 //                removeRelAliasProperty(entityUpdated, relAlias, dispatcher, userLogin);
 //                List<String> relations = relAlias.getRelations();
 //                createRelAliasFields(entityToWrite, entityUpdated, csdlEntityType, relAlias, dispatcher, userLogin);
@@ -1166,7 +1166,7 @@ public class OdataProcessorHelper {
         try {
             while (it.hasNext()) { // 轮询EntityType中所有的RelAlias
                 EntityTypeRelAlias relAlias = it.next();
-                createRelAliasFields(entityToWrite, entityCreated, csdlEntityType, relAlias, dispatcher, userLogin);
+                createRelAliasFields(entityToWrite, entityCreated, csdlEntityType, relAlias, dispatcher, userLogin, locale);
             }
         } catch (GenericEntityException | GenericServiceException e) {
             throw new OfbizODataException(e.getMessage());
@@ -1199,7 +1199,7 @@ public class OdataProcessorHelper {
     public static void unbindNavigationLink(GenericValue genericValue, GenericValue nestedGenericValue,
                                             OfbizCsdlNavigationProperty csdlNavigationProperty,
                                             LocalDispatcher dispatcher,
-                                            GenericValue userLogin) throws OfbizODataException {
+                                            GenericValue userLogin, Locale locale) throws OfbizODataException {
         EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
         List<String> relations = relAlias.getRelations();
         Map<String, ModelRelation> relationsEntity = relAlias.getRelationsEntity();
@@ -1262,7 +1262,7 @@ public class OdataProcessorHelper {
             dispatcher.runSync(deleteService, serviceParams);
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
-            throw new OfbizODataException(Util.getExceptionMsg(e));
+            throw new OfbizODataException(Util.getExceptionMsg(e, locale));
         }
     }
 
@@ -1422,7 +1422,7 @@ public class OdataProcessorHelper {
                                                     OfbizCsdlEntityType csdlEntityType,
                                                     EntityTypeRelAlias relAlias,
                                                     LocalDispatcher dispatcher,
-                                                    GenericValue userLogin) throws GenericEntityException, GenericServiceException, OfbizODataException {
+                                                    GenericValue userLogin, Locale locale) throws GenericEntityException, GenericServiceException, OfbizODataException {
         GenericValue genericValue = entityCreated.getGenericValue();
         List<String> relations = relAlias.getRelations();
         int relationSize = relations.size();
@@ -1527,7 +1527,7 @@ public class OdataProcessorHelper {
                 }
             }
             if (mainEntityFk.size() > 0) {
-                updateGenericValue(dispatcher, dispatcher.getDelegator(), genericValue.getEntityName(), entityCreated.getKeyMap(), mainEntityFk, null, userLogin);
+                updateGenericValue(dispatcher, dispatcher.getDelegator(), genericValue.getEntityName(), entityCreated.getKeyMap(), mainEntityFk, null, userLogin, locale);
             }
         }
         return destGenericValue;
@@ -1538,7 +1538,7 @@ public class OdataProcessorHelper {
      */
     public static void updateRelAliasFields(Entity entityToWrite, OdataOfbizEntity entityCreated,
                                             OfbizCsdlEntityType csdlEntityType, EntityTypeRelAlias relAlias,
-                                            LocalDispatcher dispatcher, GenericValue userLogin) throws OfbizODataException {
+                                            LocalDispatcher dispatcher, GenericValue userLogin, Locale locale) throws OfbizODataException {
         try {
             Delegator delegator = dispatcher.getDelegator();
             GenericValue genericValue = entityCreated.getGenericValue();
@@ -1556,7 +1556,7 @@ public class OdataProcessorHelper {
                 dispatcher.runSync(updateService, serviceInMap);
             } else {
                 //创建
-                createRelAliasFields(entityToWrite, entityCreated, csdlEntityType, relAlias, dispatcher, userLogin);
+                createRelAliasFields(entityToWrite, entityCreated, csdlEntityType, relAlias, dispatcher, userLogin, locale);
             }
         } catch (GenericEntityException | GenericServiceException e) {
             e.printStackTrace();
@@ -1679,7 +1679,7 @@ public class OdataProcessorHelper {
                     createdGenericValue = createGenericValue(dispatcher, createService, entityName, serviceParams);
                 }
             } catch (GenericServiceException | GenericEntityException e) {
-                throw new OfbizODataException(Util.getExceptionMsg(e));
+                throw new OfbizODataException(Util.getExceptionMsg(e, request.getLocale()));
             }
             if (destGenericValue == null) { // 第一个产生的createdGenericValue，就是目标GenericValue，要返回
                 destGenericValue = createdGenericValue;
@@ -1697,7 +1697,7 @@ public class OdataProcessorHelper {
                 }
             }
             if (mainEntityFk.size() > 0) {
-                updateGenericValue(dispatcher, delegator, genericValue.getEntityName(), mainEntity.getKeyMap(), mainEntityFk, null, userLogin);
+                updateGenericValue(dispatcher, delegator, genericValue.getEntityName(), mainEntity.getKeyMap(), mainEntityFk, null, userLogin, request.getLocale());
             }
         }
         return destGenericValue;

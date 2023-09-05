@@ -25,6 +25,7 @@ import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -77,6 +78,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
     public void bindNavigationLink(Map<String, Object> odataContext, OdataOfbizEntity entity, EdmEntityType edmEntityType,
                                    EdmNavigationProperty edmNavigationProperty, Map<String, Object> bindPrimaryKey) throws OfbizODataException {
         Delegator delegator = (Delegator) odataContext.get("delegator");
+        Locale locale = (Locale) odataContext.get("locale");
         GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
         LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
@@ -122,7 +124,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
                     fkFieldMap.put(fieldName, bindPrimaryKey.get(relFieldName));
                 }
                 OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(), entity.getKeyMap(),
-                        fkFieldMap, csdlEntityType, userLogin);
+                        fkFieldMap, csdlEntityType, userLogin, locale);
             }
         }
     }
@@ -133,6 +135,7 @@ public class DefaultNavigationHandler implements NavigationHandler {
         Delegator delegator = (Delegator) odataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) odataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) odataContext.get("userLogin");
+        Locale locale = (Locale) odataContext.get("locale");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         OfbizCsdlEntityType navigationEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmNavigationProperty.getType().getFullQualifiedName());
         OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
@@ -144,11 +147,11 @@ public class DefaultNavigationHandler implements NavigationHandler {
             if (modelRelation.getType().contains("one")) {
                 //将外键置空
                 OdataProcessorHelper.removeGenericValueFK(dispatcher, delegator, csdlEntityType.getOfbizEntity(),
-                        genericValue.getPrimaryKey(), modelRelation, csdlEntityType, userLogin);
+                        genericValue.getPrimaryKey(), modelRelation, csdlEntityType, userLogin, locale);
             } else {
                 //删除relation实体
                 GenericValue navigationGenericValue = delegator.findOne(navigationEntityType.getOfbizEntity(), unbindPrimaryKey, false);
-                OdataProcessorHelper.unbindNavigationLink(genericValue, navigationGenericValue, csdlNavigationProperty, dispatcher, userLogin);
+                OdataProcessorHelper.unbindNavigationLink(genericValue, navigationGenericValue, csdlNavigationProperty, dispatcher, userLogin, locale);
             }
         } catch (GenericEntityException e) {
             e.printStackTrace();

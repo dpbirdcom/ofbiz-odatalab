@@ -64,6 +64,11 @@ under the License.
         <value xml:lang="zh">服务端异常</value>
         <value xml:lang="zh-TW">服务端异常</value>
     </property>
+    <property key="ErrMsg.REQUEST_ERROR">
+        <value xml:lang="en">Request Error</value>
+        <value xml:lang="zh">请求错误</value>
+        <value xml:lang="zh-TW">请求错误</value>
+    </property>
 
     <!-- Order -->
     <property key="OrderCreatedBy">

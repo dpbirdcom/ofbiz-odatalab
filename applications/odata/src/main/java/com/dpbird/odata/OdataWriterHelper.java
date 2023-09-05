@@ -105,7 +105,7 @@ public class OdataWriterHelper {
             return entityCreated;
         } catch (GenericEntityException e) {
             e.printStackTrace();
-            throw new OfbizODataException(Util.getExceptionMsg(e));
+            throw new OfbizODataException(Util.getExceptionMsg(e, locale));
         }
     }
 
@@ -156,13 +156,13 @@ public class OdataWriterHelper {
                     fieldMap.put("lastModifiedDate", UtilDateTime.nowTimestamp());
                 }
                 updatedGenericValue = OdataProcessorHelper.updateGenericValue(dispatcher, delegator, csdlEntityType.getOfbizEntity(),
-                        keyMap, fieldMap, csdlEntityType, userLogin);
+                        keyMap, fieldMap, csdlEntityType, userLogin,locale);
                 //更新DerivedEntity
                 if (csdlEntityType.isHasDerivedEntity()) {
                     OfbizCsdlEntityType derivedType = OdataProcessorHelper.getDerivedType(edmProvider, delegator, entityToWrite, csdlEntityType);
                     if (UtilValidate.isNotEmpty(derivedType)) {
                         OdataProcessorHelper.updateGenericValue(dispatcher, delegator, derivedType.getOfbizEntity(),
-                                keyMap, new HashMap<>(entityToWrite.getGenericValue()), derivedType, userLogin);
+                                keyMap, new HashMap<>(entityToWrite.getGenericValue()), derivedType, userLogin, locale);
                     }
                 }
                 if (UtilValidate.isNotEmpty(csdlEntityType.getAttrEntityName()) ||
@@ -234,7 +234,7 @@ public class OdataWriterHelper {
                 if (nestedGenericValue == null) { // navigation为非collection时
                     OdataProcessorHelper.clearNavigationLink(genericValue, relAlias, dispatcher, userLogin);
                 } else {
-                    OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin);
+                    OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin, locale);
                 }
             }
         } else {
@@ -247,7 +247,7 @@ public class OdataWriterHelper {
             if (nestedGenericValue == null) { // navigation为非collection时
                 OdataProcessorHelper.clearNavigationLink(genericValue, relAlias, dispatcher, userLogin);
             } else {
-                OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin);
+                OdataProcessorHelper.unbindNavigationLink(genericValue, nestedGenericValue, csdlNavigationProperty, dispatcher, userLogin, locale);
             }
         }
     }

@@ -2685,12 +2685,15 @@ public class Util {
     /**
      * 转换异常信息
      */
-    public static String getExceptionMsg(Throwable throwable) {
+    public static String getExceptionMsg(Throwable throwable, Locale locale) {
+        if (UtilValidate.isEmpty(locale)) {
+            locale = Locale.ENGLISH;
+        }
         Throwable originalException = getOriginalException(throwable);
         if (originalException instanceof OfbizServiceException || originalException instanceof OfbizODataException) {
             return originalException.getMessage();
         } else {
-            return "Server Error";
+            return UtilProperties.getMessage("OdataUiLabels", "ErrMsg.SERVER_ERROR", locale);
         }
     }
 
