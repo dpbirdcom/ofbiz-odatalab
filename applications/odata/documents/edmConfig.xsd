@@ -371,6 +371,7 @@
             <xs:attribute name="Computed" type="xs:boolean"/>
             <xs:attribute name="Immutable" type="xs:boolean"/>
             <xs:attribute name="IsImageURL" type="xs:boolean"/>
+            <xs:attribute name="IsImage" type="xs:boolean"/>
             <xs:attribute name="MultiLineText" type="xs:boolean"/>
             <xs:attribute name="ExcludeFromNavigationContext" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>

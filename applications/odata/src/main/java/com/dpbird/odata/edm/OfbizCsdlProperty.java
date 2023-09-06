@@ -10,6 +10,7 @@ public class OfbizCsdlProperty extends CsdlProperty {
     private boolean computed = false;
     private boolean immutable = false;
     private boolean imageUrl = false;
+    private boolean isImage = false;
     private String hidden;
     private boolean hiddenFilter = false;
     private boolean multiLineText = false;
@@ -69,6 +70,14 @@ public class OfbizCsdlProperty extends CsdlProperty {
 
     public void setImageUrl(boolean imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isImage() {
+        return isImage;
+    }
+
+    public void setIsImage(boolean isImage) {
+        this.isImage = isImage;
     }
 
     public String getHidden() {
