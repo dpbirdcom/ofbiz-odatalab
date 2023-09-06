@@ -734,7 +734,7 @@ public class OdataProcessorHelper {
         } else {
             pkMap = Util.retrievePkMap(dispatcher.getDelegator(), fieldMap, result, entityName);
         }
-        return dispatcher.getDelegator().findOne(entityName, pkMap, true);
+        return dispatcher.getDelegator().findOne(entityName, pkMap, false);
     }
 
     public static GenericValue createGenericValue(LocalDispatcher dispatcher, Delegator delegator,
@@ -1669,6 +1669,7 @@ public class OdataProcessorHelper {
                     }
                     primaryKey.put(pkFieldName, serviceParams.get(pkFieldName));
                 }
+                Util.makeupFromDate(serviceParams, delegator.getModelEntity(entityName));
                 GenericValue existGenericValue = null;
                 if (containsKey) {
                     existGenericValue = delegator.findOne(entityName, primaryKey, false);

@@ -130,6 +130,7 @@ public class DraftReaderAndWriter {
         entityCollection.setCount(resultList.size());
         for (GenericValue genericValue : resultList) {
             OdataOfbizEntity entity = (OdataOfbizEntity) findResultToEntity(navEdmEntityType, genericValue);
+            entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
             ArrayList<OdataParts> odataParts = new ArrayList<>(mainEntity.getOdataParts());
             odataParts.add(new OdataParts(null, edmNavigationProperty.getType(), null, entity));
             entity.setOdataParts(odataParts);

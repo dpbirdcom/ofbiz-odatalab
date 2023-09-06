@@ -257,8 +257,10 @@ public class OfbizActionProcessor
             final Preferences.Return returnPreference = odata.createPreferences(oDataResponse.getHeaders(HttpHeader.PREFER)).getReturn();
             if (returnPreference == null || returnPreference == Preferences.Return.REPRESENTATION) {
                 returnedEntitySet = edmAction.getReturnedEntitySet(boundEntitySet);
+                Entity entity = entityResult.getEntity();
+                entity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
                 oDataResponse.setContent(odata.createSerializer(responseFormat)
-                        .entity(serviceMetadata, edmReturnEntityType, entityResult.getEntity(), EntitySerializerOptions.with()
+                        .entity(serviceMetadata, edmReturnEntityType, entity, EntitySerializerOptions.with()
                                 .contextURL(isODataMetadataNone(responseFormat) ? null
                                         : getContextUrl(null, edmReturnEntityType, true))
                                 .expand(expandOption).select(selectOption).build())
@@ -296,8 +298,7 @@ public class OfbizActionProcessor
             if (UtilValidate.isNotEmpty(oDataRequest.getHeader("SAP-ContextId")) && sapContextId != null) {
                 DataModifyActions.setResponseSessionContext(oDataResponse, sapContextId);
             }
-            String exceptionMeg = e instanceof GenericServiceException ? e.getCause().getMessage() : e.getMessage();
-            throw new ODataApplicationException(exceptionMeg, HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
+            throw new ODataApplicationException(Util.getExceptionMsg(e, locale), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
         }
     }
 
