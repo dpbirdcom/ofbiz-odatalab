@@ -411,7 +411,7 @@ public class DraftReaderAndWriter {
                 OdataOfbizEntity ofbizEntity = reader.makeEntityFromGv(mainGenericValue);
                 EntityCollection relatedList = reader.findRelatedList(ofbizEntity, edmNavigationProperty, queryOptions, null);
                 for (Entity related : relatedList.getEntities()) {
-                    if (navCsdlEntityType.hasStream()) {
+                    if (UtilValidate.isNotEmpty(navCsdlEntityType.getStreamProperty())) {
                         related.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
                     }
                 }
