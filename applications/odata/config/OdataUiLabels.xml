@@ -54,8 +54,23 @@ under the License.
         <value xml:lang="zh">草稿丢失或已经被保存</value>
         <value xml:lang="zh-TW">草稿丢失或已经被保存</value>
     </property>
+    <property key="verifyMsg.auth.NO_ACCESS">
+        <value xml:lang="en">No access</value>
+        <value xml:lang="zh">没有访问权限</value>
+        <value xml:lang="zh-TW">没有访问权限</value>
+    </property>
+    <property key="ErrMsg.SERVER_ERROR">
+        <value xml:lang="en">Server Error</value>
+        <value xml:lang="zh">服务端异常</value>
+        <value xml:lang="zh-TW">服务端异常</value>
+    </property>
+    <property key="ErrMsg.REQUEST_ERROR">
+        <value xml:lang="en">Request Error</value>
+        <value xml:lang="zh">请求错误</value>
+        <value xml:lang="zh-TW">请求错误</value>
+    </property>
 
-	<!-- Order -->
+    <!-- Order -->
     <property key="OrderCreatedBy">
         <value xml:lang="en">Created By</value>
         <value xml:lang="zh">创建者</value>

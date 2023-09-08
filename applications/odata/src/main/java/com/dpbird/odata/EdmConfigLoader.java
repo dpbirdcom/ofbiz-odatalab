@@ -398,7 +398,7 @@ public class EdmConfigLoader {
     }
 
     private static CsdlAnnotations generateAutoValueList(ValueList valueList, OfbizCsdlEntityType ofbizCsdlEntityType, CsdlNavigationProperty navigationProperty,
-                                                        CsdlSchema csdlSchema, Locale locale) {
+                                                         CsdlSchema csdlSchema, Locale locale) {
         List<CsdlReferentialConstraint> referentialConstraints = navigationProperty.getReferentialConstraints();
         CsdlReferentialConstraint csdlReferentialConstraint = referentialConstraints.get(0);
         String propertyName = csdlReferentialConstraint.getProperty();
@@ -594,6 +594,9 @@ public class EdmConfigLoader {
         if (csdlProperty.isImageUrl()) {
             csdlAnnotationList.add(createAnnotationBool("UI.IsImageURL", "true", null));
         }
+        if (csdlProperty.isImage()) {
+            csdlAnnotationList.add(createAnnotationBool("UI.IsImage", "true", null));
+        }
         if (csdlProperty.isExcludeFromNavigationContext()) {
             csdlAnnotationList.add(createAnnotationBool("UI.ExcludeFromNavigationContext", "true", null));
         }
@@ -627,7 +630,7 @@ public class EdmConfigLoader {
 
 
     private static CsdlAnnotations generateStickySessionAnnotations(OfbizCsdlEntityType csdlEntityType,
-                                                               OfbizCsdlSchema csdlSchema, Locale locale) {
+                                                                    OfbizCsdlSchema csdlSchema, Locale locale) {
         CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
         String entityTypeFQN = csdlEntityType.getFullQualifiedNameString();
         String annotationsTarget = csdlSchema.getNamespace() + "." + csdlSchema.getEntityContainer().getName() + "/" + csdlEntityType.getName();
@@ -1587,6 +1590,7 @@ public class EdmConfigLoader {
         String hiddenFilter = propertyElement.getAttribute("HiddenFilter");
         String computed = propertyElement.getAttribute("Computed");
         String immutable = propertyElement.getAttribute("Immutable");
+        String isImage = propertyElement.getAttribute("IsImage");
         String isImageURL = propertyElement.getAttribute("IsImageURL");
         String excludeFromNavigationContext = propertyElement.getAttribute("ExcludeFromNavigationContext");
         String collectionPath = propertyElement.getAttribute("CollectionPath");
@@ -1658,6 +1662,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(isImageURL)) {
             property.setImageUrl(Boolean.valueOf(isImageURL));
+        }
+        if (UtilValidate.isNotEmpty(isImage)) {
+            property.setIsImage(Boolean.valueOf(isImage));
         }
         if (UtilValidate.isNotEmpty(excludeFromNavigationContext)) {
             property.setExcludeFromNavigationContext(Boolean.valueOf(excludeFromNavigationContext));
@@ -2705,7 +2712,7 @@ public class EdmConfigLoader {
                 StringBuilder sqlBuf = new StringBuilder("DROP TABLE ");
                 sqlBuf.append(ModelUtil.javaNameToDbName(draftEntityName));
                 try (Connection connection = TransactionFactoryLoader.getInstance().getConnection(helperInfo);
-                    Statement stmt = connection.createStatement()) {
+                     Statement stmt = connection.createStatement()) {
                     stmt.executeUpdate(sqlBuf.toString());
                     Debug.logInfo("[deleteTable] sql=" + sqlBuf, module);
                 } catch (SQLException e) {

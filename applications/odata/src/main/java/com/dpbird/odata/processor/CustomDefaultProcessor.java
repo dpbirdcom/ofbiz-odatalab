@@ -1,6 +1,8 @@
 package com.dpbird.odata.processor;
 
 import org.apache.ofbiz.base.util.UtilMisc;
+import org.apache.ofbiz.base.util.UtilProperties;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpMethod;
@@ -16,6 +18,8 @@ import org.apache.olingo.server.api.uri.UriInfo;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CustomDefaultProcessor implements MetadataProcessor, ServiceDocumentProcessor, ErrorProcessor {
@@ -112,6 +116,11 @@ public class CustomDefaultProcessor implements MetadataProcessor, ServiceDocumen
             if (errorCode == null) {
                 serverError.setCode("500");
             }
+            //翻译下异常
+            String errMsg = getOlingoErrMsg(request, serverError);
+            if (UtilValidate.isNotEmpty(errMsg)) {
+                serverError.setMessage(errMsg);
+            }
             ODataSerializer serializer = odata.createSerializer(requestedContentType);
             response.setContent(serializer.error(serverError).getContent());
             response.setStatusCode(serverError.getStatusCode());
@@ -124,5 +133,20 @@ public class CustomDefaultProcessor implements MetadataProcessor, ServiceDocumen
             response.setStatusCode(HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode());
             response.setHeader(HttpHeader.CONTENT_TYPE, ContentType.APPLICATION_JSON.toContentTypeString());
         }
+    }
+
+    /**
+     * 只转换olingo的请求异常信息 服务端异常odata内部处理
+     */
+    private String getOlingoErrMsg(ODataRequest request, ODataServerError serverError) {
+        try {
+            String headers = request.getHeader("Accept-Language");
+            Locale locale = UtilValidate.isEmpty(headers) ? Locale.getDefault() : Locale.forLanguageTag(request.getHeader("Accept-Language"));
+            return serverError.getStatusCode() < 500 ? UtilProperties.getMessage("OdataUiLabels", "ErrMsg.REQUEST_ERROR", locale) : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
     }
 }

@@ -418,9 +418,6 @@ public class OdataReader extends OfbizOdataProcessor {
         List<Entity> relatedEntityList = new ArrayList<>();
         for (GenericValue genericValue : relatedGenericList) {
             Entity resultToEntity = findResultToEntity(navBindingTarget, edmNavigationPropertyType, genericValue);
-            if (navCsdlEntityType.hasStream()) {
-                resultToEntity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
-            }
             relatedEntityList.add(resultToEntity);
         }
         //获取relation关联字段
@@ -443,7 +440,11 @@ public class OdataReader extends OfbizOdataProcessor {
         OdataProcessorHelper.appendNonEntityFields(httpServletRequest, delegator, dispatcher, edmProvider, queryOptions, relatedEntityList, locale, userLogin);
         Map<GenericValue, Entity> expandDataMap = new LinkedHashMap<>();
         for (int i = 0; i < relatedEntityList.size(); i++) {
-            expandDataMap.put(relatedGenericList.get(i), relatedEntityList.get(i));
+            Entity relatedEntity = relatedEntityList.get(i);
+            if (UtilValidate.isNotEmpty(navCsdlEntityType.getStreamProperty())) {
+                relatedEntity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+            }
+            expandDataMap.put(relatedGenericList.get(i), relatedEntity);
         }
         //处理下一层expand
         recursionExpand(entityList, expandDataMap, navBindingTarget, edmNavigationProperty, relAlias, fieldNames, relFieldNames);

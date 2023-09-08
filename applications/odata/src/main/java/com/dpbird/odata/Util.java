@@ -1,6 +1,7 @@
 package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
+import com.dpbird.odata.services.OfbizServiceException;
 import com.dpbird.odata.services.ProcessorServices;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
@@ -2679,6 +2680,21 @@ public class Util {
 //            }
 //        }
 //        return result;
+    }
+
+    /**
+     * 转换异常信息
+     */
+    public static String getExceptionMsg(Throwable throwable, Locale locale) {
+        if (UtilValidate.isEmpty(locale)) {
+            locale = Locale.ENGLISH;
+        }
+        Throwable originalException = getOriginalException(throwable);
+        if (originalException instanceof OfbizServiceException || originalException instanceof OfbizODataException) {
+            return originalException.getMessage();
+        } else {
+            return UtilProperties.getMessage("OdataUiLabels", "ErrMsg.SERVER_ERROR", locale);
+        }
     }
 
     /**
