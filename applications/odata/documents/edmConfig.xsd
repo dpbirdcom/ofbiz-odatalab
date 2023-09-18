@@ -401,12 +401,16 @@
     </xs:element>
     <xs:element name="Parameter">
         <xs:complexType>
+            <xs:all>
+                <xs:element minOccurs="0" ref="ValueList"/>
+            </xs:all>
             <xs:attribute name="IsCollection" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Type" use="required" type="xs:NCName"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
             <xs:attribute name="Scale" type="xs:integer"/>
+            <xs:attribute name="Label"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">
