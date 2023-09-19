@@ -79,15 +79,18 @@ public class ValueList extends Term {
 
     public static class Parameter {
 
-        public Parameter(String parameterType, String valueListProperty, String localDataProperty) {
+        public Parameter(String parameterType, String valueListProperty, String localDataProperty, String constantValue) {
             this.parameterType = parameterType;
             this.valueListProperty = valueListProperty;
             this.localDataProperty = localDataProperty;
+            this.constantValue = constantValue;
         }
 
         private String parameterType;
         private String valueListProperty;
         private String localDataProperty;
+        private String constantValue;
+
 
         public String getParameterType() {
             return parameterType;
@@ -111,6 +114,14 @@ public class ValueList extends Term {
 
         public void setLocalDataProperty(String localDataProperty) {
             this.localDataProperty = localDataProperty;
+        }
+
+        public String getConstant() {
+            return constantValue;
+        }
+
+        public void setConstant(String constantValue) {
+            this.constantValue = constantValue;
         }
     }
 

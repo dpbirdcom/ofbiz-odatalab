@@ -365,9 +365,7 @@ public class EdmConfigLoader {
             for (ValueList.Parameter parameter : parameters) {
                 parameterRecord = new CsdlRecord();
                 parameterRecord.setType(parameter.getParameterType());
-                CsdlPropertyValue localDataProperty = createPropertyValuePropertyPath("LocalDataProperty", parameter.getLocalDataProperty());
-                CsdlPropertyValue valueListProperty = createPropertyValueString("ValueListProperty", parameter.getValueListProperty());
-                parameterRecord.setPropertyValues(UtilMisc.toList(localDataProperty, valueListProperty));
+                parameterRecord.setPropertyValues(getValueListPropertyValues(parameter));
                 csdlExpressions.add(parameterRecord);
             }
         } else {
@@ -437,9 +435,7 @@ public class EdmConfigLoader {
             for (ValueList.Parameter parameter : parameters) {
                 parameterRecord = new CsdlRecord();
                 parameterRecord.setType(parameter.getParameterType());
-                CsdlPropertyValue localDataProperty = createPropertyValuePropertyPath("LocalDataProperty", parameter.getLocalDataProperty());
-                CsdlPropertyValue valueListProperty = createPropertyValueString("ValueListProperty", parameter.getValueListProperty());
-                parameterRecord.setPropertyValues(UtilMisc.toList(localDataProperty, valueListProperty));
+                parameterRecord.setPropertyValues(getValueListPropertyValues(parameter));
                 csdlExpressions.add(parameterRecord);
             }
         }
@@ -457,6 +453,19 @@ public class EdmConfigLoader {
 
         valueListAnnotation.setExpression(csdlRecord);
         return valueListAnnotation;
+    }
+
+    private static List<CsdlPropertyValue> getValueListPropertyValues(ValueList.Parameter parameter) {
+        String parameterType = parameter.getParameterType();
+        if ("Common.ValueListParameterConstant".equals(parameterType)) {
+            CsdlPropertyValue constant = createPropertyValueString("Constant", parameter.getConstant());
+            CsdlPropertyValue valueListProperty = createPropertyValueString("ValueListProperty", parameter.getValueListProperty());
+            return UtilMisc.toList(constant, valueListProperty);
+        } else {
+            CsdlPropertyValue localDataProperty = createPropertyValuePropertyPath("LocalDataProperty", parameter.getLocalDataProperty());
+            CsdlPropertyValue valueListProperty = createPropertyValueString("ValueListProperty", parameter.getValueListProperty());
+            return UtilMisc.toList(localDataProperty, valueListProperty);
+        }
     }
 
 
@@ -1863,7 +1872,11 @@ public class EdmConfigLoader {
                 if ("ParameterInOut".equals(tagName)) {
                     valueParameterType = "Common.ValueListParameterInOut";
                 }
-                ValueList.Parameter parameter = new ValueList.Parameter(valueParameterType, element.getAttribute("ValueListProperty"), element.getAttribute("LocalDataProperty"));
+                if ("ParameterConstant".equals(tagName)) {
+                    valueParameterType = "Common.ValueListParameterConstant";
+                }
+                ValueList.Parameter parameter = new ValueList.Parameter(valueParameterType, element.getAttribute("ValueListProperty"),
+                        element.getAttribute("LocalDataProperty"), element.getAttribute("Constant"));
                 parameterList.add(parameter);
             }
             valueList.setParameters(parameterList);
@@ -1915,7 +1928,11 @@ public class EdmConfigLoader {
                 if ("ParameterInOut".equals(tagName)) {
                     valueParameterType = "Common.ValueListParameterInOut";
                 }
-                ValueList.Parameter parameter = new ValueList.Parameter(valueParameterType, element.getAttribute("ValueListProperty"), element.getAttribute("LocalDataProperty"));
+                if ("ParameterConstant".equals(tagName)) {
+                    valueParameterType = "Common.ValueListParameterConstant";
+                }
+                ValueList.Parameter parameter = new ValueList.Parameter(valueParameterType, element.getAttribute("ValueListProperty"),
+                        element.getAttribute("LocalDataProperty"), element.getAttribute("Constant"));
                 parameterList.add(parameter);
             }
             valueList.setParameters(parameterList);

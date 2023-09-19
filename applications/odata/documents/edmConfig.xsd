@@ -263,6 +263,7 @@
                 <xs:element minOccurs="0" ref="ParameterIn"/>
                 <xs:element minOccurs="0" ref="ParameterOut"/>
                 <xs:element minOccurs="0" ref="ParameterInOut"/>
+                <xs:element minOccurs="0" ref="ParameterConstant"/>
             </xs:choice>
             <xs:attribute name="CollectionPath" type="xs:NCName"/>
             <xs:attribute name="WithFixedValues" type="xs:boolean"/>
@@ -286,6 +287,12 @@
         <xs:complexType>
             <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
             <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ParameterConstant">
+        <xs:complexType>
+            <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
+            <xs:attribute name="Constant" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Title">
