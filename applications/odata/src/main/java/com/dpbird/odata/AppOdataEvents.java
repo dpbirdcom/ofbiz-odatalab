@@ -136,11 +136,6 @@ public class AppOdataEvents {
             handler.process(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
-            resp.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            resp.setContentType("application/json; charset=utf-8");
-            try (PrintWriter out = resp.getWriter()) {
-                out.append(JSONObject.fromObject(UtilMisc.toMap("ErrorMsg", e.getMessage())).toString());
-            }
             return "error";
         }
         return "success";
@@ -236,11 +231,6 @@ public class AppOdataEvents {
             handler.process(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
-            resp.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            resp.setContentType("application/json; charset=utf-8");
-            try (PrintWriter out = resp.getWriter()) {
-                out.append(JSONObject.fromObject(UtilMisc.toMap("ErrorMsg", e.getMessage())).toString());
-            }
             return "error";
         }
         return "success";
