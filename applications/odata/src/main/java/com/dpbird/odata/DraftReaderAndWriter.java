@@ -54,7 +54,7 @@ public class DraftReaderAndWriter {
     protected String sapContextId;
     protected HttpServletRequest httpServletRequest;
     protected Map<String, Object> odataContext;
-    public static final int MAX_ROWS = 10000;
+    public static final int MAX_ROWS = 200;
 
     public DraftReaderAndWriter(Map<String, Object> odataContext, String sapContextId, EdmEntityType edmEntityType) throws OfbizODataException {
         this.odataContext = odataContext;
