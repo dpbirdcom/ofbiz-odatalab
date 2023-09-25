@@ -1056,8 +1056,10 @@ public class OfbizOdataProcessor {
             }
             List<String> navigationNames = edmEntityType.getNavigationPropertyNames();
             for (String navigationName : navigationNames) {
-                EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
-                addExpandNavigation(entityList, edmEntityType, navigationProperty, expandLevel);
+                for (Entity entity : entityList) {
+                    EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
+                    addExpandNavigation((OdataOfbizEntity) entity, edmEntityType, navigationProperty, expandLevel);
+                }
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
