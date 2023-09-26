@@ -57,7 +57,7 @@ import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 public class OfbizOdataProcessor {
 
     public static final String module = OfbizOdataProcessor.class.getName();
-    public static final int MAX_ROWS = 10000;
+    public static final int MAX_ROWS = 200;
     public static final int EXTRA_QUERY_MAX_RAW = 1000;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
@@ -1056,12 +1056,17 @@ public class OfbizOdataProcessor {
             }
             List<String> navigationNames = edmEntityType.getNavigationPropertyNames();
             for (String navigationName : navigationNames) {
-                EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
-                addExpandNavigation(entityList, edmEntityType, navigationProperty, expandLevel);
+                for (Entity entity : entityList) {
+                    EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
+                    addExpandNavigation((OdataOfbizEntity) entity, edmEntityType, navigationProperty, expandLevel);
+                }
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
-                addAllExpandItem(entityList, expandItem, edmBindingTarget, edmEntityType);
+                for (Entity entity : entityList) {
+                    addExpandItem((OdataOfbizEntity) entity, expandItem, edmEntityType);
+                }
+//                addAllExpandItem(entityList, expandItem, edmBindingTarget, edmEntityType);
             }
         }
     }

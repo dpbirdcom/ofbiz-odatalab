@@ -523,7 +523,7 @@ public class ProcessorServices {
                 OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(csdlPropertyRef.getName());
                 String ofbizFieldName = csdlProperty.getOfbizFieldName();
                 ModelField modelField = modelEntity.getField(ofbizFieldName);
-                if ("id".equals(modelField.getType())) {
+                if (modelField.getType().contains("id")) {
                     pkFieldValue = "ID" + delegator.getNextSeqId(DataModifyActions.NEXT_ID_KEY);
                 }
             }
