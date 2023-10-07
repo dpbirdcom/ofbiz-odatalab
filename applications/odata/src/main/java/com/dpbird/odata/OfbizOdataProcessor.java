@@ -937,11 +937,16 @@ public class OfbizOdataProcessor {
         Debug.logInfo("adding expand option with name = " + navPropName, module);
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
             ExpandOption nestedExpandOption = expandItem.getExpandOption(); // expand nested in expand
-            if (nestedExpandOption == null && expandLevel > 1) {
+            if (expandLevel > 1) {
                 ExpandOptionImpl expandOptionImpl = new ExpandOptionImpl();
                 LevelsOptionImpl levelsOptionImpl = (LevelsOptionImpl) levelsExpandOption;
                 levelsOptionImpl.setValue(expandLevel--);
                 expandOptionImpl.addExpandItem(expandItem);
+                if (nestedExpandOption != null) {
+                    for (ExpandItem item : nestedExpandOption.getExpandItems()) {
+                        expandOptionImpl.addExpandItem(item);
+                    }
+                }
                 nestedExpandOption = expandOptionImpl;
             }
             Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption, "orderByOption", expandItem.getOrderByOption(),
