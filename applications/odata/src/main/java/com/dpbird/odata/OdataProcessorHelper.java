@@ -228,17 +228,27 @@ public class OdataProcessorHelper {
                         pkFieldValue = fieldValue;
                     }
                     if ("description".equals(fieldName)) {
+                        String key = entityName + ".description." + pkFieldValue;
+                        String translation = Util.getTranslation(delegator, key, locale);
+                        if (UtilValidate.isNotEmpty(translation)) {
+                            fieldValue = translation;
+                        }
                         // Debug.logInfo("looking for i18n " + entityName + ".description" + "." + pkFieldValue, module);
-                        Object uiLabelValue = Util.getUiLabelMap(locale).get(entityName + ".description" + "." + pkFieldValue);
-                        if (!uiLabelValue.equals(entityName + ".description." + pkFieldValue)) {
-                            fieldValue = uiLabelValue;
-                        }
+//                        Object uiLabelValue = Util.getUiLabelMap(locale).get(entityName + ".description" + "." + pkFieldValue);
+//                        if (!uiLabelValue.equals(entityName + ".description." + pkFieldValue)) {
+//                            fieldValue = uiLabelValue;
+//                        }
                     } else if ("geoName".equals(fieldName)) { // Geo对象没有description字段，是geoName
-                        // Debug.logInfo("looking for i18n " + entityName + ".geoName" + "." + pkFieldValue, module);
-                        Object uiLabelValue = Util.getUiLabelMap(locale).get(entityName + ".geoName" + "." + pkFieldValue);
-                        if (!uiLabelValue.equals(entityName + ".geoName." + pkFieldValue)) {
-                            fieldValue = uiLabelValue;
+                        String key = entityName + ".geoName." + pkFieldValue;
+                        String translation = Util.getTranslation(delegator, key, locale);
+                        if (UtilValidate.isNotEmpty(translation)) {
+                            fieldValue = translation;
                         }
+//                        // Debug.logInfo("looking for i18n " + entityName + ".geoName" + "." + pkFieldValue, module);
+//                        Object uiLabelValue = Util.getUiLabelMap(locale).get(entityName + ".geoName" + "." + pkFieldValue);
+//                        if (!uiLabelValue.equals(entityName + ".geoName." + pkFieldValue)) {
+//                            fieldValue = uiLabelValue;
+//                        }
                     }
                 }
                 CsdlProperty csdlProperty = csdlEntityType.getProperty(fieldName);

@@ -913,6 +913,7 @@ public class EdmConfigLoader {
         String draftEntityName = null;
         String entitySetName = null;
         EntityCondition entityCondition = null;
+        String ofbizType = null;
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizEntity"))) {
             ofbizEntity = entityTypeElement.getAttribute("OfbizEntity");
         }
@@ -930,6 +931,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("EntitySetName"))) {
             entitySetName = entityTypeElement.getAttribute("EntitySetName");
+        }
+        if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizType"))) {
+            ofbizType = entityTypeElement.getAttribute("OfbizType");
         }
         ModelEntity modelEntity = null;
         try {
@@ -1105,7 +1109,7 @@ public class EdmConfigLoader {
                 attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
                 csdlProperties, csdlNavigationProperties, csdlPropertyRefs, filterByDate, baseType, hasDerivedEntity,
                 excludeProperties, entityCondition, entityConditionStr, labelPrefix, locale, searchOption, groupBy, hasStream,
-                autoLabel, autoDraft, autoValueList, autoSet, draftEntityName, entitySetName);
+                autoLabel, autoDraft, autoValueList, autoSet, draftEntityName, entitySetName, ofbizType);
         csdlEntityType.setAbstract(isAbstract);
         csdlEntityType.setAnnotations(csdlAnnotationList);
         csdlEntityType.setTerms(terms);
@@ -2615,7 +2619,7 @@ public class EdmConfigLoader {
                                                         String baseType, boolean hadDerivedEntity, List<String> excludeProperties,
                                                         EntityCondition entityCondition, String entityConditionStr, String labelPrefix, Locale locale, String searchOption,
                                                         boolean groupBy, boolean hasStream, boolean autoLabel, boolean autoDraft, boolean autoValueList,
-                                                        boolean autoSet, String draftEntityName, String entitySetName) {
+                                                        boolean autoSet, String draftEntityName, String entitySetName, String ofbizType) {
         String entityName = entityTypeFqn.getName(); // Such as Invoice
         List<CsdlPropertyRef> propertyRefs = csdlPropertyRefs;
         ModelEntity modelEntity = null;
@@ -2688,7 +2692,7 @@ public class EdmConfigLoader {
         OfbizCsdlEntityType entityType = new OfbizCsdlEntityType(ofbizEntity, handlerClass, false,
                 false, filterByDate, attrEntityName, attrNumericEntityName, attrDateEntityName,
                 hadDerivedEntity, entityCondition, entityConditionStr, labelPrefix, searchOption, groupBy, hasStream,
-                autoLabel, autoDraft, autoValueList, autoSet, draftEntityName, entitySetName);
+                autoLabel, autoDraft, autoValueList, autoSet, draftEntityName, entitySetName, ofbizType);
         if (UtilValidate.isNotEmpty(baseType)) {
             //有BaseType, Property里就不应该再有pk
             List<String> propertyRefNames = propertyRefs.stream().map(CsdlPropertyRef::getName).collect(Collectors.toList());
