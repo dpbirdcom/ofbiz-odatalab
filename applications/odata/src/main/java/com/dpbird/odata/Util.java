@@ -2752,4 +2752,13 @@ public class Util {
         return EntityQuery.use(delegator).from(navDraftTable).where(queryCondition).queryList();
     }
 
+    /**
+     * 获取译文
+     */
+    public static String getTranslation(Delegator delegator, String key, Locale locale) throws GenericEntityException {
+        String language = locale.getLanguage();
+        GenericValue genericValue = EntityQuery.use(delegator).from("Internationalization").where("lang", language, "property", key).queryFirst();
+        return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("translation") : null;
+    }
+
 }

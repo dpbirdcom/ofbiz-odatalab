@@ -762,5 +762,64 @@ under the License.
         </relation>
     </entity>
 
+    <entity entity-name="Internationalization"
+            package-name="com.dpbird.odata"
+            title="International translation">
+        <description>储存国际化翻译</description>
+        <field name="id" type="id"/>
+        <field name="lang" type="id"/>
+        <field name="property" type="value"/>
+        <field name="translation" type="value"/>
+        <prim-key field="id"/>
+    </entity>
+
+    <entity entity-name="ProcessEntity" package-name="com.banfftech.odata">
+        <description>业务对象</description>
+        <field name="processEntityId" type="id"><description>主键</description></field>
+        <field name="processEntityName" type="name"><description>ofbiz实体名称</description></field>
+        <field name="processEntityTypeId" type="name"><description>实体类型标识</description></field>
+        <field name="isOpen" type="indicator"><description>是否开放</description></field>
+        <field name="description" type="value"><description>实体描述</description></field>
+        <prim-key field="processEntityId"/>
+        <relation type="many" fk-name="PROC_EN_FD" rel-entity-name="ProcessField">
+            <key-map field-name="processEntityId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="ProcessField" package-name="com.banfftech.odata">
+        <description>业务对象字段</description>
+        <field name="processFieldId" type="id"><description>主键</description></field>
+        <field name="processFieldName" type="name"><description>字段名称</description></field>
+        <field name="processFieldTypeId" type="id"><description>字段类型</description></field>
+        <field name="valueTypeId" type="id"><description>选择对象的类型条件</description></field>
+        <field name="asCondition" type="indicator"><description>是否可以在审理流程中当作条件</description></field>
+        <field name="isOpen" type="indicator"><description>是否开放</description></field>
+        <field name="description" type="value"><description>字段描述</description></field>
+        <field name="processEntityId" type="id"><description>对应实体外键</description></field>
+        <prim-key field="processFieldId"/>
+        <relation type="one" fk-name="PROC_FD_TYPE" rel-entity-name="ProcessFieldType">
+            <key-map field-name="processFieldTypeId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="ProcessFieldLabel" package-name="com.banfftech.odata">
+        <description>业务对象字段标签</description>
+        <field name="processFieldLabelId" type="id"><description>主键</description></field>
+        <field name="processFieldId" type="id"><description>对应字段主键</description></field>
+        <field name="language" type="id"><description>语言</description></field>
+        <field name="value" type="value"><description>译文</description></field>
+        <prim-key field="processFieldLabelId"/>
+        <relation type="one" fk-name="PROC_FD_LABEL" rel-entity-name="ProcessField">
+            <key-map field-name="processFieldId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="ProcessFieldType" package-name="com.banfftech.odata">
+        <description>业务对象字段类型</description>
+        <field name="processFieldTypeId" type="id"><description>类型标识</description></field>
+        <field name="description" type="value"><description>描述</description></field>
+        <prim-key field="processFieldTypeId"/>
+    </entity>
+
 
 </entitymodel>
