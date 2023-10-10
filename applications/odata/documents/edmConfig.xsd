@@ -93,6 +93,7 @@
             <xs:attribute name="EntitySetName" type="xs:NCName"/>
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
             <xs:attribute name="Orderby" type="xs:anyURI"/>
+            <xs:attribute name="OfbizType" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">

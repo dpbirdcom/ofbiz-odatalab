@@ -2758,7 +2758,7 @@ public class Util {
     public static String getTranslation(Delegator delegator, String key, Locale locale) throws GenericEntityException {
         String language = locale.getLanguage();
         GenericValue genericValue = EntityQuery.use(delegator).from("Internationalization").where("lang", language, "property", key).queryFirst();
-        return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("translation") : null;
+        return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("value") : null;
     }
 
 }

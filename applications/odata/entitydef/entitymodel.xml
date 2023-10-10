@@ -769,7 +769,7 @@ under the License.
         <field name="id" type="id"/>
         <field name="lang" type="id"/>
         <field name="property" type="value"/>
-        <field name="translation" type="value"/>
+        <field name="value" type="value"/>
         <prim-key field="id"/>
     </entity>
 
@@ -811,6 +811,9 @@ under the License.
         <prim-key field="processFieldLabelId"/>
         <relation type="one" fk-name="PROC_FD_LABEL" rel-entity-name="ProcessField">
             <key-map field-name="processFieldId"/>
+        </relation>
+        <relation type="one" fk-name="FD_LABEL_ENUM" rel-entity-name="Enumeration">
+            <key-map field-name="language" rel-field-name="enumId"/>
         </relation>
     </entity>
 
