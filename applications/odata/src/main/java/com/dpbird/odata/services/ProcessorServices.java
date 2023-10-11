@@ -18,10 +18,7 @@ import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.datasource.GenericHelperInfo;
 import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
@@ -1035,6 +1032,36 @@ public class ProcessorServices {
             //删除ofbiz实体组缓存
             Map<String, String> groupCache = delegator.getModelGroupReader().getGroupCache(delegator.getDelegatorBaseName());
             groupCache.remove(modelEntity.getEntityName());
+        }
+        return ServiceUtil.returnSuccess();
+    }
+
+    public static Map<String, Object> writeOfbizEntity(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException {
+        Delegator delegator = dctx.getDelegator();
+        Map<String, ModelEntity> entityCache = delegator.getModelReader().getEntityCache();
+        for (ModelEntity modelEntity : entityCache.values()) {
+            String entityName = modelEntity.getEntityName();
+            String ofbizEntityId = delegator.getNextSeqId("OfbizEntity");
+            delegator.create("OfbizEntity", UtilMisc.toMap("ofbizEntityId", ofbizEntityId, "ofbizEntityName", entityName));
+            Iterator<ModelField> fieldsIterator = modelEntity.getFieldsIterator();
+            List<String> pkFieldNames = modelEntity.getPkFieldNames();
+            while (fieldsIterator.hasNext()) {
+                ModelField field = fieldsIterator.next();
+                String ofbizFieldId = delegator.getNextSeqId("OfbizField");
+                delegator.create("OfbizField", UtilMisc.toMap("ofbizFieldId", ofbizFieldId, "ofbizEntityId", ofbizEntityId,
+                        "ofbizFieldName", field.getName(), "isPrimaryKey", pkFieldNames.contains(field.getName()) ? "Y" : "N"));
+            }
+            Iterator<ModelRelation> relationsIterator = modelEntity.getRelationsIterator();
+            while (relationsIterator.hasNext()) {
+                ModelRelation relation = relationsIterator.next();
+                String title = relation.getTitle();
+                String relEntityName = relation.getRelEntityName();
+                String combinedName = relation.getCombinedName();
+                String type = relation.getType();
+                String ofbizRelationId = delegator.getNextSeqId("OfbizRelation");
+                delegator.create("OfbizRelation", UtilMisc.toMap("ofbizRelationId", ofbizRelationId, "ofbizEntityId", ofbizEntityId,
+                        "ofbizRelationTitle", title, "ofbizRelationEntity", relEntityName, "ofbizRelationName", combinedName, "ofbizRelationType", type));
+            }
         }
         return ServiceUtil.returnSuccess();
     }

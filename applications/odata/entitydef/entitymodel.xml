@@ -824,5 +824,42 @@ under the License.
         <prim-key field="processFieldTypeId"/>
     </entity>
 
+    <!-- 存储ofbiz数据结构 -->
+    <entity entity-name="OfbizEntity" package-name="com.banfftech.odata">
+        <description>记录所有的实体</description>
+        <field name="ofbizEntityId" type="id"><description>ID</description></field>
+        <field name="ofbizEntityName" type="name"><description>实体名称</description></field>
+        <field name="description" type="description"><description>描述</description></field>
+        <prim-key field="ofbizEntityId"/>
+    </entity>
+
+    <entity entity-name="OfbizField" package-name="com.banfftech.odata">
+        <description>记录实体字段</description>
+        <field name="ofbizFieldId" type="id"><description>ID</description></field>
+        <field name="ofbizEntityId" type="id"><description>实体ID</description></field>
+        <field name="ofbizFieldName" type="name"><description>字段名称</description></field>
+        <field name="isPrimaryKey" type="indicator"><description>是否是主键</description></field>
+        <field name="description" type="description"><description>描述</description></field>
+        <prim-key field="ofbizFieldId"/>
+        <relation type="one" rel-entity-name="OfbizEntity">
+            <key-map field-name="ofbizEntityId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="OfbizRelation" package-name="com.banfftech.odata">
+        <description>记录所有的实体</description>
+        <field name="ofbizRelationId" type="id"><description>ID</description></field>
+        <field name="ofbizEntityId" type="id"><description>实体ID</description></field>
+        <field name="ofbizRelationTitle" type="name"><description>标题</description></field>
+        <field name="ofbizRelationEntity" type="name"><description>关联实体名称</description></field>
+        <field name="ofbizRelationName" type="name"><description>组合名称</description></field>
+        <field name="ofbizRelationType" type="value"><description>关联类型</description></field>
+        <prim-key field="ofbizRelationId"/>
+        <relation type="one" rel-entity-name="OfbizEntity">
+            <key-map field-name="ofbizEntityId"/>
+        </relation>
+    </entity>
+
+
 
 </entitymodel>
