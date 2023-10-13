@@ -118,566 +118,209 @@ under the License.
 
     <!-- end shortcut view -->
 
-    <!-- 数据库动态view，及odata的metadata数据库化 -->
-    <entity entity-name="OdataView" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="packageName" type="name"></field>
-        <field name="title" type="description"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="viewName"/>
-        <relation type="many" rel-entity-name="MemberEntity">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="many" rel-entity-name="AliasAll">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="many" rel-entity-name="FieldAlias">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="many" rel-entity-name="ViewLink">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="many" rel-entity-name="Relation">
-            <key-map field-name="viewName" rel-field-name="availableEntityName"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="MemberEntity" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="memberEntityName" type="name"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <relation type="one" fk-name="ODATAVIEW_MEMBER" rel-entity-name="OdataView">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="one-nofk" rel-entity-name="AliasAll">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-        </relation>
-        <relation type="many" rel-entity-name="FieldAlias">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="AliasAll" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="aliasPrefix" type="name"></field>
-        <field name="groupBy" type="indicator"></field>
-        <field name="aliasFunction" type="name"></field>
-        <field name="fieldSet" type="value"></field>
-        <field name="fieldsToExclude" type="value"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <relation type="one" fk-name="MEMBER_ALIASALL" rel-entity-name="MemberEntity">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="FieldAlias" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="aliasName" type="name"></field>
-        <field name="aliasField" type="name"></field>
-        <field name="colAlias" type="name"></field>
-        <field name="isPk" type="indicator"></field>
-        <field name="groupBy" type="indicator"></field>
-        <field name="aliasFunction" type="name"></field>
-        <field name="fieldSet" type="value"></field>
-        <field name="isFromAliasAll" type="indicator"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <prim-key field="aliasName"/>
-        <relation type="one" fk-name="MEMBER_ALIAS" rel-entity-name="MemberEntity">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-        </relation>
-        <relation type="one-nofk" rel-entity-name="ComplexAlias">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="aliasName"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="ComplexAlias" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="aliasName" type="name"></field>
-        <field name="operator" type="name"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <prim-key field="aliasName"/>
-        <relation type="one" fk-name="CPLXALIAS_ALIAS" rel-entity-name="FieldAlias">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="aliasName"/>
-        </relation>
-        <relation type="many" rel-entity-name="ComplexAliasField">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="aliasName"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="ComplexAliasField" package-name="com.dpbird.odata">
-    	<field name="complexFieldId" type="id"></field>
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="aliasName" type="name"></field>
-        <field name="operatorAlias" type="name"></field>
-        <field name="operatorField" type="name"></field>
-        <field name="defaultValue" type="value"></field>
-        <field name="fieldValue" type="value"></field>
-        <field name="fieldFunction" type="name"></field>
-        <prim-key field="complexFieldId"/>
-        <relation type="one" fk-name="CPLXALSFLD_CMPLX" rel-entity-name="ComplexAlias">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="aliasName"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="ViewLink" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="relEntityAlias" type="name"></field>
-        <field name="relOptional" type="indicator"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <prim-key field="relEntityAlias"/>
-        <relation type="one" fk-name="ODATAVIEW_LINK" rel-entity-name="OdataView">
-            <key-map field-name="viewName"/>
-        </relation>
-        <relation type="many" rel-entity-name="ViewLinkKeyMap">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-        <relation type="many" rel-entity-name="EntityCondition">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="ViewLinkKeyMap" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="relEntityAlias" type="name"></field>
-        <field name="fieldName" type="name"></field>
-        <field name="relFieldName" type="name"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <prim-key field="relEntityAlias"/>
-        <prim-key field="fieldName"/>
-        <relation type="one" fk-name="VIEWLINK_KEYMAP" rel-entity-name="ViewLink">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="EntityCondition" package-name="com.dpbird.odata">
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="relEntityAlias" type="name"></field>
-        <field name="fieldName" type="name"></field>
-        <field name="filterByDate" type="indicator"></field>
-        <field name="isDistinct" type="indicator"></field>
-        <field name="orderByField" type="name"></field>
-        <prim-key field="viewName"/>
-        <prim-key field="entityAlias"/>
-        <prim-key field="relEntityAlias"/>
-        <relation type="one" fk-name="ETTCNDTION_VWLK" rel-entity-name="ViewLink">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-        <relation type="many" rel-entity-name="ConditionList">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="ConditionList" package-name="com.dpbird.odata">
-    	<field name="conditionListId" type="id"></field>
-    	<field name="parentConditionListId" type="id"></field>
-    	<field name="isHaving" type="indicator"></field>
-    	<field name="combine" type="name"></field>
-        <field name="viewName" type="name"></field>
-        <field name="entityAlias" type="name"></field>
-        <field name="relEntityAlias" type="name"></field>
-        <prim-key field="conditionListId"/>
-        <relation type="one-nofk" rel-entity-name="EntityCondition">
-            <key-map field-name="viewName"/>
-            <key-map field-name="entityAlias"/>
-            <key-map field-name="relEntityAlias"/>
-        </relation>
-        <relation rel-entity-name="ConditionExpr" type="many">
-        	<key-map field-name="conditionListId"/>
-        </relation>
-		<relation type="many" title="Child" rel-entity-name="ConditionList">
-			<key-map field-name="conditionListId" rel-field-name="parentConditionListId"/>
-		</relation>
-    </entity>
-
-    <entity entity-name="ConditionExpr" package-name="com.dpbird.odata">
-	    	<field name="conditionExprId" type="id"></field>
-	    	<field name="conditionListId" type="id"></field>
-	    	<field name="entityAlias" type="name"></field>
-	    	<field name="fieldName" type="name"></field>
-	    	<field name="operator" type="id"></field>
-	    	<field name="relEntityAlias" type="name"></field>
-	    	<field name="relFieldName" type="name"></field>
-	    	<field name="fieldValue" type="value"></field>
-	    	<field name="ignoreCase" type="indicator"></field>
-	    	<prim-key field="conditionExprId"/>
-        <relation type="one" fk-name="CNDEXPR_CNDLST" rel-entity-name="ConditionList">
-            <key-map field-name="conditionListId"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="Relation" package-name="com.dpbird.odata">
-        <field name="availableEntityName" type="name"></field>
-        <field name="relEntityName" type="name"></field>
-        <field name="fkName" type="name"></field>
-        <field name="relType" type="very-short"></field>
-        <field name="title" type="description"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="availableEntityName"/>
-        <prim-key field="relEntityName"/>
-        <prim-key field="title"/>
-        <relation type="many" rel-entity-name="RelationKeyMap">
-            <key-map field-name="availableEntityName"/>
-            <key-map field-name="relEntityName"/>
-            <key-map field-name="title"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="RelationKeyMap" package-name="com.dpbird.odata">
-        <field name="availableEntityName" type="name"></field>
-        <field name="relEntityName" type="name"></field>
-        <field name="fieldName" type="name"></field>
-        <field name="title" type="description"></field>
-        <field name="relFieldName" type="name"></field>
-        <prim-key field="availableEntityName"/>
-        <prim-key field="relEntityName"/>
-        <prim-key field="fieldName"/>
-        <prim-key field="title"/>
-        <relation type="one" fk-name="RELATION_KEYMAP" rel-entity-name="Relation">
-            <key-map field-name="availableEntityName"/>
-            <key-map field-name="relEntityName"/>
-            <key-map field-name="title"/>
-        </relation>
-    </entity>
-
-    <entity entity-name="AvailableEntity" package-name="com.dpbird.odata">
-    	<field name="availableEntityName" type="name"></field>
-    	<field name="description" type="description"></field>
-    	<field name="isView" type="indicator"></field>
-    	<field name="entityType" type="id"><description>SYSTEM or ODATAVIEW</description></field>
-    	<prim-key field="availableEntityName"/>
-    	<relation rel-entity-name="OdataView" type="one-nofk">
-    		<key-map field-name="availableEntityName" rel-field-name="viewName"/>
-    	</relation>
-    </entity>
-
-    <entity entity-name="EdmConfig" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="appId" type="id"></field>
-        <field name="namespace" type="value"></field>
-        <field name="description" type="description"></field>
-        <prim-key field="edmConfigId"/>
-    	<relation rel-entity-name="OdataApp" fk-name="EDMCONFIG_APP" type="one">
-    		<key-map field-name="appId"/>
-    	</relation>
+    <!-- =============================== EdmService 存储方案 =============================== -->
+    <entity entity-name="EdmService" package-name="com.dpbird.odata">
+        <field name="edmServiceId" type="id"/>
+        <field name="serviceName" type="id"/>
+        <field name="namespace" type="value"/>
+        <field name="description" type="description"/>
+        <prim-key field="edmServiceId"/>
         <relation type="many" rel-entity-name="EdmEntityType">
-            <key-map field-name="edmConfigId"/>
-        </relation>
-        <relation type="many" rel-entity-name="EdmEntityContainer">
-            <key-map field-name="edmConfigId"/>
+            <key-map field-name="edmServiceId"/>
         </relation>
         <relation type="many" rel-entity-name="EdmAction">
-            <key-map field-name="edmConfigId"/>
+            <key-map field-name="edmServiceId"/>
         </relation>
         <relation type="many" rel-entity-name="EdmFunction">
-            <key-map field-name="edmConfigId"/>
+            <key-map field-name="edmServiceId"/>
         </relation>
-        <relation type="many" rel-entity-name="CsdlAnnotations">
-            <key-map field-name="edmConfigId"/>
-        </relation>
+<!--        <relation type="many" rel-entity-name="CsdlAnnotations">-->
+<!--            <key-map field-name="edmServiceId"/>-->
+<!--        </relation>-->
     </entity>
 
     <entity entity-name="EdmEntityType" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="edmEntityTypeId" type="id"></field>
-        <field name="entityTypeName" type="name"></field>
-        <field name="availableEntityName" type="name"></field>
-        <prim-key field="edmConfigId"/>
+        <field name="edmEntityTypeId" type="id"/>
+        <field name="name" type="name"/>
+        <field name="ofbizEntity" type="name"/>
+        <field name="autoProperties" type="indicator"/>
+        <field name="entitySetName" type="name"/>
+        <field name="entityCondition" type="value"/>
+        <field name="searchOption" type="value"/>
+        <field name="edmServiceId" type="id"/>
         <prim-key field="edmEntityTypeId"/>
-    	<relation rel-entity-name="EdmConfig" fk-name="ENTITYTYPE_CONFIG" type="one">
-    		<key-map field-name="edmConfigId"/>
+    	<relation rel-entity-name="EdmService" fk-name="EDM_EN_SERV" type="one">
+    		<key-map field-name="edmServiceId"/>
     	</relation>
-    	<relation rel-entity-name="AvailableEntity" type="one" fk-name="ETYTYPE_AVLENTITY">
-    		<key-map field-name="availableEntityName"/>
-    	</relation>
-    </entity>
-
-    <entity entity-name="EdmEntityContainer" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="containerName" type="name"></field>
-        <prim-key field="edmConfigId"/>
-        <prim-key field="containerName"/>
-    	<relation rel-entity-name="EdmConfig" fk-name="ETYCNT_CONFIG" type="one">
-    		<key-map field-name="edmConfigId"/>
-    	</relation>
-    	<relation rel-entity-name="EdmEntitySet" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    	<relation rel-entity-name="EdmActionImport" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    	<relation rel-entity-name="EdmFunctionImport" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    </entity>
-
-    <entity entity-name="EdmEntitySet" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="containerName" type="name"></field>
-        <field name="entitySetName" type="name"></field>
-        <field name="edmEntityTypeId" type="id"></field>
-        <prim-key field="edmConfigId"/>
-        <prim-key field="containerName"/>
-        <prim-key field="entitySetName"/>
-    	<relation rel-entity-name="EdmEntityContainer" fk-name="ETYSET_CONTAINER" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    	<relation rel-entity-name="EdmEntityType" fk-name="ENTITYSET_TYPE" type="one">
-    		<key-map field-name="edmConfigId"/>
+    	<relation rel-entity-name="EdmProperty" type="many">
     		<key-map field-name="edmEntityTypeId"/>
     	</relation>
-    	<relation rel-entity-name="NavigationPropertyBinding" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    		<key-map field-name="entitySetName"/>
+    </entity>
+
+    <entity entity-name="EdmProperty" package-name="com.dpbird.odata">
+        <field name="edmPropertyId" type="id"/>
+        <field name="edmEntityTypeId" type="id"/>
+        <field name="name" type="name"/>
+        <field name="type" type="name"/>
+        <field name="Hidden" type="value"/>
+        <field name="Computed" type="value"/>
+        <field name="FieldControl" type="value"/>
+        <field name="Immutable" type="value"/>
+        <field name="Label" type="value"/>
+        <field name="Scale" type="numeric"/>
+        <prim-key field="edmPropertyId"/>
+    	<relation rel-entity-name="EdmEntityType" fk-name="EDM_PROP_EN" type="one">
+    		<key-map field-name="edmEntityTypeId"/>
     	</relation>
     </entity>
 
-    <entity entity-name="NavigationPropertyBinding" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="containerName" type="name"></field>
-        <field name="entitySetName" type="name"></field>
-    	<field name="navPath" type="name"></field>
-    	<field name="target" type="name"></field>
-        <prim-key field="edmConfigId"/>
-        <prim-key field="containerName"/>
-        <prim-key field="entitySetName"/>
-        <prim-key field="navPath"/>
-        <relation rel-entity-name="EdmEntitySet" fk-name="NAVBINDING_SET" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    		<key-map field-name="entitySetName"/>
-        </relation>
-    </entity>
-
-	<entity entity-name="AvailableService" package-name="com.dpbird.odata">
-		<field name="serviceId" type="id"></field>
-		<field name="serviceName" type="value"></field>
-		<field name="description" type="description"></field>
-		<field name="isSystemService" type="indicator"></field>
-		<field name="isReadOnly" type="indicator"></field>
-    	<field name="returnType" type="name"></field>
-    	<field name="returnName" type="name"></field>
-    	<field name="isNullable" type="indicator"></field>
-    	<field name="isCollection" type="indicator"></field>
-    	<prim-key field="serviceId"/>
-    	<relation rel-entity-name="ServiceParameter" type="many">
-    		<key-map field-name="serviceId"/>
-    	</relation>
-	</entity>
-
-    <entity entity-name="ServiceParameter" package-name="com.dpbird.odata">
-        <field name="serviceId" type="id"></field>
-    	<field name="paramName" type="name"></field>
-    	<field name="paramType" type="name"></field>
-    	<field name="isNullable" type="indicator"></field>
-    	<field name="isCollection" type="indicator"></field>
-    	<prim-key field="serviceId"/>
-    	<prim-key field="paramName"/>
-    	<relation rel-entity-name="AvailableService" fk-name="SVCPARM_SRV" type="one">
-    		<key-map field-name="serviceId"/>
+    <entity entity-name="EdmNavigationProperty" package-name="com.dpbird.odata">
+        <field name="edmNavigationPropertyId" type="id"/>
+        <field name="edmEntityTypeId" type="id"/>
+        <field name="name" type="name"/>
+        <field name="type" type="name"/>
+        <field name="Relations" type="value"/>
+        <field name="IsCollection" type="value"/>
+        <prim-key field="edmNavigationPropertyId"/>
+    	<relation rel-entity-name="EdmEntityType" fk-name="EDM_NAV_PROP_EN" type="one">
+    		<key-map field-name="edmEntityTypeId"/>
     	</relation>
     </entity>
 
     <entity entity-name="EdmAction" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-    	<field name="actionName" type="name"></field>
-    	<field name="serviceId" type="id"></field>
-    	<field name="isBound" type="indicator"></field>
-    	<field name="isComposable" type="indicator"></field>
-    	<prim-key field="edmConfigId"/>
-    	<prim-key field="actionName"/>
-    	<relation rel-entity-name="EdmConfig" fk-name="ACTION_CONFIG" type="one">
-    		<key-map field-name="edmConfigId"/>
-    	</relation>
-    	<relation rel-entity-name="ActionParameter" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="actionName"/>
-    	</relation>
-    	<relation rel-entity-name="AvailableService" fk-name="ACTION_SERVICE" type="one">
-    		<key-map field-name="serviceId"/>
-    	</relation>
-    </entity>
-    <entity entity-name="EdmActionImport" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="containerName" type="name"></field>
-        <field name="actionImportName" type="name"></field>
-        <field name="actionName" type="name"></field>
-        <prim-key field="edmConfigId"/>
-        <prim-key field="containerName"/>
-        <prim-key field="actionImportName"/>
-    	<relation rel-entity-name="EdmEntityContainer" fk-name="ACTIMP_CONT" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    	<relation rel-entity-name="EdmAction" fk-name="ACTIMP_ACTION" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="actionName"/>
-    	</relation>
+        <field name="edmActionId" type="id"/>
+    	<field name="name" type="name"/>
+    	<field name="isBound" type="indicator"/>
+    	<field name="ofbizService" type="value"/>
+    	<field name="edmServiceId" type="id"/>
+    	<prim-key field="edmActionId"/>
+        <relation rel-entity-name="EdmService" fk-name="EDM_ACT_SERV" type="one">
+            <key-map field-name="edmServiceId"/>
+        </relation>
+        <relation rel-entity-name="EdmParameter" type="many">
+            <key-map field-name="edmActionId"/>
+        </relation>
     </entity>
 
     <entity entity-name="EdmFunction" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-    	<field name="functionName" type="name"></field>
-    	<field name="serviceId" type="id"></field>
-    	<field name="isBound" type="indicator"></field>
-    	<field name="isComposable" type="indicator"></field>
-    	<prim-key field="edmConfigId"/>
-    	<prim-key field="functionName"/>
-    	<relation rel-entity-name="EdmConfig" fk-name="FUNCTION_CONFIG" type="one">
-    		<key-map field-name="edmConfigId"/>
-    	</relation>
-    	<relation rel-entity-name="FunctionParameter" type="many">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="functionName"/>
-    	</relation>
-    	<relation rel-entity-name="AvailableService" fk-name="FUNCTION_SERVICE" type="one">
-    		<key-map field-name="serviceId"/>
-    	</relation>
-    </entity>
-    <entity entity-name="EdmFunctionImport" package-name="com.dpbird.odata">
-        <field name="edmConfigId" type="id"></field>
-        <field name="containerName" type="name"></field>
-        <field name="functionImportName" type="name"></field>
-        <field name="functionName" type="name"></field>
-        <prim-key field="edmConfigId"/>
-        <prim-key field="containerName"/>
-        <prim-key field="functionImportName"/>
-    	<relation rel-entity-name="EdmEntityContainer" fk-name="FUNCIMP_CONTAINER" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="containerName"/>
-    	</relation>
-    	<relation rel-entity-name="EdmFunction" fk-name="FUNCIMP_ACTION" type="one">
-    		<key-map field-name="edmConfigId"/>
-    		<key-map field-name="functionName"/>
-    	</relation>
+        <field name="edmFunctionId" type="id"/>
+    	<field name="name" type="name"/>
+    	<field name="isBound" type="indicator"/>
+    	<field name="ofbizService" type="value"/>
+    	<field name="edmServiceId" type="id"/>
+    	<prim-key field="edmFunctionId"/>
+        <relation rel-entity-name="EdmService" fk-name="EDM_FUNC_SERV" type="one">
+            <key-map field-name="edmServiceId"/>
+        </relation>
+        <relation rel-entity-name="EdmParameter" type="many">
+            <key-map field-name="edmFunctionId"/>
+        </relation>
     </entity>
 
+    <entity entity-name="EdmParameter" package-name="com.dpbird.odata">
+        <field name="edmParameterId" type="id"/>
+        <field name="edmFunctionId" type="id"/>
+        <field name="edmActionId" type="id"/>
+    	<field name="name" type="name"/>
+    	<field name="type" type="value"/>
+    	<field name="Nullable" type="indicator"/>
+    	<field name="IsCollection" type="indicator"/>
+    	<field name="edmServiceId" type="id"/>
+    	<prim-key field="edmParameterId"/>
+        <relation rel-entity-name="EdmAction" fk-name="EDM_PRAM_ACT" type="one">
+            <key-map field-name="edmActionId"/>
+        </relation>
+        <relation rel-entity-name="EdmFunction" fk-name="EDM_PRAM_FUNC" type="one">
+            <key-map field-name="edmFunctionId"/>
+        </relation>
+    </entity>
+
+
     <!-- Annotation related entities -->
-    <entity entity-name="CsdlAnnotations" package-name="com.dpbird.odata">
-    		<field name="csdlAnnotationsId" type="id"></field>
-        <field name="edmConfigId" type="id"></field>
-    		<field name="target" type="name"></field>
-    		<field name="qualifier" type="name"></field>
-    		<prim-key field="csdlAnnotationsId"/>
-    		<relation rel-entity-name="CsdlAnnotation" type="many">
-    			<key-map field-name="csdlAnnotationsId"/>
-    		</relation>
-	    	<relation rel-entity-name="EdmConfig" fk-name="ANTIONS_CONFIG" type="one">
-	    		<key-map field-name="edmConfigId"/>
-	    	</relation>
-    </entity>
-    <entity entity-name="CsdlAnnotation" package-name="com.dpbird.odata">
-    		<field name="csdlAnnotationId" type="id"></field>
-    		<field name="csdlAnnotationsId" type="id"></field>
-    		<field name="csdlExpressionId" type="id"></field>
-    		<field name="csdlPropertyValueId" type="id"></field>
-    		<field name="term" type="name"></field>
-    		<field name="qualifier" type="name"></field>
-    		<prim-key field="csdlAnnotationId"/>
-    		<relation rel-entity-name="CsdlAnnotations" type="one" fk-name="ANTION_ANTIONS">
-    			<key-map field-name="csdlAnnotationsId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="ANTION_EXPSSN">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlPropertyValue" type="one" fk-name="ANTION_PRPTYVLU">
-    			<key-map field-name="csdlPropertyValueId"/>
-    		</relation>
-    </entity>
-    <entity entity-name="CsdlExpression" package-name="com.dpbird.odata">
-    		<field name="csdlExpressionId" type="id"></field>
-    		<field name="csdlExpressionTypeId" type="id"></field>
-    		<field name="csdlExpressionValue" type="value"></field>
-    		<field name="parentCsdlExpressionId" type="id"></field>
-    		<prim-key field="csdlExpressionId"/>
-    		<relation rel-entity-name="CsdlExpression" type="one-nofk" title="Parent">
-    			<key-map field-name="parentCsdlExpressionId" rel-field-name="csdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlExpression" type="many" title="Sub">
-    			<key-map field-name="csdlExpressionId" rel-field-name="parentCsdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlRecord" type="one-nofk">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlCollection" type="one-nofk">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    </entity>
-    <entity entity-name="CsdlRecord" package-name="com.dpbird.odata">
-    		<field name="csdlExpressionId" type="id"></field>
-    		<field name="recordType" type="value"></field>
-    		<prim-key field="csdlExpressionId"/>
-    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="RECORD_EXPSSN">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlPropertyValue" type="many">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    </entity>
-    <entity entity-name="CsdlPropertyValue" package-name="com.dpbird.odata">
-    		<field name="csdlPropertyValueId" type="id"></field>
-    		<field name="property" type="name"></field>
-    		<field name="csdlExpressionId" type="id"></field>
-    		<field name="valueExpressionId" type="id"></field>
-    		<prim-key field="csdlPropertyValueId"/>
-    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="PRPTYVLU_EXPSSN">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlAnnotation" type="many">
-    			<key-map field-name="csdlPropertyValueId"/>
-    		</relation>
-    		<relation rel-entity-name="CsdlExpression" type="one" title="Value" fk-name="PRPTYVLU_VLUEXPSSN">
-    			<key-map field-name="valueExpressionId" rel-field-name="csdlExpressionId"/>
-    		</relation>
-    </entity>
-    <entity entity-name="CsdlCollection" package-name="com.dpbird.odata">
-    		<field name="csdlExpressionId" type="id"></field>
-    		<prim-key field="csdlExpressionId"/>
-    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="COLLECTION_EXPSSN">
-    			<key-map field-name="csdlExpressionId"/>
-    		</relation>
-    </entity>
+<!--    <entity entity-name="CsdlAnnotations" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlAnnotationsId" type="id"></field>-->
+<!--        <field name="edmConfigId" type="id"></field>-->
+<!--    		<field name="target" type="name"></field>-->
+<!--    		<field name="qualifier" type="name"></field>-->
+<!--    		<prim-key field="csdlAnnotationsId"/>-->
+<!--    		<relation rel-entity-name="CsdlAnnotation" type="many">-->
+<!--    			<key-map field-name="csdlAnnotationsId"/>-->
+<!--    		</relation>-->
+<!--	    	<relation rel-entity-name="EdmConfig" fk-name="ANTIONS_CONFIG" type="one">-->
+<!--	    		<key-map field-name="edmConfigId"/>-->
+<!--	    	</relation>-->
+<!--    </entity>-->
+<!--    <entity entity-name="CsdlAnnotation" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlAnnotationId" type="id"></field>-->
+<!--    		<field name="csdlAnnotationsId" type="id"></field>-->
+<!--    		<field name="csdlExpressionId" type="id"></field>-->
+<!--    		<field name="csdlPropertyValueId" type="id"></field>-->
+<!--    		<field name="term" type="name"></field>-->
+<!--    		<field name="qualifier" type="name"></field>-->
+<!--    		<prim-key field="csdlAnnotationId"/>-->
+<!--    		<relation rel-entity-name="CsdlAnnotations" type="one" fk-name="ANTION_ANTIONS">-->
+<!--    			<key-map field-name="csdlAnnotationsId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="ANTION_EXPSSN">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlPropertyValue" type="one" fk-name="ANTION_PRPTYVLU">-->
+<!--    			<key-map field-name="csdlPropertyValueId"/>-->
+<!--    		</relation>-->
+<!--    </entity>-->
+<!--    <entity entity-name="CsdlExpression" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlExpressionId" type="id"></field>-->
+<!--    		<field name="csdlExpressionTypeId" type="id"></field>-->
+<!--    		<field name="csdlExpressionValue" type="value"></field>-->
+<!--    		<field name="parentCsdlExpressionId" type="id"></field>-->
+<!--    		<prim-key field="csdlExpressionId"/>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one-nofk" title="Parent">-->
+<!--    			<key-map field-name="parentCsdlExpressionId" rel-field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="many" title="Sub">-->
+<!--    			<key-map field-name="csdlExpressionId" rel-field-name="parentCsdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlRecord" type="one-nofk">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlCollection" type="one-nofk">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    </entity>-->
+<!--    <entity entity-name="CsdlRecord" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlExpressionId" type="id"></field>-->
+<!--    		<field name="recordType" type="value"></field>-->
+<!--    		<prim-key field="csdlExpressionId"/>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="RECORD_EXPSSN">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlPropertyValue" type="many">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    </entity>-->
+<!--    <entity entity-name="CsdlPropertyValue" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlPropertyValueId" type="id"></field>-->
+<!--    		<field name="property" type="name"></field>-->
+<!--    		<field name="csdlExpressionId" type="id"></field>-->
+<!--    		<field name="valueExpressionId" type="id"></field>-->
+<!--    		<prim-key field="csdlPropertyValueId"/>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="PRPTYVLU_EXPSSN">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlAnnotation" type="many">-->
+<!--    			<key-map field-name="csdlPropertyValueId"/>-->
+<!--    		</relation>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one" title="Value" fk-name="PRPTYVLU_VLUEXPSSN">-->
+<!--    			<key-map field-name="valueExpressionId" rel-field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    </entity>-->
+<!--    <entity entity-name="CsdlCollection" package-name="com.dpbird.odata">-->
+<!--    		<field name="csdlExpressionId" type="id"></field>-->
+<!--    		<prim-key field="csdlExpressionId"/>-->
+<!--    		<relation rel-entity-name="CsdlExpression" type="one" fk-name="COLLECTION_EXPSSN">-->
+<!--    			<key-map field-name="csdlExpressionId"/>-->
+<!--    		</relation>-->
+<!--    </entity>-->
     
     <!--    以下为sap ui5 fe的SelectionVariant和PresentationVariant的存储方案-->
     <entity entity-name="VariantFile"
@@ -698,25 +341,14 @@ under the License.
         </relation>
     </entity>
 
-    <entity entity-name="EdmApp"
+    <entity entity-name="EdmConfig"
             package-name="com.dpbird.odata"
-            title="Edm App">
-        <field name="edmAppId" type="id"/>
-        <field name="description" type="value"/>
-        <prim-key field="edmAppId"/>
-    </entity>
-
-    <entity entity-name="EdmAppConfig"
-            package-name="com.dpbird.odata"
-            title="Edm App Config">
-        <field name="edmAppId" type="id"/>
-        <field name="edmAppVersion" type="value"/>
+            title="Edm Config">
+        <field name="edmConfigId" type="id"/>
+        <field name="edmConfigName" type="id"/>
+        <field name="edmConfigVersion" type="value"/>
         <field name="edmConfigContent" type="very-long"/>
-        <prim-key field="edmAppId"/>
-        <prim-key field="edmAppVersion"/>
-        <relation type="one" fk-name="EAC_EA" rel-entity-name="EdmApp">
-            <key-map field-name="edmAppId"/>
-        </relation>
+        <prim-key field="edmConfigId"/>
     </entity>
 
     <entity entity-name="OdataApp" package-name="com.dpbird.odata">
@@ -728,6 +360,7 @@ under the License.
 
     <entity entity-name="Tiles" package-name="com.dpbird.odata">
         <field name="tilesId" type="id"/>
+        <field name="tilesName" type="id"/>
         <field name="description" type="description"/>
         <prim-key field="tilesId"/>
     </entity>
@@ -841,7 +474,7 @@ under the License.
         <field name="isPrimaryKey" type="indicator"><description>是否是主键</description></field>
         <field name="description" type="description"><description>描述</description></field>
         <prim-key field="ofbizFieldId"/>
-        <relation type="one" rel-entity-name="OfbizEntity">
+        <relation type="one" rel-entity-name="OfbizEntity" fk-name="OFBIZ_FIELD_EN">
             <key-map field-name="ofbizEntityId"/>
         </relation>
     </entity>
@@ -855,11 +488,10 @@ under the License.
         <field name="ofbizRelationName" type="name"><description>组合名称</description></field>
         <field name="ofbizRelationType" type="value"><description>关联类型</description></field>
         <prim-key field="ofbizRelationId"/>
-        <relation type="one" rel-entity-name="OfbizEntity">
+        <relation type="one" rel-entity-name="OfbizEntity" fk-name="OFBIZ_REL_EN">
             <key-map field-name="ofbizEntityId"/>
         </relation>
     </entity>
-
 
 
 </entitymodel>

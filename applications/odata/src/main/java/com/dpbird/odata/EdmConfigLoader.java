@@ -266,6 +266,12 @@ public class EdmConfigLoader {
                 DataField dataField = (DataField) dataFieldAbstract;
                 CsdlPropertyValue propertyValue = createPropertyValuePath("Value", (String) dataField.getValue());
                 propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(dataField.getCriticality())) {
+                    propertyValues.add(createPropertyValueEnum("Criticality", dataField.getCriticality()));
+                }
+                if (UtilValidate.isNotEmpty(dataField.getCriticalityPath())) {
+                    propertyValues.add(createPropertyValuePath("Criticality", dataField.getCriticalityPath()));
+                }
                 String recordType = "UI.DataField";
                 csdlRecord.setType(recordType);
                 // add Label
@@ -531,6 +537,13 @@ public class EdmConfigLoader {
         CsdlAnnotation csdlAnnotation = createAnnotation(lineItem.getTermName(), lineItem.getQualifier());
         CsdlCollection csdlCollection = createCollectionDataField(csdlEntityType, lineItem.getDataFields(), true, locale);
         csdlAnnotation.setExpression(csdlCollection);
+        if (UtilValidate.isNotEmpty(lineItem.getCriticality())) {
+            CsdlAnnotation annotationEnum = createAnnotationEnum("UI.Criticality", lineItem.getCriticality(), null);
+            csdlAnnotation.setAnnotations(UtilMisc.toList(annotationEnum));
+        } else if (UtilValidate.isNotEmpty(lineItem.getCriticalityPath())) {
+            CsdlAnnotation annotationPath = createAnnotationPath("UI.Criticality", lineItem.getCriticalityPath(), null);
+            csdlAnnotation.setAnnotations(UtilMisc.toList(annotationPath));
+        }
         return csdlAnnotation;
     }
 
@@ -1133,12 +1146,14 @@ public class EdmConfigLoader {
         if (UtilValidate.isEmpty(lineItemChildren)) {
             return null;
         }
+        List<String> criticalityTypes = UtilMisc.toList("VeryNegative", "Neutral", "Negative", "Critical", "Positive", "VeryPositive");
         String qualifier = lineItemElement.getAttribute("Qualifier");
         LineItem lineItem = new LineItem(qualifier);
         for (Element lineItemChild : lineItemChildren) {
             String lineItemChildTag = lineItemChild.getTagName();
             if (lineItemChildTag.equals("DataField")) {
                 String values = lineItemChild.getAttribute("Values");
+                String criticality = lineItemChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = lineItemChild.getAttribute("Importance");
                 for (String propertyName : propertyNames) {
@@ -1146,8 +1161,16 @@ public class EdmConfigLoader {
                     if (UtilValidate.isNotEmpty(importance)) {
                         dataField.setImportance(ImportanceType.valueOf(importance));
                     }
+                    if (UtilValidate.isNotEmpty(criticality)) {
+                        if (criticalityTypes.contains(criticality)) {
+                            dataField.setCriticality(CriticalityType.valueOf(criticality));
+                        } else {
+                            dataField.setCriticalityPath(criticality);
+                        }
+                    }
                     lineItem.addDataField(dataField);
                 }
+
             } else if (lineItemChildTag.equals("DataFieldForAction")) {
                 String label = loadAttributeValue(lineItemChild, "Label", locale, delegator);
                 String action = lineItemChild.getAttribute("Action");
@@ -1194,6 +1217,14 @@ public class EdmConfigLoader {
                     dataFieldForAnnotation.setImportance(ImportanceType.valueOf(importance));
                 }
                 lineItem.addDataField(dataFieldForAnnotation);
+            } else if (lineItemChildTag.equals("Criticality")) {
+                String value = lineItemChild.getAttribute("Value");
+                if (criticalityTypes.contains(value)) {
+                    CriticalityType criticalityType = CriticalityType.valueOf(value);
+                    lineItem.setCriticality(criticalityType);
+                } else {
+                    lineItem.setCriticalityPath(value);
+                }
             }
         }
 
