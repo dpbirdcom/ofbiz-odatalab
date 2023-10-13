@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/services.xsd">
+    <description>OData services implemented by entity-auto</description>
+    <vendor></vendor>
+    <version>1.0</version>
+    
+    <service name="banfftech.createTiles" default-entity-name="Tiles" engine="entity-auto" invoke="create">
+        <description>Create a Tiles</description>
+        <auto-attributes include="pk" mode="INOUT" optional="true"/>
+        <auto-attributes include="nonpk" mode="IN" optional="true"/>
+    </service>
+    <service name="banfftech.updateTiles" default-entity-name="Tiles" engine="entity-auto" invoke="update">
+        <description>Update a Tiles</description>
+        <auto-attributes include="pk" mode="IN"/>
+        <auto-attributes include="nonpk" mode="IN" optional="true"/>
+    </service>
+    <service name="banfftech.deleteTiles" default-entity-name="Tiles" engine="entity-auto" invoke="delete">
+        <description>Delete a Tiles</description>
+        <auto-attributes include="pk" mode="IN"/>
+    </service>
+    
+</services>

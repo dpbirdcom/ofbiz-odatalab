@@ -308,6 +308,7 @@
     <xs:element name="DataField">
         <xs:complexType>
             <xs:attribute name="Values"/>
+            <xs:attribute name="Criticality"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
@@ -320,6 +321,11 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Criticality">
+        <xs:complexType>
+            <xs:attribute name="Value"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="HeaderInfo">
@@ -343,6 +349,7 @@
     <xs:element name="LineItem">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="Criticality"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
             </xs:choice>

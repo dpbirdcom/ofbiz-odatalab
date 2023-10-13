@@ -3,6 +3,7 @@ package com.dpbird.odata.annotation;
 public abstract class DataFieldAbstract {
     private String label;
     private CriticalityType criticality; //
+    private String criticalityPath;
     private CriticalityRepresentationType criticalityRepresentationType; // WithIcon, WithoutIcon
     private String iconUrl;
     private ImportanceType importance;
@@ -54,5 +55,13 @@ public abstract class DataFieldAbstract {
 
     public void setHidden(String hidden) {
         this.hidden = hidden;
+    }
+
+    public String getCriticalityPath() {
+        return criticalityPath;
+    }
+
+    public void setCriticalityPath(String criticalityPath) {
+        this.criticalityPath = criticalityPath;
     }
 }
