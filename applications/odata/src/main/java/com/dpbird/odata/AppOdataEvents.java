@@ -250,8 +250,8 @@ public class AppOdataEvents {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
         //访问当前edm需要的权限
-        List<String> requiredPermissions = EntityQuery.use(delegator).from("OdataAppPermission")
-                .where("appId", odataApp).cache().getFieldList("permissionId");
+        List<String> requiredPermissions = EntityQuery.use(delegator).from("EdmConfigPermission")
+                .where("edmConfigName", odataApp).cache().getFieldList("permissionId");
         if (UtilValidate.isEmpty(requiredPermissions)) {
             //不需要权限
             return true;

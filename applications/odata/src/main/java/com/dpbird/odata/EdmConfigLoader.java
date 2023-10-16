@@ -2371,18 +2371,18 @@ public class EdmConfigLoader {
             typeId = ofbizType.split("=")[1];
         }
         try {
-            GenericValue processEntity = EntityQuery.use(delegator).from("ProcessEntity").cache()
-                    .where("processEntityName", ofbizEntityName, "processEntityTypeId", typeId).queryFirst();
-            if (UtilValidate.isNotEmpty(processEntity)) {
-                GenericValue processField = EntityQuery.use(delegator).from("ProcessField").cache()
-                        .where("processEntityId", processEntity.getString("processEntityId"), "processFieldName", propertyName).queryFirst();
-                if (UtilValidate.isNotEmpty(processField)) {
-                    GenericValue fieldLabel = EntityQuery.use(delegator).from("ProcessFieldLabel")
-                            .where("processFieldId", processField.getString("processFieldId"), "language", locale.getLanguage()).queryFirst();
+            GenericValue dbEntity = EntityQuery.use(delegator).from("DBEntity").cache()
+                    .where("dbEntityName", ofbizEntityName, "dbEntityTypeId", typeId).queryFirst();
+            if (UtilValidate.isNotEmpty(dbEntity)) {
+                GenericValue dbField = EntityQuery.use(delegator).from("DBField").cache()
+                        .where("dbEntityId", dbEntity.getString("dbEntityId"), "dbFieldName", propertyName).queryFirst();
+                if (UtilValidate.isNotEmpty(dbField)) {
+                    GenericValue fieldLabel = EntityQuery.use(delegator).from("DBFieldLabel")
+                            .where("dbFieldId", dbField.getString("dbFieldId"), "language", locale.getLanguage()).queryFirst();
                     if (UtilValidate.isNotEmpty(fieldLabel)) {
                         label = fieldLabel.getString("value");
-                    } else if (UtilValidate.isNotEmpty(processField.getString("description"))) {
-                        label = processField.getString("description");
+                    } else if (UtilValidate.isNotEmpty(dbField.getString("description"))) {
+                        label = dbField.getString("description");
                     }
                 }
             }

@@ -344,55 +344,31 @@ under the License.
     <entity entity-name="EdmConfig"
             package-name="com.dpbird.odata"
             title="Edm Config">
+        <description>储存EdmConfig</description>
         <field name="edmConfigId" type="id"/>
-        <field name="edmConfigName" type="id"/>
+        <field name="edmConfigName" type="value"/>
         <field name="edmConfigVersion" type="value"/>
         <field name="edmConfigContent" type="very-long"/>
         <prim-key field="edmConfigId"/>
     </entity>
 
-    <entity entity-name="OdataApp" package-name="com.dpbird.odata">
-        <field name="appId" type="id"/>
-        <field name="appName" type="name"/>
-        <field name="description" type="description"/>
-        <prim-key field="appId"/>
-    </entity>
-
-    <entity entity-name="Tiles" package-name="com.dpbird.odata">
-        <field name="tilesId" type="id"/>
-        <field name="tilesName" type="id"/>
-        <field name="description" type="description"/>
-        <prim-key field="tilesId"/>
-    </entity>
-
-    <entity entity-name="OdataAppPermission"
+    <entity entity-name="EdmConfigPermission"
             package-name="com.dpbird.odata"
-            title="Odata service permissions">
-        <field name="appId" type="id"/>
+            title="EdmConfig Permission">
+        <description>Edmconfig访问权限</description>
+        <field name="edmConfigPermissionId" type="id"/>
+        <field name="edmConfigName" type="value"/>
         <field name="permissionId" type="id"/>
-        <prim-key field="appId"/>
-        <prim-key field="permissionId"/>
-        <relation type="one" rel-entity-name="OdataApp">
-            <key-map field-name="appId"/>
-        </relation>
-        <relation type="one" rel-entity-name="SecurityPermission">
-            <key-map field-name="permissionId"/>
-        </relation>
+        <prim-key field="edmConfigPermissionId"/>
     </entity>
 
-    <entity entity-name="TilesPermission"
-            package-name="com.dpbird.odata"
-            title="Tiles permissions">
-        <field name="tilesId" type="id"/>
+    <entity entity-name="UILabApp" package-name="com.dpbird.odata">
+        <description>储存现有客户端应用</description>
+        <field name="uiLabAppId" type="id"/>
+        <field name="uiLabAppName" type="value"/>
         <field name="permissionId" type="id"/>
-        <prim-key field="tilesId"/>
-        <prim-key field="permissionId"/>
-        <relation type="one" rel-entity-name="Tiles">
-            <key-map field-name="tilesId"/>
-        </relation>
-        <relation type="one" fk-name="TILES_PERMISSION_SECURITY" rel-entity-name="SecurityPermission">
-            <key-map field-name="permissionId"/>
-        </relation>
+        <field name="description" type="description"/>
+        <prim-key field="uiLabAppId"/>
     </entity>
 
     <entity entity-name="Internationalization"
@@ -406,55 +382,55 @@ under the License.
         <prim-key field="id"/>
     </entity>
 
-    <entity entity-name="ProcessEntity" package-name="com.banfftech.odata">
+    <entity entity-name="DBEntity" package-name="com.banfftech.odata">
         <description>业务对象</description>
-        <field name="processEntityId" type="id"><description>主键</description></field>
-        <field name="processEntityName" type="name"><description>ofbiz实体名称</description></field>
-        <field name="processEntityTypeId" type="name"><description>实体类型标识</description></field>
+        <field name="dbEntityId" type="id"><description>主键</description></field>
+        <field name="dbEntityName" type="name"><description>ofbiz实体名称</description></field>
+        <field name="dbEntityTypeId" type="name"><description>实体类型标识</description></field>
         <field name="isOpen" type="indicator"><description>是否开放</description></field>
         <field name="description" type="value"><description>实体描述</description></field>
-        <prim-key field="processEntityId"/>
-        <relation type="many" fk-name="PROC_EN_FD" rel-entity-name="ProcessField">
-            <key-map field-name="processEntityId"/>
+        <prim-key field="dbEntityId"/>
+        <relation type="many" fk-name="PROC_EN_FD" rel-entity-name="DBField">
+            <key-map field-name="dbEntityId"/>
         </relation>
     </entity>
 
-    <entity entity-name="ProcessField" package-name="com.banfftech.odata">
+    <entity entity-name="DBField" package-name="com.banfftech.odata">
         <description>业务对象字段</description>
-        <field name="processFieldId" type="id"><description>主键</description></field>
-        <field name="processFieldName" type="name"><description>字段名称</description></field>
-        <field name="processFieldTypeId" type="id"><description>字段类型</description></field>
+        <field name="dbFieldId" type="id"><description>主键</description></field>
+        <field name="dbFieldName" type="name"><description>字段名称</description></field>
+        <field name="dbFieldTypeId" type="id"><description>字段类型</description></field>
         <field name="valueTypeId" type="id"><description>选择对象的类型条件</description></field>
         <field name="asCondition" type="indicator"><description>是否可以在审理流程中当作条件</description></field>
         <field name="isOpen" type="indicator"><description>是否开放</description></field>
         <field name="description" type="value"><description>字段描述</description></field>
-        <field name="processEntityId" type="id"><description>对应实体外键</description></field>
-        <prim-key field="processFieldId"/>
-        <relation type="one" fk-name="PROC_FD_TYPE" rel-entity-name="ProcessFieldType">
-            <key-map field-name="processFieldTypeId"/>
+        <field name="dbEntityId" type="id"><description>对应实体外键</description></field>
+        <prim-key field="dbFieldId"/>
+        <relation type="one" fk-name="PROC_FD_TYPE" rel-entity-name="DBFieldType">
+            <key-map field-name="dbFieldTypeId"/>
         </relation>
     </entity>
 
-    <entity entity-name="ProcessFieldLabel" package-name="com.banfftech.odata">
+    <entity entity-name="DBFieldLabel" package-name="com.banfftech.odata">
         <description>业务对象字段标签</description>
-        <field name="processFieldLabelId" type="id"><description>主键</description></field>
-        <field name="processFieldId" type="id"><description>对应字段主键</description></field>
+        <field name="dbFieldLabelId" type="id"><description>主键</description></field>
+        <field name="dbFieldId" type="id"><description>对应字段主键</description></field>
         <field name="language" type="id"><description>语言</description></field>
         <field name="value" type="value"><description>译文</description></field>
-        <prim-key field="processFieldLabelId"/>
-        <relation type="one" fk-name="PROC_FD_LABEL" rel-entity-name="ProcessField">
-            <key-map field-name="processFieldId"/>
+        <prim-key field="dbFieldLabelId"/>
+        <relation type="one" fk-name="PROC_FD_LABEL" rel-entity-name="DBField">
+            <key-map field-name="dbFieldId"/>
         </relation>
         <relation type="one" fk-name="FD_LABEL_ENUM" rel-entity-name="Enumeration">
             <key-map field-name="language" rel-field-name="enumId"/>
         </relation>
     </entity>
 
-    <entity entity-name="ProcessFieldType" package-name="com.banfftech.odata">
+    <entity entity-name="DBFieldType" package-name="com.banfftech.odata">
         <description>业务对象字段类型</description>
-        <field name="processFieldTypeId" type="id"><description>类型标识</description></field>
+        <field name="dbFieldTypeId" type="id"><description>类型标识</description></field>
         <field name="description" type="value"><description>描述</description></field>
-        <prim-key field="processFieldTypeId"/>
+        <prim-key field="dbFieldTypeId"/>
     </entity>
 
     <!-- 存储ofbiz数据结构 -->
