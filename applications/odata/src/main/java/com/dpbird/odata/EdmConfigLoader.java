@@ -2371,10 +2371,10 @@ public class EdmConfigLoader {
             typeId = ofbizType.split("=")[1];
         }
         try {
-            GenericValue dbEntity = EntityQuery.use(delegator).from("DBEntity").cache()
+            GenericValue dbEntity = EntityQuery.use(delegator).from("DBEntity")
                     .where("dbEntityName", ofbizEntityName, "dbEntityTypeId", typeId).queryFirst();
             if (UtilValidate.isNotEmpty(dbEntity)) {
-                GenericValue dbField = EntityQuery.use(delegator).from("DBField").cache()
+                GenericValue dbField = EntityQuery.use(delegator).from("DBField")
                         .where("dbEntityId", dbEntity.getString("dbEntityId"), "dbFieldName", propertyName).queryFirst();
                 if (UtilValidate.isNotEmpty(dbField)) {
                     GenericValue fieldLabel = EntityQuery.use(delegator).from("DBFieldLabel")
