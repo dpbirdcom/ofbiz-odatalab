@@ -252,7 +252,7 @@ public class AppOdataEvents {
         //访问当前edm需要的权限
         GenericValue edmService = EntityQuery.use(delegator).from("EdmService")
                 .where("serviceName", odataApp).queryFirst();
-        if (UtilValidate.isNotEmpty(edmService)) {
+        if (UtilValidate.isEmpty(edmService)) {
             return true;
         }
         List<String> requiredPermissions = EntityQuery.use(delegator).from("EdmServicePermission")
