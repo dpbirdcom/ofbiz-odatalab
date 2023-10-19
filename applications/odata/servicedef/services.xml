@@ -222,7 +222,7 @@ under the License.
         <attribute name="entityNames" type="List" mode="IN" optional="false"><description>删除指定的草稿表</description></attribute>
     </service>
 
-    <service name="dpbird.writeOfbizEntity" engine="java"
+    <service name="dpbird.writeOfbizEntity" engine="java" transaction-timeout="1200000"
              location="com.dpbird.odata.services.ProcessorServices" invoke="writeOfbizEntity">
         <description>记录ofbiz数据结构</description>
     </service>

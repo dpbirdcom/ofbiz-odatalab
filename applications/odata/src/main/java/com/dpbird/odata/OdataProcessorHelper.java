@@ -760,7 +760,7 @@ public class OdataProcessorHelper {
             Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
             //添加DefaultValue
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
-                propertyMap.putIfAbsent(entry.getKey(), entry.getValue());
+                propertyMap.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
             //转成数据库字段
             Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);

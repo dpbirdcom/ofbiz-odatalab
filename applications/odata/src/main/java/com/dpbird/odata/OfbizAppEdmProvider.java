@@ -425,9 +425,9 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             if (file.exists()) {
                 return new FileInputStream(file);
             } else {
-                GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmConfig").where("edmConfigName", webapp).queryFirst();
+                GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmService").where("serviceName", webapp).queryFirst();
                 if (edmAppConfig != null) {
-                    String edmConfigContent = edmAppConfig.getString("edmConfigContent");
+                    String edmConfigContent = edmAppConfig.getString("edmContent");
                     return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
                 }
             }

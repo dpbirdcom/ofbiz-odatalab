@@ -123,6 +123,7 @@ under the License.
         <field name="edmServiceId" type="id"/>
         <field name="serviceName" type="id"/>
         <field name="namespace" type="value"/>
+        <field name="edmContent" type="very-long"/>
         <field name="description" type="description"/>
         <prim-key field="edmServiceId"/>
         <relation type="many" rel-entity-name="EdmEntityType">
@@ -139,6 +140,16 @@ under the License.
 <!--        </relation>-->
     </entity>
 
+    <entity entity-name="EdmServicePermission"
+            package-name="com.dpbird.odata"
+            title="EdmService Permission">
+        <description>EdmService访问权限</description>
+        <field name="edmServicePermissionId" type="id"/>
+        <field name="edmServiceId" type="value"/>
+        <field name="permissionId" type="id"/>
+        <prim-key field="edmServicePermissionId"/>
+    </entity>
+
     <entity entity-name="EdmEntityType" package-name="com.dpbird.odata">
         <field name="edmEntityTypeId" type="id"/>
         <field name="name" type="name"/>
@@ -148,6 +159,7 @@ under the License.
         <field name="searchOption" type="value"/>
         <field name="edmServiceId" type="id"/>
         <field name="dbEntityId" type="id"/>
+        <field name="description" type="value"/>
         <prim-key field="edmEntityTypeId"/>
     	<relation rel-entity-name="EdmService" fk-name="EDM_EN_SERV" type="one">
     		<key-map field-name="edmServiceId"/>
@@ -166,12 +178,12 @@ under the License.
         <field name="dbFieldId" type="id"/>
         <field name="name" type="name"/>
         <field name="type" type="name"/>
-        <field name="Hidden" type="value"/>
-        <field name="Computed" type="value"/>
-        <field name="FieldControl" type="value"/>
-        <field name="Immutable" type="value"/>
-        <field name="Label" type="value"/>
-        <field name="Scale" type="numeric"/>
+        <field name="hidden" type="value"/>
+        <field name="computed" type="value"/>
+        <field name="fieldControl" type="value"/>
+        <field name="immutable" type="value"/>
+        <field name="label" type="value"/>
+        <field name="scale" type="numeric"/>
         <prim-key field="edmPropertyId"/>
     	<relation rel-entity-name="EdmEntityType" fk-name="EDM_PROP_EN" type="one">
     		<key-map field-name="edmEntityTypeId"/>
@@ -186,8 +198,8 @@ under the License.
         <field name="edmEntityTypeId" type="id"/>
         <field name="name" type="name"/>
         <field name="type" type="name"/>
-        <field name="Relations" type="value"/>
-        <field name="IsCollection" type="value"/>
+        <field name="relations" type="value"/>
+        <field name="isCollection" type="value"/>
         <prim-key field="edmNavigationPropertyId"/>
     	<relation rel-entity-name="EdmEntityType" fk-name="EDM_NAV_PROP_EN" type="one">
     		<key-map field-name="edmEntityTypeId"/>
@@ -348,26 +360,6 @@ under the License.
         </relation>
     </entity>
 
-    <entity entity-name="EdmConfig"
-            package-name="com.dpbird.odata"
-            title="Edm Config">
-        <description>储存EdmConfig</description>
-        <field name="edmConfigId" type="id"/>
-        <field name="edmConfigName" type="value"/>
-        <field name="edmConfigVersion" type="value"/>
-        <field name="edmConfigContent" type="very-long"/>
-        <prim-key field="edmConfigId"/>
-    </entity>
-
-    <entity entity-name="EdmConfigPermission"
-            package-name="com.dpbird.odata"
-            title="EdmConfig Permission">
-        <description>Edmconfig访问权限</description>
-        <field name="edmConfigPermissionId" type="id"/>
-        <field name="edmConfigName" type="value"/>
-        <field name="permissionId" type="id"/>
-        <prim-key field="edmConfigPermissionId"/>
-    </entity>
 
     <entity entity-name="UILabApp" package-name="com.dpbird.odata">
         <description>储存现有客户端应用</description>
