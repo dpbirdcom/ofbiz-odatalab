@@ -173,6 +173,7 @@ under the License.
         <field name="edmServiceId" type="id"/>
         <field name="dbEntityId" type="id"/>
         <field name="description" type="value"/>
+        <field name="sourceJson" type="very-long"/>
         <prim-key field="edmEntityTypeId"/>
     	<relation rel-entity-name="EdmService" fk-name="EDM_EN_SERV" type="one">
     		<key-map field-name="edmServiceId"/>
