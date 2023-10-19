@@ -123,7 +123,6 @@ under the License.
         <field name="edmServiceId" type="id"/>
         <field name="serviceName" type="id"/>
         <field name="namespace" type="value"/>
-        <field name="edmContent" type="very-long"/>
         <field name="description" type="description"/>
         <prim-key field="edmServiceId"/>
         <relation type="many" rel-entity-name="EdmEntityType">
@@ -148,6 +147,20 @@ under the License.
         <field name="edmServiceId" type="value"/>
         <field name="permissionId" type="id"/>
         <prim-key field="edmServicePermissionId"/>
+    </entity>
+
+    <entity entity-name="EdmServiceContent"
+            package-name="com.dpbird.odata"
+            title="EdmService Permission">
+        <description>EdmService定义内容</description>
+        <field name="edmServiceContentId" type="id"/>
+        <field name="edmServiceId" type="value"/>
+        <field name="format" type="value"/>
+        <field name="edmContent" type="very-long"/>
+        <prim-key field="edmServiceContentId"/>
+        <relation rel-entity-name="EdmService" fk-name="EDM_SER_CONT" type="one">
+            <key-map field-name="edmServiceId"/>
+        </relation>
     </entity>
 
     <entity entity-name="EdmEntityType" package-name="com.dpbird.odata">

@@ -427,8 +427,12 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
             } else {
                 GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmService").where("serviceName", webapp).queryFirst();
                 if (edmAppConfig != null) {
-                    String edmConfigContent = edmAppConfig.getString("edmContent");
-                    return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
+                    GenericValue edmContent = EntityQuery.use(delegator).from("EdmServiceContent")
+                            .where("edmServiceId", edmAppConfig.getString("edmServiceId"), "format", "xml").queryFirst();
+                    if (UtilValidate.isNotEmpty(edmContent)) {
+                        String edmConfigContent = edmContent.getString("edmContent");
+                        return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
+                    }
                 }
             }
         } catch (FileNotFoundException | MalformedURLException | GenericEntityException e) {
