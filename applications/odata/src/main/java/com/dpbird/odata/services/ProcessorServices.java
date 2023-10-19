@@ -1059,7 +1059,7 @@ public class ProcessorServices {
         String entityName = modelEntity.getEntityName();
         //create Entity
         GenericValue currentType = EntityQuery.use(delegator).from("DBEntity")
-                            .where("dbEntityName", entityName, "dbEntityTypeId", typeId).queryFirst();
+                            .where("dbEntityName", entityName, "dbEntityTypeId", typeValue).queryFirst();
         String dbEntityId;
         if (UtilValidate.isEmpty(currentType)) {
             dbEntityId = "DB" + delegator.getNextSeqId("DBEntity");
@@ -1077,7 +1077,6 @@ public class ProcessorServices {
                     .where("dbEntityId", dbEntityId, "dbFieldName", field.getName()).queryFirst();
             if (UtilValidate.isEmpty(currentField)) {
                 String dbFieldId = "DB" + delegator.getNextSeqId("DBField");
-
                 dispatcher.runSync("banfftech.createDBField", UtilMisc.toMap("dbFieldId", dbFieldId, "dbEntityId", dbEntityId,
                         "dbFieldName", field.getName(), "isPrimaryKey", pkFieldNames.contains(field.getName()) ? "Y" : "N"), 10000, true);
             }
