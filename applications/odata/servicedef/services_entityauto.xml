@@ -6,18 +6,18 @@
     <vendor></vendor>
     <version>1.0</version>
     
-    <service name="banfftech.createTiles" default-entity-name="Tiles" engine="entity-auto" invoke="create">
-        <description>Create a Tiles</description>
+    <service name="banfftech.createUILabApp" default-entity-name="UILabApp" engine="entity-auto" invoke="create">
+        <description>Create a UILabApp</description>
         <auto-attributes include="pk" mode="INOUT" optional="true"/>
         <auto-attributes include="nonpk" mode="IN" optional="true"/>
     </service>
-    <service name="banfftech.updateTiles" default-entity-name="Tiles" engine="entity-auto" invoke="update">
-        <description>Update a Tiles</description>
+    <service name="banfftech.updateUILabApp" default-entity-name="UILabApp" engine="entity-auto" invoke="update">
+        <description>Update a UILabApp</description>
         <auto-attributes include="pk" mode="IN"/>
         <auto-attributes include="nonpk" mode="IN" optional="true"/>
     </service>
-    <service name="banfftech.deleteTiles" default-entity-name="Tiles" engine="entity-auto" invoke="delete">
-        <description>Delete a Tiles</description>
+    <service name="banfftech.deleteUILabApp" default-entity-name="UILabApp" engine="entity-auto" invoke="delete">
+        <description>Delete a UILabApp</description>
         <auto-attributes include="pk" mode="IN"/>
     </service>
     
