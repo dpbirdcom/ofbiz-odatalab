@@ -26,6 +26,7 @@
             </xs:sequence>
             <xs:attribute name="EntitySetPath" type="xs:NCName"/>
             <xs:attribute name="IsBound" type="xs:boolean"/>
+            <xs:attribute name="SideEffects" type="xs:boolean" />
             <xs:attribute name="IsEntityAction" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="OfbizService"/>
