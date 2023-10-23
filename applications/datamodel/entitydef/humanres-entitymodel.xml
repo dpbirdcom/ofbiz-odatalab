@@ -459,7 +459,6 @@ under the License.
     </entity>
     <entity entity-name="EmplLeaveType"
             package-name="org.apache.ofbiz.humanres.employment"
-            default-resource-name="HumanResEntityLabels"
             title="Employee Leave Type Entity">
         <field name="leaveTypeId" type="id"/>
         <field name="parentTypeId" type="id"/>
@@ -958,7 +957,6 @@ under the License.
     </entity>
     <entity entity-name="EmplLeaveReasonType"
             package-name="org.apache.ofbiz.humanres.employment"
-            default-resource-name="HumanResEntityLabels"
             title="Leave Reason Type Entity">
         <field name="emplLeaveReasonTypeId" type="id"/>
         <field name="parentTypeId" type="id"/>
