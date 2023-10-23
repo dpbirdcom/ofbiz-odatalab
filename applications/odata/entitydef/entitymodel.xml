@@ -490,4 +490,13 @@ under the License.
         </relation>
     </entity>
 
+    <entity entity-name="UILabApp" package-name="com.dpbird.odata">
+        <description>储存现有客户端应用</description>
+        <field name="uiLabAppId" type="id"/>
+        <field name="uiLabAppName" type="value"/>
+        <field name="permissionId" type="id"/>
+        <field name="description" type="description"/>
+        <prim-key field="uiLabAppId"/>
+    </entity>
+
 </entitymodel>
