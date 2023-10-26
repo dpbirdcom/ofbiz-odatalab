@@ -17,6 +17,7 @@ import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +35,15 @@ public class ActionEvents {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        HttpServletRequest request = (HttpServletRequest) oDataContext.get("httpServletRequest");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
         try {
+            for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
+                actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
+            }
             Map<String, Object>validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, actionParameters, userLogin, null, null);
             Map<String, Object> result = dispatcher.runSync(createService, validFieldsForService);
             //Return Entity
