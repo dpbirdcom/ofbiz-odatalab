@@ -2765,4 +2765,16 @@ public class Util {
         return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("value") : null;
     }
 
+    /**
+     * 获取Action,Function绑定的对象
+     */
+    public static OdataOfbizEntity getBoundEntity(Map<String, Object> parameter) {
+        for (Object value : parameter.values()) {
+            if (value instanceof OdataOfbizEntity) {
+                return (OdataOfbizEntity) value;
+            }
+        }
+        return null;
+    }
+
 }
