@@ -755,6 +755,9 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(csdlParameter.getLabel())) {
             csdlAnnotationList.add(createAnnotationString("Common.Label", csdlParameter.getLabel(), null));
         }
+        if (UtilValidate.isNotEmpty(csdlParameter.getFieldControl())) {
+            csdlAnnotationList.add(createAnnotationEnum("Common.FieldControl", csdlParameter.getFieldControl(), null));
+        }
         List<Term> terms = csdlParameter.getTerms();
         if (terms != null) {
             for (Term term : terms) {
@@ -2158,6 +2161,7 @@ public class EdmConfigLoader {
         String scale = parameterElement.getAttribute("Scale");
         String nullable = parameterElement.getAttribute("Nullable");
         String isCollection = parameterElement.getAttribute("IsCollection");
+        String fieldControl = parameterElement.getAttribute("FieldControl");
         FullQualifiedName paramFullQualifiedName;
         EdmPrimitiveTypeKind paramEdmType = OfbizMapOdata.PARAM_TYPE_MAP.get(type);
         if (paramEdmType != null) {
@@ -2178,6 +2182,9 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(label) ) {
             label = getLabel(delegator, label, locale);
 //            label = parseValue(label, locale);
+        }
+        if (UtilValidate.isNotEmpty(fieldControl)) {
+            parameter.setFieldControl(FieldControlType.valueOf(fieldControl));
         }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));

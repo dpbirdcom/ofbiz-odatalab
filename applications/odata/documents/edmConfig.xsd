@@ -426,6 +426,7 @@
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
             <xs:attribute name="Scale" type="xs:integer"/>
+            <xs:attribute name="FieldControl" type="xs:NCName"/>
             <xs:attribute name="Label"/>
         </xs:complexType>
     </xs:element>
