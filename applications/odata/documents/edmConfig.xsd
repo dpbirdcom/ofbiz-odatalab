@@ -8,6 +8,7 @@
                     <xs:element ref="Action"/>
                     <xs:element ref="ComplexType"/>
                     <xs:element ref="EntityType"/>
+                    <xs:element ref="ExtendEntityType"/>
                     <xs:element ref="EnumType"/>
                     <xs:element ref="Function"/>
                     <xs:element ref="view-entity"/>
@@ -95,6 +96,18 @@
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
             <xs:attribute name="Orderby" type="xs:anyURI"/>
             <xs:attribute name="OfbizType" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ExtendEntityType">
+        <xs:annotation>
+            <xs:documentation>Inherit objects and extend</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="Property"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
+            </xs:choice>
+            <xs:attribute name="Name" use="required" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
