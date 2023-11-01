@@ -213,7 +213,7 @@ public class OdataReader extends OfbizOdataProcessor {
         try {
             //query
             EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity);
-            entityQuery = entityQuery.select(getValidSelect()).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();
+            entityQuery = entityQuery.select(getValidSelect()).orderBy(orderBy).cursorScrollInsensitive();
             int listCount;
             List<GenericValue> dataItems;
             try (EntityListIterator iterator = entityQuery.queryIterator()) {

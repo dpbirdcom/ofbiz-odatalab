@@ -2,6 +2,7 @@ package com.dpbird.odata;
 
 import com.dpbird.odata.edm.*;
 import com.dpbird.odata.handler.HandlerFactory;
+import net.sf.ehcache.search.aggregator.Max;
 import org.apache.fop.util.ListUtil;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.StringUtil;
@@ -57,7 +58,7 @@ import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 public class OfbizOdataProcessor {
 
     public static final String module = OfbizOdataProcessor.class.getName();
-    public static final int MAX_ROWS = 200;
+    public static final int MAX_ROWS = 10000;
     public static final int EXTRA_QUERY_MAX_RAW = 1000;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
@@ -77,7 +78,7 @@ public class OfbizOdataProcessor {
     protected Set<String> fieldsToSelect = null;
     protected Set<String> applySelect = null;
     protected int skipValue = 0;
-    protected int topValue = MAX_ROWS;
+    protected int topValue = 200;
     protected List<String> orderBy;
     protected String sapContextId;
     protected boolean filterByDate = false;
@@ -395,17 +396,21 @@ public class OfbizOdataProcessor {
     }
 
     protected void retrieveFindOption() {
-        topValue = getTopOption(queryOptions);
         skipValue = getSkipOption(queryOptions);
+        topValue = getTopOption(queryOptions);
     }
 
     protected int getTopOption(Map<String, QueryOption> queryOptions) {
         if (UtilValidate.isNotEmpty(queryOptions)
                 && queryOptions.get("topOption") != null
                 && ((TopOption) queryOptions.get("topOption")).getValue() > 0) {
-            return ((TopOption) queryOptions.get("topOption")).getValue();
+            int topValue = ((TopOption) queryOptions.get("topOption")).getValue();
+            if (topValue > MAX_ROWS) {
+                topValue = MAX_ROWS;
+            }
+            return topValue;
         }
-        return MAX_ROWS;
+        return 200;
     }
 
     protected int getSkipOption(Map<String, QueryOption> queryOptions) {
