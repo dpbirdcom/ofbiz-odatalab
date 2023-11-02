@@ -133,9 +133,9 @@ public class OfbizOdataProcessor {
         //检查是否是多段式的apply查询 如果是就不添加主对象的EntitySetCondition
         List<UriResource> uriResourceParts = (List<UriResource>) odataContext.get("uriResourceParts");
         boolean isMultistageApply = Util.isMultistageApply(uriResourceParts, queryOptions);
-        if (UtilValidate.isNotEmpty(edmParams) && edmParams.get("edmBindingTarget") != null && !isMultistageApply) {
+        if (UtilValidate.isNotEmpty(edmParams) && !isMultistageApply) {
             EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
-            if (edmBindingTarget instanceof EdmEntitySet) { // 只有entitySet时才会有entitySetCondition
+            if (UtilValidate.isNotEmpty(edmBindingTarget) && edmBindingTarget instanceof EdmEntitySet) { // 只有entitySet时才会有entitySetCondition
                 OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) this.edmProvider.getEntityContainer()
                         .getEntitySet(((EdmEntitySet) edmParams.get("edmBindingTarget")).getName());
                 String entitySetConditionStr = csdlEntitySet.getConditionStr();
@@ -143,17 +143,16 @@ public class OfbizOdataProcessor {
                 if (UtilValidate.isNotEmpty(entitySetConditionStr)) {
                     entitySetCondition = getStringCondition(entitySetConditionStr, csdlEntityType);
                 }
-                //EntityType的Condition
-                if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
-                    entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
-                }
             }
         }
         entityCondition = Util.appendCondition(entityCondition, entitySetCondition);
-        entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
-
         if (this.edmEntityType != null) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            //EntityType的Condition
+            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+                entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
+                entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
+            }
             this.filterByDate = csdlEntityType.isFilterByDate();
             if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(csdlEntityType.getDraftEntityName())) {
                 List<EntityCondition> exprs = new ArrayList<EntityCondition>();
