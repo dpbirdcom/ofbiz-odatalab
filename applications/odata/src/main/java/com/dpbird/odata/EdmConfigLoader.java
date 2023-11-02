@@ -855,6 +855,11 @@ public class EdmConfigLoader {
                 edmWebConfig.addTerm(csdlTerm);
             }
         }
+        //处理继承扩展
+        List<? extends Element> extendEntityTypeEles = UtilXml.childElementList(rootElement, "ExtendEntityType");
+        if (UtilValidate.isNotEmpty(extendEntityTypeEles)) {
+            loadExtendEntityTypeFromElement(edmWebConfig, extendEntityTypeEles, dispatcher, locale);
+        }
         generateNavigationBindings(edmWebConfig);
     }
 
@@ -866,6 +871,36 @@ public class EdmConfigLoader {
                 OfbizCsdlNavigationProperty ofbizCsdlNavigationProperty = (OfbizCsdlNavigationProperty) navigationProperty;
                 if (ofbizCsdlNavigationProperty.isAutoBinding()) {
                     generateNavigationBinding(entityType, ofbizCsdlNavigationProperty, edmWebConfig);
+                }
+            }
+        }
+    }
+
+    private static void loadExtendEntityTypeFromElement(EdmWebConfig edmWebConfig, List<? extends Element> extendEntityTypeEles,
+                                                        LocalDispatcher dispatcher, Locale locale) throws OfbizODataException {
+        Delegator delegator = dispatcher.getDelegator();
+        for (Element extendEntityTypeEle : extendEntityTypeEles) {
+            String name = extendEntityTypeEle.getAttribute("Name");
+            OfbizCsdlEntityType csdlEntityType = edmWebConfig.getEntityType(name);
+            String ofbizEntity = csdlEntityType.getOfbizEntity();
+            ModelEntity modelEntity = delegator.getModelEntity(ofbizEntity);
+            List<? extends Element> extendChildEle = UtilXml.childElementList(extendEntityTypeEle);
+            for (Element childEle : extendChildEle) {
+                String tagName = childEle.getTagName();
+                //Append and overwrite NavigationProperty
+                if (tagName.equals("NavigationProperty")) {
+                    CsdlNavigationProperty csdlNavigationProperty = loadNavigationFromElement(delegator, modelEntity, childEle);
+                    csdlEntityType.getNavigationProperties().removeIf(nav -> nav.getName().equals(csdlNavigationProperty.getName()));
+                    csdlEntityType.getNavigationProperties().add(csdlNavigationProperty);
+                }
+                //Append and overwrite Property
+                if (tagName.equals("Property")) {
+                    OfbizCsdlProperty csdlProperty = loadPropertyFromElement(dispatcher, modelEntity, csdlEntityType.getRelAliases(),
+                            childEle, locale, csdlEntityType.getLabelPrefix(), csdlEntityType.isAutoLabel());
+                    if (UtilValidate.isNotEmpty(csdlProperty)) {
+                        csdlEntityType.getProperties().removeIf(p -> p.getName().equals(csdlProperty.getName()));
+                        csdlEntityType.getProperties().add(csdlProperty);
+                    }
                 }
             }
         }

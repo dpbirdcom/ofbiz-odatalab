@@ -16,7 +16,6 @@ import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -57,7 +56,7 @@ import static com.dpbird.odata.OdataExpressionVisitor.AGGREGATE_MAP;
 public class OfbizOdataProcessor {
 
     public static final String module = OfbizOdataProcessor.class.getName();
-    public static final int MAX_ROWS = 200;
+    public static final int MAX_ROWS = 10000;
     public static final int EXTRA_QUERY_MAX_RAW = 1000;
     protected Delegator delegator;
     protected LocalDispatcher dispatcher;
@@ -77,7 +76,7 @@ public class OfbizOdataProcessor {
     protected Set<String> fieldsToSelect = null;
     protected Set<String> applySelect = null;
     protected int skipValue = 0;
-    protected int topValue = MAX_ROWS;
+    protected int topValue = 200;
     protected List<String> orderBy;
     protected String sapContextId;
     protected boolean filterByDate = false;
@@ -395,17 +394,21 @@ public class OfbizOdataProcessor {
     }
 
     protected void retrieveFindOption() {
-        topValue = getTopOption(queryOptions);
         skipValue = getSkipOption(queryOptions);
+        topValue = getTopOption(queryOptions);
     }
 
     protected int getTopOption(Map<String, QueryOption> queryOptions) {
         if (UtilValidate.isNotEmpty(queryOptions)
                 && queryOptions.get("topOption") != null
                 && ((TopOption) queryOptions.get("topOption")).getValue() > 0) {
-            return ((TopOption) queryOptions.get("topOption")).getValue();
+            int topValue = ((TopOption) queryOptions.get("topOption")).getValue();
+            if (topValue > MAX_ROWS) {
+                topValue = MAX_ROWS;
+            }
+            return topValue;
         }
-        return MAX_ROWS;
+        return 200;
     }
 
     protected int getSkipOption(Map<String, QueryOption> queryOptions) {
