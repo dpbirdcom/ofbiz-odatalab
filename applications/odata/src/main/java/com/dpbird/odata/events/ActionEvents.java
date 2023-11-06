@@ -5,17 +5,12 @@ import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import org.apache.ofbiz.base.util.GeneralException;
-import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.entity.Delegator;
-import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.service.GeneralServiceException;
-import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
-import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -33,10 +28,10 @@ public class ActionEvents {
     public static Object createEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
             throws OfbizODataException {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
-        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
-        HttpServletRequest request = (HttpServletRequest) oDataContext.get("httpServletRequest");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        HttpServletRequest request = (HttpServletRequest) oDataContext.get("httpServletRequest");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
@@ -44,7 +39,7 @@ public class ActionEvents {
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
                 actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
-            Map<String, Object>validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, actionParameters, userLogin, null, null);
+            Map<String, Object> validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, actionParameters, userLogin, null, null);
             Map<String, Object> result = dispatcher.runSync(createService, validFieldsForService);
             //Return Entity
             ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());

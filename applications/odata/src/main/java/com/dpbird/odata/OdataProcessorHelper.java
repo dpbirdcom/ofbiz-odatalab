@@ -154,12 +154,8 @@ public class OdataProcessorHelper {
             return method.invoke(objectClass, oDataContext, paramMap, edmBindingTarget);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
-            if (e instanceof InvocationTargetException) {
-                InvocationTargetException invocationTargetException = (InvocationTargetException) e;
-                throw (OfbizODataException) invocationTargetException.getTargetException();
-            } else {
-                throw new OfbizODataException(OfbizMapOdata.ERROR_CODE_TWO, e.getMessage());
-            }
+            String locale = Util.getExceptionMsg(e, (Locale) oDataContext.get("locale"));
+            throw new OfbizODataException(locale);
         }
     }
 
@@ -760,7 +756,7 @@ public class OdataProcessorHelper {
             Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
             //添加DefaultValue
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
-                propertyMap.putIfAbsent(entry.getKey(), entry.getValue());
+                propertyMap.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
             //转成数据库字段
             Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);

@@ -8,6 +8,7 @@
                     <xs:element ref="Action"/>
                     <xs:element ref="ComplexType"/>
                     <xs:element ref="EntityType"/>
+                    <xs:element ref="ExtendEntityType"/>
                     <xs:element ref="EnumType"/>
                     <xs:element ref="Function"/>
                     <xs:element ref="view-entity"/>
@@ -26,6 +27,7 @@
             </xs:sequence>
             <xs:attribute name="EntitySetPath" type="xs:NCName"/>
             <xs:attribute name="IsBound" type="xs:boolean"/>
+            <xs:attribute name="SideEffects" type="xs:boolean" />
             <xs:attribute name="IsEntityAction" type="xs:boolean"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="OfbizService"/>
@@ -93,6 +95,19 @@
             <xs:attribute name="EntitySetName" type="xs:NCName"/>
             <xs:attribute name="InsertRequireProperties" type="xs:anyURI"/>
             <xs:attribute name="Orderby" type="xs:anyURI"/>
+            <xs:attribute name="OfbizType" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ExtendEntityType">
+        <xs:annotation>
+            <xs:documentation>Inherit objects and extend</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="Property"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="NavigationProperty"/>
+            </xs:choice>
+            <xs:attribute name="Name" use="required" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelAlias">
@@ -424,6 +439,7 @@
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
             <xs:attribute name="Scale" type="xs:integer"/>
+            <xs:attribute name="FieldControl" type="xs:NCName"/>
             <xs:attribute name="Label"/>
         </xs:complexType>
     </xs:element>

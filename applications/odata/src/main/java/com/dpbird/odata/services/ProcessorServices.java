@@ -18,10 +18,7 @@ import org.apache.ofbiz.entity.GenericPK;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.datasource.GenericHelperInfo;
 import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
-import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelField;
-import org.apache.ofbiz.entity.model.ModelKeyMap;
-import org.apache.ofbiz.entity.model.ModelViewEntity;
+import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.entity.util.EntityUtilProperties;
@@ -1037,5 +1034,68 @@ public class ProcessorServices {
             groupCache.remove(modelEntity.getEntityName());
         }
         return ServiceUtil.returnSuccess();
+    }
+
+    public static Map<String, Object> writeOfbizEntity(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException, GenericServiceException {
+        Delegator delegator = dctx.getDelegator();
+        LocalDispatcher dispatcher = dctx.getDispatcher();
+        Map<String, ModelEntity> entityCache = delegator.getModelReader().getEntityCache();
+        for (ModelEntity modelEntity : entityCache.values()) {
+            String entityName = modelEntity.getEntityName();
+            createDBEntity(delegator, dispatcher, modelEntity, null, null);
+            ModelEntity typeModel = delegator.getModelReader().getModelEntityNoCheck(entityName + "Type");
+            if (UtilValidate.isNotEmpty(typeModel)) {
+                List<GenericValue> entityTypeList = delegator.findAll(typeModel.getEntityName(), false);
+                String typeIdField = typeModel.getFirstPkFieldName();
+                for (GenericValue entityType : entityTypeList) {
+                    createDBEntity(delegator, dispatcher, modelEntity, typeIdField, entityType.getString(typeIdField));
+                }
+            }
+        }
+        return ServiceUtil.returnSuccess();
+    }
+
+    private static void createDBEntity(Delegator delegator, LocalDispatcher dispatcher, ModelEntity modelEntity, String typeId, String typeValue) throws GenericEntityException, GenericServiceException {
+        String entityName = modelEntity.getEntityName();
+        //create Entity
+        GenericValue currentType = EntityQuery.use(delegator).from("DBEntity")
+                            .where("dbEntityName", entityName, "dbEntityTypeId", typeValue).queryFirst();
+        String dbEntityId;
+        if (UtilValidate.isEmpty(currentType)) {
+            dbEntityId = "DB" + delegator.getNextSeqId("DBEntity");
+            dispatcher.runSync("banfftech.createDBEntity", UtilMisc.toMap("dbEntityId", dbEntityId, "dbEntityName", entityName,
+                    "dbEntityTypeField", typeId, "dbEntityTypeId", typeValue), 10000, true);
+        } else {
+            dbEntityId = currentType.getString("dbEntityId");
+        }
+        //create Field
+        Iterator<ModelField> fieldsIterator = modelEntity.getFieldsIterator();
+        List<String> pkFieldNames = modelEntity.getPkFieldNames();
+        while (fieldsIterator.hasNext()) {
+            ModelField field = fieldsIterator.next();
+            GenericValue currentField = EntityQuery.use(delegator).from("DBField")
+                    .where("dbEntityId", dbEntityId, "dbFieldName", field.getName()).queryFirst();
+            if (UtilValidate.isEmpty(currentField)) {
+                String dbFieldId = "DB" + delegator.getNextSeqId("DBField");
+                dispatcher.runSync("banfftech.createDBField", UtilMisc.toMap("dbFieldId", dbFieldId, "dbEntityId", dbEntityId,
+                        "dbFieldName", field.getName(), "isPrimaryKey", pkFieldNames.contains(field.getName()) ? "Y" : "N"), 10000, true);
+            }
+        }
+        //create Relation
+        Iterator<ModelRelation> relationsIterator = modelEntity.getRelationsIterator();
+        while (relationsIterator.hasNext()) {
+            ModelRelation relation = relationsIterator.next();
+            String title = relation.getTitle();
+            String relEntityName = relation.getRelEntityName();
+            String combinedName = relation.getCombinedName();
+            String type = relation.getType();
+            GenericValue currentRelation = EntityQuery.use(delegator).from("DBRelation")
+                    .where("dbEntityId", dbEntityId, "dbRelationName", combinedName).queryFirst();
+            if (UtilValidate.isEmpty(currentRelation)) {
+                String dbRelationId = "DB" + delegator.getNextSeqId("DBRelation");
+                dispatcher.runSync("banfftech.createDBRelation", UtilMisc.toMap("dbRelationId", dbRelationId, "dbEntityId", dbEntityId,
+                        "dbRelationTitle", title, "dbRelationEntity", relEntityName, "dbRelationName", combinedName, "dbRelationType", type), 10000, true);
+            }
+        }
     }
 }

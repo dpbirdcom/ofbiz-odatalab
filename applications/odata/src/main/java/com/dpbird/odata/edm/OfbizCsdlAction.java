@@ -7,15 +7,17 @@ public class OfbizCsdlAction extends CsdlAction {
 	private String returnName;
 	private boolean stickySession = false;
 	private boolean entityAction = false; // 比如create entity，update entity，delete entity
-	
+	private boolean sideEffects = false;
+
 	public OfbizCsdlAction() {
 		super();
 	}
-	public OfbizCsdlAction(String ofbizMethod, String returnName, boolean stickySession) {
+	public OfbizCsdlAction(String ofbizMethod, String returnName, boolean stickySession, boolean sideEffects) {
 		super();
 		this.ofbizMethod = ofbizMethod;
 		this.returnName = returnName;
 		this.stickySession = stickySession;
+		this.sideEffects = sideEffects;
 	}
 	public String getOfbizMethod() {
 		return ofbizMethod;
@@ -60,5 +62,13 @@ public class OfbizCsdlAction extends CsdlAction {
 
 	public boolean isStickySessionEdit() {
 		return this.name.endsWith("EditAction");
+	}
+
+	public boolean isSideEffects() {
+		return sideEffects;
+	}
+
+	public void setSideEffects(boolean sideEffects) {
+		this.sideEffects = sideEffects;
 	}
 }

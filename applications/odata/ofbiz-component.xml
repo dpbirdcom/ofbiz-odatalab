@@ -41,6 +41,7 @@ under the License.
 
     <!-- service resources: model(s), eca(s) and group definitions -->
     <service-resource type="model" loader="main" location="servicedef/services.xml"/>
+    <service-resource type="model" loader="main" location="servicedef/services_entityauto.xml"/>
     <service-resource type="model" loader="main" location="servicedef/services_test.xml"/>
 <!--    <service-resource type="model" loader="main" location="servicedef/services_app.xml"/>-->
 <!--    <service-resource type="model" loader="main" location="servicedef/services_attribute.xml"/>-->
