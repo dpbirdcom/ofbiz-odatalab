@@ -666,7 +666,7 @@ public class Util {
             uiLabelMap.addBottomResourceBundle("CommonUiLabels");
             uiLabelMap.addBottomResourceBundle("SecurityUiLabels");
             uiLabelMap.addBottomResourceBundle("ServiceErrorUiLabels");
-            uiLabelMap.addBottomResourceBundle("ExtendedUiLabels");
+//            uiLabelMap.addBottomResourceBundle("ExtendedUiLabels");
             uiLabelLocaleMap.put(locale, uiLabelMap);
 
         }
