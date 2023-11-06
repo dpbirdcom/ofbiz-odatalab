@@ -143,16 +143,16 @@ public class OfbizOdataProcessor {
                 if (UtilValidate.isNotEmpty(entitySetConditionStr)) {
                     entitySetCondition = getStringCondition(entitySetConditionStr, csdlEntityType);
                 }
+                //EntityType的Condition
+                if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+                    entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
+                }
             }
         }
         entityCondition = Util.appendCondition(entityCondition, entitySetCondition);
+        entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
         if (this.edmEntityType != null) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-            //EntityType的Condition
-            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
-                entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
-                entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
-            }
             this.filterByDate = csdlEntityType.isFilterByDate();
             if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(csdlEntityType.getDraftEntityName())) {
                 List<EntityCondition> exprs = new ArrayList<EntityCondition>();
