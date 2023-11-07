@@ -1028,14 +1028,16 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizType"))) {
             ofbizType = entityTypeElement.getAttribute("OfbizType");
-            entityCondition = parseEntityCondition(ofbizType, null);
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("EntityCondition"))) {
             entityConditionStr = entityTypeElement.getAttribute("EntityCondition");
-            entityCondition = Util.appendCondition(entityCondition, parseEntityCondition(entityConditionStr, null));
             if (UtilValidate.isNotEmpty(ofbizType)) {
                 entityConditionStr += " and " + ofbizType;
             }
+            entityCondition =parseEntityCondition(entityConditionStr, null);
+        } else if (UtilValidate.isNotEmpty(ofbizType)) {
+            entityConditionStr = ofbizType;
+            entityCondition = parseEntityCondition(entityConditionStr, null);
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("SearchOption"))) {
             searchOption = entityTypeElement.getAttribute("SearchOption");
