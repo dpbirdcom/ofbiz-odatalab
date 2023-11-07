@@ -1017,9 +1017,6 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("EntitySetName"))) {
             entitySetName = entityTypeElement.getAttribute("EntitySetName");
         }
-        if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizType"))) {
-            ofbizType = entityTypeElement.getAttribute("OfbizType");
-        }
         ModelEntity modelEntity = null;
         try {
             modelEntity = delegator.getModelReader().getModelEntity(ofbizEntity);
@@ -1029,9 +1026,16 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("Handler"))) {
             handlerClass = entityTypeElement.getAttribute("Handler");
         }
+        if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("OfbizType"))) {
+            ofbizType = entityTypeElement.getAttribute("OfbizType");
+            entityCondition = parseEntityCondition(ofbizType, null);
+        }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("EntityCondition"))) {
             entityConditionStr = entityTypeElement.getAttribute("EntityCondition");
-            entityCondition = parseEntityCondition(entityConditionStr, null);
+            entityCondition = Util.appendCondition(entityCondition, parseEntityCondition(entityConditionStr, null));
+            if (UtilValidate.isNotEmpty(ofbizType)) {
+                entityConditionStr += " and " + ofbizType;
+            }
         }
         if (UtilValidate.isNotEmpty(entityTypeElement.getAttribute("SearchOption"))) {
             searchOption = entityTypeElement.getAttribute("SearchOption");
