@@ -665,17 +665,18 @@ public class OdataProcessorHelper {
             }
             GenericValue genericValue = odataOfbizEntity.getGenericValue();
             for (OfbizCsdlProperty attrProperty : attrProperties) {
-                Map<String, Object> attrMapKey = new HashMap<>(genericValue.getPrimaryKey());
-                String attrPropertyName = attrProperty.getName();
-                attrMapKey.put("attrName", attrPropertyName);
                 //查询attrEntity 或者是attrNumericEntity 或者是attrDateEntity
                 String attrEntity = attrProperty.isAttribute() ? attrEntityName :
                         attrProperty.isNumericAttribute() ? attrNumericEntityName : attrDateEntityName;
+                ModelEntity attrModelEntity = delegator.getModelEntity(attrEntity);
+                String attrPk = attrModelEntity.getFirstPkFieldName();
+                Map<String, Object> attrMapKey = UtilMisc.toMap(attrPk, genericValue.get(attrPk));
+                String attrPropertyName = attrProperty.getName();
+                attrMapKey.put("attrName", attrPropertyName);
                 GenericValue attrGenericValue = delegator.findOne(attrEntity, attrMapKey, true);
                 if (attrGenericValue == null) {
                     continue;
                 }
-
                 if (attrProperty.isAttribute()) {
                     if (attrProperty.getType().contains("Boolean")) {
                         Boolean attrValue = attrGenericValue.getBoolean("attrValue");
