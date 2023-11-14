@@ -60,6 +60,7 @@
                 <xs:element ref="Key"/>
                 <xs:element ref="HeaderInfo"/>
                 <xs:element ref="LineItem"/>
+                <xs:element ref="DataPoint"/>
                 <xs:element ref="FieldGroup"/>
                 <xs:element ref="SelectionFields"/>
                 <xs:element ref="Exclude"/>
@@ -371,10 +372,19 @@
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="DataPoint">
+        <xs:complexType>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+            <xs:attribute name="Value" type="xs:NCName"/>
+            <xs:attribute name="Title" type="xs:NCName"/>
+            <xs:attribute name="Criticality" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="FieldGroup">
         <xs:complexType>
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
