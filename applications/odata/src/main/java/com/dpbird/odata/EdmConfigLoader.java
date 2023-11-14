@@ -1418,7 +1418,7 @@ public class EdmConfigLoader {
                 String inline = fieldGroupChild.getAttribute("Inline");
                 String importance = fieldGroupChild.getAttribute("Importance");
                 DataFieldForAction dataFieldForAction = new DataFieldForAction();
-                dataFieldForAction.setLabel(childLabel);
+                dataFieldForAction.setLabel(getLabel(delegator, childLabel, locale));
                 dataFieldForAction.setAction(OfbizMapOdata.NAMESPACE + "." + action);
                 dataFieldForAction.setInline(Boolean.parseBoolean(inline));
                 dataFieldForAction.setImportance(ImportanceType.valueOf(importance));
