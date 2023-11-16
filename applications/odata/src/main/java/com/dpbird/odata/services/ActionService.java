@@ -233,7 +233,10 @@ public class ActionService {
                 }
             }
         }
-        formParam.put(parameterContext.getParameterName(), parameterContext);
+        Long fileSize = parameterContext.getFileSize();
+        if (UtilValidate.isNotEmpty(fileSize) && fileSize > 0) {
+            formParam.put(parameterContext.getParameterName(), parameterContext);
+        }
         return formParam;
     }
 
