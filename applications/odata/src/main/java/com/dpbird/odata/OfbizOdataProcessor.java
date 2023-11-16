@@ -992,7 +992,11 @@ public class OfbizOdataProcessor {
                                            EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> embeddedQueryOptions) throws OfbizODataException {
         Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
         OdataReader reader = new OdataReader(getOdataContext(), embeddedQueryOptions, embeddedEdmParams);
-        return reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null);
+        EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null);
+        for (Entity relatedEntity : relatedList.getEntities()) {
+            relatedEntity.getProperties().removeIf(property -> "Edm.Stream".equals(property.getType()));
+        }
+        return relatedList;
     }
 
     private void expandNonCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
