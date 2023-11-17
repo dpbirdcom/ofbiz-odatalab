@@ -36,6 +36,7 @@ public class ActionEvents {
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
         try {
+            actionParameters.put("userLogin", userLogin);
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
                 actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
