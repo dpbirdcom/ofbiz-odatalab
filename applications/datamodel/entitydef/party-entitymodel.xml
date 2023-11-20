@@ -1978,15 +1978,13 @@ under the License.
     <entity entity-name="PartyContent"
             package-name="org.apache.ofbiz.party.party"
             title="Party Data Object Entity">
+      <field name="partyContentId" type="id"></field>
       <field name="partyId" type="id"></field>
       <field name="contentId" type="id"></field>
       <field name="partyContentTypeId" type="id"></field>
       <field name="fromDate" type="date-time"></field>
       <field name="thruDate" type="date-time"></field>
-      <prim-key field="partyId"/>
-      <prim-key field="contentId"/>
-      <prim-key field="partyContentTypeId"/>
-      <prim-key field="fromDate"/>
+      <prim-key field="partyContentId"/>
       <relation type="one" fk-name="PARTY_CNT_PARTY" rel-entity-name="Party">
         <key-map field-name="partyId"/>
       </relation>
