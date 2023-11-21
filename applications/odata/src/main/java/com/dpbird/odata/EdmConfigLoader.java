@@ -1442,7 +1442,7 @@ public class EdmConfigLoader {
         String title = dataPointElement.getAttribute("Title");
         String criticality = dataPointElement.getAttribute("Criticality");
         DataPoint dataPoint = new DataPoint(qualifier);
-        dataPoint.setTitle(title);
+        dataPoint.setTitle(getLabel(delegator, title, locale));
         dataPoint.setValue(value);
         if (criticalityTypes.contains(criticality)) {
             CriticalityType criticalityType = CriticalityType.valueOf(criticality);
