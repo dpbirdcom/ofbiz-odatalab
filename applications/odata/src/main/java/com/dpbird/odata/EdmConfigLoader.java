@@ -608,7 +608,7 @@ public class EdmConfigLoader {
             csdlPropertyValues.add(createPropertyValueString("Title", title));
         }
         if (UtilValidate.isNotEmpty(value)) {
-            csdlPropertyValues.add(createPropertyValueString("Value", value));
+            csdlPropertyValues.add(createPropertyValuePath("Value", value));
         }
         if (UtilValidate.isNotEmpty(criticalityPath)) {
             csdlPropertyValues.add(createPropertyValuePath("Criticality", criticalityPath));
