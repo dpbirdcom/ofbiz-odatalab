@@ -60,6 +60,7 @@
                 <xs:element ref="Key"/>
                 <xs:element ref="HeaderInfo"/>
                 <xs:element ref="LineItem"/>
+                <xs:element ref="Identification"/>
                 <xs:element ref="DataPoint"/>
                 <xs:element ref="FieldGroup"/>
                 <xs:element ref="SelectionFields"/>
@@ -372,11 +373,19 @@
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="Identification">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+            </xs:choice>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="DataPoint">
         <xs:complexType>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
-            <xs:attribute name="Value" type="xs:NCName"/>
-            <xs:attribute name="Title" type="xs:NCName"/>
+            <xs:attribute name="Value" type="xs:anyURI"/>
+            <xs:attribute name="Title" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
@@ -450,7 +459,9 @@
             <xs:attribute name="Precision" type="xs:integer"/>
             <xs:attribute name="Scale" type="xs:integer"/>
             <xs:attribute name="FieldControl" type="xs:NCName"/>
-            <xs:attribute name="Label"/>
+            <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
+            <xs:attribute name="DefaultValue" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">

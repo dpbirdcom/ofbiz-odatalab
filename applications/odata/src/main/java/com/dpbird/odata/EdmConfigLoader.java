@@ -217,6 +217,8 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateHeaderInfo((HeaderInfo) term, locale));
             } else if (term instanceof DataPoint) {
                 csdlAnnotationList.add(generateDataPoint((DataPoint) term, locale));
+            }else if (term instanceof Identification) {
+                csdlAnnotationList.add(generateIdentification(csdlEntityType, (Identification) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -559,6 +561,13 @@ public class EdmConfigLoader {
         return csdlAnnotation;
     }
 
+    private static CsdlAnnotation generateIdentification(OfbizCsdlEntityType csdlEntityType, Identification identification, Locale locale) {
+        CsdlAnnotation csdlAnnotation = createAnnotation(identification.getTermName(), identification.getQualifier());
+        CsdlCollection csdlCollection = createCollectionDataField(csdlEntityType, identification.getDataFields(), true, locale);
+        csdlAnnotation.setExpression(csdlCollection);
+        return csdlAnnotation;
+    }
+
     private static CsdlAnnotation generateHeaderInfo(HeaderInfo headerInfo, Locale locale) {
         HeaderInfoType headerInfoType = headerInfo.getHeaderInfoType();
         CsdlAnnotation csdlAnnotation = createAnnotation(headerInfo.getTermName(), headerInfo.getQualifier());
@@ -789,6 +798,12 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(csdlParameter.getFieldControl())) {
             csdlAnnotationList.add(createAnnotationEnum("Common.FieldControl", csdlParameter.getFieldControl(), null));
+        }
+        if (UtilValidate.isNotEmpty(csdlParameter.getHidden())) {
+            csdlAnnotationList.add(createAnnotationBool("UI.Hidden", csdlParameter.getHidden(), null));
+        }
+        if (UtilValidate.isNotEmpty(csdlParameter.getDefaultValue())) {
+            csdlAnnotationList.add(createAnnotationString("UI.ParameterDefaultValue", csdlParameter.getDefaultValue(), null));
         }
         List<Term> terms = csdlParameter.getTerms();
         if (terms != null) {
@@ -1207,6 +1222,8 @@ public class EdmConfigLoader {
                 terms.add(loadHeaderInfoFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("DataPoint")) {
                 terms.add(loadDataPointFromElement(inEntityElement, locale, delegator));
+            }else if (inEntityTagName.equals("Identification")) {
+                terms.add(loadIdentificationFromElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1338,6 +1355,47 @@ public class EdmConfigLoader {
         }
 
         return lineItem;
+    }
+
+    private static Term loadIdentificationFromElement(Element identificationElement, Locale locale, Delegator delegator) {
+        List<? extends Element> identificationChildren = UtilXml.childElementList(identificationElement);
+        if (UtilValidate.isEmpty(identificationChildren)) {
+            return null;
+        }
+        String qualifier = identificationElement.getAttribute("Qualifier");
+        Identification identification = new Identification(qualifier);
+        for (Element identChildren : identificationChildren) {
+            String lineItemChildTag = identChildren.getTagName();
+            if (lineItemChildTag.equals("DataFieldForAction")) {
+                String label = loadAttributeValue(identChildren, "Label", locale, delegator);
+                String action = identChildren.getAttribute("Action");
+                String invocationGrouping = identChildren.getAttribute("InvocationGrouping");
+                String criticality = identChildren.getAttribute("Criticality");
+                String inline = identChildren.getAttribute("Inline");
+                String hidden = identChildren.getAttribute("Hidden");
+                String importance = identChildren.getAttribute("Importance");
+                DataFieldForAction dataFieldForAction = new DataFieldForAction();
+                dataFieldForAction.setLabel(label);
+                dataFieldForAction.setAction(OfbizMapOdata.NAMESPACE + "." + action);
+                if (UtilValidate.isNotEmpty(invocationGrouping)) {
+                    dataFieldForAction.setInvocationGrouping(OperationGroupingType.valueOf(invocationGrouping));
+                }
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldForAction.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                if (UtilValidate.isNotEmpty(inline)) {
+                    dataFieldForAction.setInline(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    dataFieldForAction.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(importance)) {
+                    dataFieldForAction.setImportance(ImportanceType.valueOf(importance));
+                }
+                identification.addDataField(dataFieldForAction);
+            }
+        }
+        return identification;
     }
 
     private static Term loadHeaderInfoFromElement(Element headerInfoElement, Locale locale, Delegator delegator) {
@@ -2260,6 +2318,8 @@ public class EdmConfigLoader {
         String nullable = parameterElement.getAttribute("Nullable");
         String isCollection = parameterElement.getAttribute("IsCollection");
         String fieldControl = parameterElement.getAttribute("FieldControl");
+        String hidden = parameterElement.getAttribute("Hidden");
+        String defaultValue = parameterElement.getAttribute("DefaultValue");
         FullQualifiedName paramFullQualifiedName;
         EdmPrimitiveTypeKind paramEdmType = OfbizMapOdata.PARAM_TYPE_MAP.get(type);
         if (paramEdmType != null) {
@@ -2283,6 +2343,12 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(fieldControl)) {
             parameter.setFieldControl(FieldControlType.valueOf(fieldControl));
+        }
+        if (UtilValidate.isNotEmpty(hidden)) {
+            parameter.setHidden(hidden);
+        }
+        if (UtilValidate.isNotEmpty(hidden)) {
+            parameter.setDefaultValue(defaultValue);
         }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));
