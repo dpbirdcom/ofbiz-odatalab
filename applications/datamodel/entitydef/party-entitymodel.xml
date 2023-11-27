@@ -190,7 +190,6 @@ under the License.
     </entity>
     <entity entity-name="AgreementItemType"
             package-name="org.apache.ofbiz.party.agreement"
-            default-resource-name="PartyEntityLabels"
             title="Agreement Item Type Entity">
       <field name="agreementItemTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -409,7 +408,6 @@ under the License.
     </entity>
     <entity entity-name="AgreementType"
             package-name="org.apache.ofbiz.party.agreement"
-            default-resource-name="PartyEntityLabels"
             title="Agreement Type Entity">
       <field name="agreementTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -460,7 +458,7 @@ under the License.
     </entity>
     <entity entity-name="TermType"
             package-name="org.apache.ofbiz.party.agreement"
-            title="Term Type Entity" default-resource-name="PartyEntityLabels">
+            title="Term Type Entity">
       <field name="termTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
       <field name="hasTable" type="indicator"></field>
@@ -881,7 +879,6 @@ under the License.
     </entity>
     <entity entity-name="CommunicationEventPrpTyp"
             package-name="org.apache.ofbiz.party.communication"
-            default-resource-name="PartyEntityLabels"
             title="Communication Event Purpose Type Entity">
       <field name="communicationEventPrpTypId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -940,7 +937,7 @@ under the License.
     </entity>
     <entity entity-name="CommunicationEventType"
             package-name="org.apache.ofbiz.party.communication"
-            title="Communication Event Type Entity" default-resource-name="PartyEntityLabels">
+            title="Communication Event Type Entity">
       <field name="communicationEventTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
       <field name="hasTable" type="indicator"></field>
@@ -1016,7 +1013,6 @@ under the License.
     </entity>
     <entity entity-name="ContactMechPurposeType"
             package-name="org.apache.ofbiz.party.contact"
-            default-resource-name="PartyEntityLabels"
             title="Contact Mechanism Purpose Type Entity">
       <field name="contactMechPurposeTypeId" type="id"></field>
       <field name="description" type="description"></field>
@@ -1024,7 +1020,7 @@ under the License.
     </entity>
     <entity entity-name="ContactMechType"
             package-name="org.apache.ofbiz.party.contact"
-            title="Contact Mechanism Type Entity" default-resource-name="PartyEntityLabels">
+            title="Contact Mechanism Type Entity">
       <field name="contactMechTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
       <field name="hasTable" type="indicator"></field>
@@ -1756,7 +1752,6 @@ under the License.
     </view-entity>
     <entity entity-name="PartyIdentificationType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Party Identification Type Entity">
       <field name="partyIdentificationTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -1767,24 +1762,35 @@ under the License.
         <key-map field-name="parentTypeId" rel-field-name="partyIdentificationTypeId"/>
       </relation>
     </entity>
-  
-    <entity entity-name="PartyGeoPoint"
-        package-name="org.apache.ofbiz.party.party"
-        title="Party Geo Location with history">
-        <field name="partyId" type="id"></field>
-        <field name="geoPointId" type="id"></field>
-        <field name="fromDate" type="date-time"></field>
-        <field name="thruDate" type="date-time"></field>
-        <prim-key field="partyId"/>
-        <prim-key field="geoPointId"/>
-        <prim-key field="fromDate"/>
-        <relation type="one" fk-name="PARTYGEOPT_PARTY" rel-entity-name="Party">
-            <key-map field-name="partyId"/>
-        </relation>
-        <relation type="one" fk-name="PARTYGEOPT_GEOPT" rel-entity-name="GeoPoint">
-            <key-map field-name="geoPointId"/>
-        </relation>
-    </entity>
+
+  <entity entity-name="PartyGeoPoint"
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Geo Location with history">
+    <field name="partyGeoPointId" type="id"></field>
+    <field name="partyGeoPointTypeId" type="id"></field>
+    <field name="partyId" type="id"></field>
+    <field name="geoPointId" type="id"></field>
+    <field name="fromDate" type="date-time"></field>
+    <field name="thruDate" type="date-time"></field>
+    <prim-key field="partyGeoPointId"/>
+    <relation type="one" fk-name="PARTYGEOPT_PARTY" rel-entity-name="Party">
+      <key-map field-name="partyId"/>
+    </relation>
+    <relation type="one" fk-name="PARTYGEOPT_GEOPT" rel-entity-name="GeoPoint">
+      <key-map field-name="geoPointId"/>
+    </relation>
+    <relation type="one" fk-name="PARTYGEOPT_TYPE" rel-entity-name="PartyGeoPointType">
+      <key-map field-name="partyGeoPointTypeId"/>
+    </relation>
+  </entity>
+
+  <entity entity-name="PartyGeoPointType"
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Geo Point Type">
+    <field name="partyGeoPointTypeId" type="id"></field>
+    <field name="description" type="description"></field>
+    <prim-key field="partyGeoPointTypeId"/>
+  </entity>
     <view-entity entity-name="PartyAndGeoPoint"
         package-name="org.apache.ofbiz.party.party"
         title="Party and Geo Point View Entity">
@@ -1917,7 +1923,6 @@ under the License.
     </entity>
     <entity entity-name="PartyClassificationType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Party Classification Type Entity">
       <field name="partyClassificationTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -2012,7 +2017,6 @@ under the License.
     </view-entity>
     <entity entity-name="PartyContentType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Party Content Type Entity">
         <field name="partyContentTypeId" type="id"></field>
         <field name="parentTypeId" type="id"></field>
@@ -2162,22 +2166,24 @@ under the License.
     </relation>
   </view-entity>
   <entity entity-name="PartyNameHistory"
-        package-name="org.apache.ofbiz.party.party"
-        title="Party Name History Entity">
-        <field name="partyId" type="id"></field>
-        <field name="changeDate" type="date-time"></field>
-        <field name="groupName" type="name"><description>For Party Groups only</description></field>
-        <field name="firstName" type="name"></field>
-        <field name="middleName" type="name"></field>
-        <field name="lastName" type="name"></field>
-        <field name="personalTitle" type="name"></field>
-        <field name="suffix" type="name"></field>
-        <prim-key field="partyId"/>
-        <prim-key field="changeDate"/>
-        <relation type="one" fk-name="PTY_NMHIS_PARTY" rel-entity-name="Party">
-            <key-map field-name="partyId"/>
-        </relation>
-    </entity>
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Name History Entity">
+    <field name="partyNameHistoryId" type="id"></field>
+    <field name="partyId" type="id"></field>
+    <field name="changeDate" type="date-time"></field>
+    <field name="groupName" type="name"><description>For Party Groups only</description></field>
+    <field name="firstName" type="name"></field>
+    <field name="middleName" type="name"></field>
+    <field name="lastName" type="name"></field>
+    <field name="personalTitle" type="name"></field>
+    <field name="suffix" type="name"></field>
+    <prim-key field="partyNameHistoryId"/>
+    <!--        <prim-key field="partyId"/>-->
+    <!--        <prim-key field="changeDate"/>-->
+    <relation type="one" fk-name="PTY_NMHIS_PARTY" rel-entity-name="Party">
+      <key-map field-name="partyId"/>
+    </relation>
+  </entity>
     <view-entity entity-name="PartyNameView"
             package-name="org.apache.ofbiz.party.party"
             title="Party Name View Entity">
@@ -2257,6 +2263,7 @@ under the License.
     <entity entity-name="PartyRelationship"
             package-name="org.apache.ofbiz.party.party"
             title="Party Relationship Entity">
+      <field name="partyRelationshipId" type="id"></field>
       <field name="partyIdFrom" type="id"></field>
       <field name="partyIdTo" type="id"></field>
       <field name="roleTypeIdFrom" type="id"></field>
@@ -2273,11 +2280,12 @@ under the License.
       <field name="permissionsEnumId" type="id"></field>
       <field name="positionTitle" type="name"><description>The exact word used within the company</description></field>
       <field name="comments" type="comment"></field>
-      <prim-key field="partyIdFrom"/>
-      <prim-key field="partyIdTo"/>
-      <prim-key field="roleTypeIdFrom"/>
-      <prim-key field="roleTypeIdTo"/>
-      <prim-key field="fromDate"/>
+<!--      <prim-key field="partyIdFrom"/>-->
+<!--      <prim-key field="partyIdTo"/>-->
+<!--      <prim-key field="roleTypeIdFrom"/>-->
+<!--      <prim-key field="roleTypeIdTo"/>-->
+<!--      <prim-key field="fromDate"/>-->
+      <prim-key field="partyRelationshipId"/>
       <relation type="one-nofk" title="From" rel-entity-name="Party">
         <key-map field-name="partyIdFrom" rel-field-name="partyId"/>
       </relation>
@@ -2326,7 +2334,6 @@ under the License.
     </view-entity>
     <entity entity-name="PartyRelationshipType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Party Relationship Type Entity">
       <field name="partyRelationshipTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -2720,7 +2727,6 @@ under the License.
     </entity>
     <entity entity-name="PartyType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Party Type Entity">
       <field name="partyTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
@@ -2816,7 +2822,6 @@ under the License.
     </entity>
     <entity entity-name="RoleType"
             package-name="org.apache.ofbiz.party.party"
-            default-resource-name="PartyEntityLabels"
             title="Role Type Entity">
       <field name="roleTypeId" type="id"></field>
       <field name="parentTypeId" type="id"></field>
