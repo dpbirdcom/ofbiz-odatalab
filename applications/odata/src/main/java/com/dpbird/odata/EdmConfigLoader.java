@@ -1453,6 +1453,7 @@ public class EdmConfigLoader {
             String fieldGroupChildTag = fieldGroupChild.getTagName();
             if (fieldGroupChildTag.equals("DataField")) {
                 String values = fieldGroupChild.getAttribute("Values");
+                String criticality = fieldGroupChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String labelsAttr = fieldGroupChild.getAttribute("Labels");
                 List<String> labels = StringUtil.split(labelsAttr, ",");
@@ -1465,6 +1466,9 @@ public class EdmConfigLoader {
 //                            dataField.setLabel(parseValue(dataFieldLabel, locale));
                             dataField.setLabel(getLabel(delegator, dataFieldLabel, locale));
                         }
+                    }
+                    if (UtilValidate.isNotEmpty(criticality)) {
+                        dataField.setCriticalityPath(criticality);
                     }
                     fieldGroup.addData(dataField);
                 }
