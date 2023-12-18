@@ -244,6 +244,13 @@ public class OdataReader extends OfbizOdataProcessor {
             }
             //后面要处理expand，添加外键
             selectSet.addAll(Util.getEntityFk(modelEntity));
+            //如果有orderby 添加orderby
+            if (UtilValidate.isNotEmpty(orderBy)) {
+                for (String ob : orderBy) {
+                    String obProperty =  ob.replace("-", "").replace(" NULLS LAST", "");
+                    selectSet.add(obProperty);
+                }
+            }
         } else {
             for (String propertyName : edmEntityType.getPropertyNames()) {
                 OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
