@@ -336,6 +336,24 @@ public class EdmConfigLoader {
                 propertyValues.add(propertyValue);
                 String recordType = "UI.DataFieldForAnnotation";
                 csdlRecord.setType(recordType);
+            } else if (dataFieldAbstract instanceof DataFieldWithUrl) {
+                DataFieldWithUrl dataFieldWithUrl = (DataFieldWithUrl) dataFieldAbstract;
+                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldWithUrl.getLabel());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValuePath("Value", dataFieldWithUrl.getValue());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValuePath("Url", dataFieldWithUrl.getUrl());
+                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(dataFieldWithUrl.getIconUrl())) {
+                    propertyValue = createPropertyValueString("IconUrl", dataFieldWithUrl.getIconUrl());
+                    propertyValues.add(propertyValue);
+                }
+                if (UtilValidate.isNotEmpty(dataFieldWithUrl.getCriticality())) {
+                    propertyValue = createPropertyValueEnum("Criticality", dataFieldWithUrl.getCriticality());
+                    propertyValues.add(propertyValue);
+                }
+                String recordType = "UI.DataFieldWithUrl";
+                csdlRecord.setType(recordType);
             }
             csdlRecord.setPropertyValues(propertyValues);
             List<CsdlAnnotation> annotationList = new ArrayList<>();
@@ -1343,6 +1361,21 @@ public class EdmConfigLoader {
                     dataFieldForAnnotation.setImportance(ImportanceType.valueOf(importance));
                 }
                 lineItem.addDataField(dataFieldForAnnotation);
+            } else if (lineItemChildTag.equals("DataFieldWithUrl")) {
+                String childLabel = lineItemChild.getAttribute("Label");
+                String value = lineItemChild.getAttribute("Value");
+                String url = lineItemChild.getAttribute("Url");
+                String criticality = lineItemChild.getAttribute("Criticality");
+                String iconUrl = lineItemChild.getAttribute("IconUrl");
+                DataFieldWithUrl dataFieldWithUrl = new DataFieldWithUrl();
+                dataFieldWithUrl.setValue(value);
+                dataFieldWithUrl.setLabel(getLabel(delegator, childLabel, locale));
+                dataFieldWithUrl.setUrl(url);
+                dataFieldWithUrl.setIconUrl(iconUrl);
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                lineItem.addDataField(dataFieldWithUrl);
             } else if (lineItemChildTag.equals("Criticality")) {
                 String value = lineItemChild.getAttribute("Value");
                 if (criticalityTypes.contains(value)) {
@@ -1463,7 +1496,6 @@ public class EdmConfigLoader {
                     if (UtilValidate.isNotEmpty(labels)) {
                         if (i < labels.size()) {
                             String dataFieldLabel = labels.get(i);
-//                            dataField.setLabel(parseValue(dataFieldLabel, locale));
                             dataField.setLabel(getLabel(delegator, dataFieldLabel, locale));
                         }
                     }
@@ -1491,6 +1523,21 @@ public class EdmConfigLoader {
                     dataFieldForAction.setCriticality(CriticalityType.valueOf(criticality));
                 }
                 fieldGroup.addData(dataFieldForAction);
+            } else if (fieldGroupChildTag.equals("DataFieldWithUrl")) {
+                String childLabel = fieldGroupChild.getAttribute("Label");
+                String value = fieldGroupChild.getAttribute("Value");
+                String url = fieldGroupChild.getAttribute("Url");
+                String criticality = fieldGroupChild.getAttribute("Criticality");
+                String iconUrl = fieldGroupChild.getAttribute("IconUrl");
+                DataFieldWithUrl dataFieldWithUrl = new DataFieldWithUrl();
+                dataFieldWithUrl.setValue(value);
+                dataFieldWithUrl.setLabel(getLabel(delegator, childLabel, locale));
+                dataFieldWithUrl.setUrl(url);
+                dataFieldWithUrl.setIconUrl(iconUrl);
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                fieldGroup.addData(dataFieldWithUrl);
             }
         }
 

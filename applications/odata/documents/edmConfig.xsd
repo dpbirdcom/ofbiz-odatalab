@@ -340,6 +340,15 @@
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="DataFieldWithUrl">
+        <xs:complexType>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Value" type="xs:anyURI"/>
+            <xs:attribute name="Url" type="xs:anyURI"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="Criticality">
         <xs:complexType>
             <xs:attribute name="Value"/>
@@ -369,6 +378,7 @@
                 <xs:element minOccurs="0" ref="Criticality"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
@@ -394,6 +404,7 @@
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
