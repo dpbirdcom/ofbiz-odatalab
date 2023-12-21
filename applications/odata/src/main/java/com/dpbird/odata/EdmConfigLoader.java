@@ -217,8 +217,12 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateHeaderInfo((HeaderInfo) term, locale));
             } else if (term instanceof DataPoint) {
                 csdlAnnotationList.add(generateDataPoint((DataPoint) term, locale));
-            }else if (term instanceof Identification) {
+            } else if (term instanceof Identification) {
                 csdlAnnotationList.add(generateIdentification(csdlEntityType, (Identification) term, locale));
+            } else if (term instanceof Facets) {
+                csdlAnnotationList.add(generateFacets(csdlEntityType, (Facets) term, locale));
+            } else if (term instanceof HeaderFacets) {
+                csdlAnnotationList.add(generateHeaderFacets(csdlEntityType, (HeaderFacets) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -369,6 +373,33 @@ public class EdmConfigLoader {
             }
             csdlRecord.setAnnotations(annotationList);
             collectionItems.add(csdlRecord);
+        }
+        csdlCollection.setItems(collectionItems);
+        return csdlCollection;
+    }
+
+    private static CsdlCollection createCollectionReferenceFacet(OfbizCsdlEntityType csdlEntityType,
+                                                            List<ReferenceFacet> referenceFacets, Locale locale) {
+        CsdlCollection csdlCollection = new CsdlCollection();
+        List<CsdlExpression> collectionItems = new ArrayList<>();
+        for (ReferenceFacet referenceFacet : referenceFacets) {
+            CsdlRecord csdlRecord = new CsdlRecord();
+            List<CsdlPropertyValue> propertyValues = new ArrayList<>();
+            propertyValues.add(createPropertyValueString("ID", referenceFacet.getId()));
+            propertyValues.add(createPropertyValueString("Label", referenceFacet.getLabel()));
+            propertyValues.add(createPropertyValueAnnotationPath("Target", referenceFacet.getTarget()));
+            String recordType = "UI.ReferenceFacet";
+            csdlRecord.setType(recordType);
+            csdlRecord.setPropertyValues(propertyValues);
+            collectionItems.add(csdlRecord);
+            //add annotation
+            List<CsdlAnnotation> annotationList = new ArrayList<>();
+            String hidden = referenceFacet.getHidden();
+            if (UtilValidate.isNotEmpty(hidden)) {
+                CsdlAnnotation hiddenAnnotation = createAnnotationPath("UI.Hidden", hidden, null);
+                annotationList.add(hiddenAnnotation);
+            }
+            csdlRecord.setAnnotations(annotationList);
         }
         csdlCollection.setItems(collectionItems);
         return csdlCollection;
@@ -583,6 +614,22 @@ public class EdmConfigLoader {
         CsdlAnnotation csdlAnnotation = createAnnotation(identification.getTermName(), identification.getQualifier());
         CsdlCollection csdlCollection = createCollectionDataField(csdlEntityType, identification.getDataFields(), true, locale);
         csdlAnnotation.setExpression(csdlCollection);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateFacets(OfbizCsdlEntityType csdlEntityType, Facets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateHeaderFacets(OfbizCsdlEntityType csdlEntityType, HeaderFacets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
         return csdlAnnotation;
     }
 
@@ -1240,13 +1287,12 @@ public class EdmConfigLoader {
                 terms.add(loadHeaderInfoFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("DataPoint")) {
                 terms.add(loadDataPointFromElement(inEntityElement, locale, delegator));
-            }else if (inEntityTagName.equals("Identification")) {
+            } else if (inEntityTagName.equals("Identification")) {
                 terms.add(loadIdentificationFromElement(inEntityElement, locale, delegator));
-            }
-            // manually added Annotation
-            if (inEntityTagName.equals("Annotation")) {
-                CsdlAnnotation csdlAnnotation = loadAnnotationFromElement(inEntityElement, locale, delegator);
-                csdlAnnotationList.add(csdlAnnotation);
+            } else if (inEntityTagName.equals("Facets")) {
+                terms.add(loadFacetsFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("HeaderFacets")) {
+                terms.add(loadHeaderFacetsFromElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1429,6 +1475,52 @@ public class EdmConfigLoader {
             }
         }
         return identification;
+    }
+
+    private static Term loadFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        Facets facets = new Facets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        facets.setReferenceFacets(referenceFacets);
+        return facets;
+    }
+
+    private static Term loadHeaderFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        HeaderFacets headerFacets = new HeaderFacets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        headerFacets.setReferenceFacets(referenceFacets);
+        return headerFacets;
     }
 
     private static Term loadHeaderInfoFromElement(Element headerInfoElement, Locale locale, Delegator delegator) {
