@@ -17,7 +17,6 @@ import org.apache.ofbiz.entity.condition.EntityJoinOperator;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.model.DynamicViewEntity;
 import org.apache.ofbiz.entity.model.ModelEntity;
-import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
@@ -896,7 +895,7 @@ public class OfbizOdataProcessor {
     }
 
 
-    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmEntityType edmEntityType)
+    protected void addExpandOption(ExpandOption expandOption, OdataOfbizEntity entity, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType)
             throws OfbizODataException {
         if (expandOption == null) {
             return;
@@ -912,17 +911,17 @@ public class OfbizOdataProcessor {
             List<String> navigationNames = edmEntityType.getNavigationPropertyNames();
             for (String navigationName : navigationNames) {
                 EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
-                addExpandNavigation(entity, edmEntityType, navigationProperty, expandLevel);
+                addExpandNavigation(entity, edmBindingTarget, edmEntityType, navigationProperty, expandLevel);
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
-                addExpandItem(entity, expandItem, edmEntityType);
+                addExpandItem(entity, expandItem, edmBindingTarget, edmEntityType);
             }
         }
         Debug.logInfo("finished adding all expand items", module);
     }
 
-    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmEntityType edmEntityType) throws OfbizODataException {
+    private void addExpandItem(OdataOfbizEntity entity, ExpandItem expandItem, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType) throws OfbizODataException {
         EdmNavigationProperty edmNavigationProperty = null;
         LevelsExpandOption levelsExpandOption = expandItem.getLevelsOption();
         int expandLevel = 1;
@@ -955,17 +954,17 @@ public class OfbizOdataProcessor {
             }
             Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption, "orderByOption", expandItem.getOrderByOption(),
                     "selectOption", expandItem.getSelectOption(), "searchOption", expandItem.getSearchOption(), "filterOption", expandItem.getFilterOption());
-            expandCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+            expandCollection(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
         } else { // expand对象不是collection
             // 此处改过
             Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", expandItem.getExpandOption(),
                     "orderByOption", expandItem.getOrderByOption(), "selectOption", expandItem.getSelectOption(), "filterOption", expandItem.getFilterOption());
-            expandNonCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+            expandNonCollection(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
         } // end expand对象不是collection
     }
 
     // expand=*时会调用此方法
-    private void addExpandNavigation(OdataOfbizEntity entity, EdmEntityType edmEntityType,
+    private void addExpandNavigation(OdataOfbizEntity entity, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty,
                                      int expandLevel) throws OfbizODataException {
         ExpandOption nestedExpandOption = null;
@@ -981,16 +980,16 @@ public class OfbizOdataProcessor {
         }
         Map<String, QueryOption> embeddedQueryOptions = UtilMisc.toMap("expandOption", nestedExpandOption);
         if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-            expandCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+            expandCollection(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
         } else { // expand对象不是collection
-            expandNonCollection(entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+            expandNonCollection(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
         } // end expand对象不是collection
     }
 
 
-    private EntityCollection getExpandData(OdataOfbizEntity entity, EdmEntityType edmEntityType,
+    private EntityCollection getExpandData(OdataOfbizEntity entity, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                            EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> embeddedQueryOptions) throws OfbizODataException {
-        Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
+        Map<String, Object> embeddedEdmParams = UtilMisc.toMap("edmBindingTarget", edmBindingTarget, "edmEntityType", edmEntityType, "edmNavigationProperty", edmNavigationProperty);
         OdataReader reader = new OdataReader(getOdataContext(), embeddedQueryOptions, embeddedEdmParams);
         EntityCollection relatedList = reader.findRelatedList(entity, edmNavigationProperty, embeddedQueryOptions, null);
         for (Entity relatedEntity : relatedList.getEntities()) {
@@ -999,9 +998,9 @@ public class OfbizOdataProcessor {
         return relatedList;
     }
 
-    private void expandNonCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
+    private void expandNonCollection(OdataOfbizEntity entity, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions);
+        EntityCollection expandEntityCollection = getExpandData(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, queryOptions);
         if (null != expandEntityCollection && UtilValidate.isNotEmpty(expandEntityCollection.getEntities())) {
             Entity expandEntity = expandEntityCollection.getEntities().get(0);
             expandEntityCollection.setCount(expandEntityCollection.getEntities().size());
@@ -1019,9 +1018,9 @@ public class OfbizOdataProcessor {
         }
     }
 
-    private void expandCollection(OdataOfbizEntity entity, EdmEntityType edmEntityType,
+    private void expandCollection(OdataOfbizEntity entity, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                   EdmNavigationProperty edmNavigationProperty, Map<String, QueryOption> queryOptions) throws OfbizODataException {
-        EntityCollection expandEntityCollection = getExpandData(entity, edmEntityType, edmNavigationProperty, queryOptions);
+        EntityCollection expandEntityCollection = getExpandData(entity, edmBindingTarget, edmEntityType, edmNavigationProperty, queryOptions);
         String navPropName = edmNavigationProperty.getName();
         Link link = new Link();
         link.setTitle(navPropName);
@@ -1071,13 +1070,13 @@ public class OfbizOdataProcessor {
             for (String navigationName : navigationNames) {
                 for (Entity entity : entityList) {
                     EdmNavigationProperty navigationProperty = edmEntityType.getNavigationProperty(navigationName);
-                    addExpandNavigation((OdataOfbizEntity) entity, edmEntityType, navigationProperty, expandLevel);
+                    addExpandNavigation((OdataOfbizEntity) entity, edmBindingTarget, edmEntityType, navigationProperty, expandLevel);
                 }
             }
         } else {
             for (ExpandItem expandItem : expandItems) {
                 for (Entity entity : entityList) {
-                    addExpandItem((OdataOfbizEntity) entity, expandItem, edmEntityType);
+                    addExpandItem((OdataOfbizEntity) entity, expandItem, edmBindingTarget, edmEntityType);
                 }
 //                addAllExpandItem(entityList, expandItem, edmBindingTarget, edmEntityType);
             }
@@ -1120,7 +1119,7 @@ public class OfbizOdataProcessor {
             reader.addDefaultExpandLink(entityList, edmNavigationProperty, embeddedQueryOptions);
         } else {
             for (Entity entity : entityList) {
-                addExpandItem((OdataOfbizEntity) entity, expandItem, edmEntityType);
+                addExpandItem((OdataOfbizEntity) entity, expandItem, edmBindingTarget, edmEntityType);
             }
         }
     }
@@ -1167,7 +1166,7 @@ public class OfbizOdataProcessor {
 
 
     // expand=*时会调用此方法
-    private void addExpandNavigation(Collection<Entity> entityList, EdmEntityType edmEntityType,
+    private void addExpandNavigation(Collection<Entity> entityList, EdmBindingTarget edmBindingTarget, EdmEntityType edmEntityType,
                                      EdmNavigationProperty edmNavigationProperty, int expandLevel) throws OfbizODataException {
         ExpandOption nestedExpandOption = null;
         if (expandLevel > 1) {
@@ -1188,9 +1187,9 @@ public class OfbizOdataProcessor {
         } else {
             for (Entity entity : entityList) {
                 if (edmNavigationProperty.isCollection()) { // expand的对象是collection
-                    expandCollection((OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+                    expandCollection((OdataOfbizEntity) entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
                 } else {
-                    expandNonCollection((OdataOfbizEntity) entity, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
+                    expandNonCollection((OdataOfbizEntity) entity, edmBindingTarget, edmEntityType, edmNavigationProperty, embeddedQueryOptions);
                 }
             }
         }

@@ -51,7 +51,7 @@ public class ActionProcessor extends OdataWriter {
         result.setEntity(entity);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             OdataOfbizEntity resultEntity = (OdataOfbizEntity) result.getEntity();
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), resultEntity,
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), resultEntity, null,
                     (EdmEntityType) edmAction.getReturnType().getType());
         }
         return result;

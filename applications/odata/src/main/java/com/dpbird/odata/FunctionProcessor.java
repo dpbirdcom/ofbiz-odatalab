@@ -40,7 +40,7 @@ public class FunctionProcessor extends OdataReader {
                     queryOptions, UtilMisc.toList(responseEntity), locale, userLogin);
         }
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, returnEntityType);
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) responseEntity, null, returnEntityType);
         }
         return responseEntity;
     }
@@ -77,7 +77,7 @@ public class FunctionProcessor extends OdataReader {
         //expand
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             for (Entity entity : entities) {
-                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, returnEdmEntityType);
+                addExpandOption((ExpandOption) queryOptions.get("expandOption"), (OdataOfbizEntity) entity, null, returnEdmEntityType);
             }
         }
         return entityCollection;
