@@ -2693,9 +2693,9 @@ public class EdmConfigLoader {
 
     private static String getLabel(Delegator delegator, String property, Locale locale) {
         try {
-            if (UtilValidate.isNotEmpty(property) && property.startsWith("${")) {
+            if (UtilValidate.isNotEmpty(property) && property.startsWith("${uiLabelMap.")) {
                 //是变量
-                property = property.substring(2, property.length() - 1);
+                property = property.substring(property.indexOf(".") + 1, property.length() - 1);
                 GenericValue i18n = EntityQuery.use(delegator).from("Internationalization")
                         .where("lang", locale.getLanguage(), "property", property).queryFirst();
                 if (UtilValidate.isNotEmpty(i18n)) {
