@@ -2490,7 +2490,7 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(hidden)) {
             parameter.setHidden(hidden);
         }
-        if (UtilValidate.isNotEmpty(hidden)) {
+        if (UtilValidate.isNotEmpty(defaultValue)) {
             parameter.setDefaultValue(defaultValue);
         }
         parameter.setLabel(label);
