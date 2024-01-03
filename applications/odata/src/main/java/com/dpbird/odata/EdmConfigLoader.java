@@ -2279,9 +2279,7 @@ public class EdmConfigLoader {
         String collectionPath = valueListElement.getAttribute("CollectionPath");
         String label = loadAttributeValue(valueListElement, "Label", locale, delegator);
         if (UtilValidate.isEmpty(label)) {
-            if (UtilValidate.isNotEmpty(csdlParameter.getLabel())) {
-                label = csdlParameter.getLabel();
-            }
+            label = UtilValidate.isNotEmpty(csdlParameter.getLabel()) ? csdlParameter.getLabel() : csdlParameter.getName();
         }
         String qualifier = valueListElement.getAttribute("Qualifier");
         if (UtilValidate.isEmpty(qualifier)) {
