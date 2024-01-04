@@ -17,11 +17,15 @@ import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 
 import javax.servlet.http.HttpServletRequest;
+import java.sql.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * @author scy
@@ -42,6 +46,17 @@ public class ActionEvents {
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
         try {
+            for (Map.Entry<String, Object> entry : actionParameters.entrySet()){
+                String key = entry.getKey();
+                if (UtilValidate.isEmpty(entry.getValue())){
+                    continue;
+                }
+                CsdlProperty property = csdlEntityType.getProperty(key);
+                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+                    GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
+                    actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
+                }
+            }
             actionParameters.put("userLogin", userLogin);
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
                 actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
