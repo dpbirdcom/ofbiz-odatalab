@@ -497,6 +497,7 @@
             <xs:attribute name="Label" type="xs:anyURI"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="DefaultValue" type="xs:anyURI"/>
+            <xs:attribute name="DefaultValuePath" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">
