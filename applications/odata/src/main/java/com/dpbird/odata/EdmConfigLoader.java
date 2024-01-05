@@ -358,6 +358,41 @@ public class EdmConfigLoader {
                 }
                 String recordType = "UI.DataFieldWithUrl";
                 csdlRecord.setType(recordType);
+            } else if (dataFieldAbstract instanceof DataFieldForIntentBasedNavigation) {
+                DataFieldForIntentBasedNavigation intentBasedNavigation = (DataFieldForIntentBasedNavigation) dataFieldAbstract;
+                CsdlPropertyValue propertyValue = createPropertyValueString("Label", intentBasedNavigation.getLabel());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueString("Action", intentBasedNavigation.getAction());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueBool("Inline", intentBasedNavigation.getInLine());
+                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(intentBasedNavigation.getIconUrl())) {
+                    propertyValue = createPropertyValueString("IconUrl", intentBasedNavigation.getIconUrl());
+                    propertyValues.add(propertyValue);
+                }
+                List<DataFieldForIntentBasedNavigation.Mapping> mappings = intentBasedNavigation.getMappings();
+                if (UtilValidate.isNotEmpty(mappings)) {
+                    propertyValue = new CsdlPropertyValue();
+                    propertyValue.setProperty("Mapping");
+                    CsdlCollection mappingCollection = new CsdlCollection();
+                    List<CsdlExpression> csdlExpressions = new ArrayList<>();
+                    for (DataFieldForIntentBasedNavigation.Mapping mapping : mappings) {
+                        CsdlPropertyValue localProperty = createPropertyValuePropertyPath("LocalProperty", mapping.getLocalProperty());
+                        CsdlPropertyValue semanticObjectProperty = createPropertyValueString("SemanticObjectProperty", mapping.getSemanticObjectProperty());
+                        CsdlRecord mappingRecord = new CsdlRecord();
+                        mappingRecord.setType("Common.SemanticObjectMappingType");
+                        mappingRecord.setPropertyValues(UtilMisc.toList(localProperty, semanticObjectProperty));
+                        csdlExpressions.add(mappingRecord);
+                    }
+                    mappingCollection.setItems(csdlExpressions);
+                    propertyValue.setValue(mappingCollection);
+                    propertyValues.add(propertyValue);
+                }
+
+                String recordType = "UI.DataFieldForIntentBasedNavigation";
+                csdlRecord.setType(recordType);
             }
             csdlRecord.setPropertyValues(propertyValues);
             List<CsdlAnnotation> annotationList = new ArrayList<>();
@@ -1425,6 +1460,42 @@ public class EdmConfigLoader {
                     dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
                 }
                 lineItem.addDataField(dataFieldWithUrl);
+            }  else if (lineItemChildTag.equals("DataFieldForIntentBasedNavigation")) {
+                String childLabel = lineItemChild.getAttribute("Label");
+                String semanticObject = lineItemChild.getAttribute("SemanticObject");
+                String action = lineItemChild.getAttribute("Action");
+                String inline = lineItemChild.getAttribute("Inline");
+                String hidden = lineItemChild.getAttribute("Hidden");
+                String iconUrl = lineItemChild.getAttribute("IconUrl");
+                DataFieldForIntentBasedNavigation fieldForIntentBasedNavigation = new DataFieldForIntentBasedNavigation();
+                fieldForIntentBasedNavigation.setLabel(getLabel(delegator, childLabel, locale));
+                fieldForIntentBasedNavigation.setSemanticObject(semanticObject);
+                fieldForIntentBasedNavigation.setAction(action);
+                if (UtilValidate.isNotEmpty(inline)) {
+                    fieldForIntentBasedNavigation.setInLine(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    fieldForIntentBasedNavigation.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(iconUrl)) {
+                    fieldForIntentBasedNavigation.setIconUrl(iconUrl);
+                }
+                //Mapping
+                List<? extends Element> childElementList = UtilXml.childElementList(lineItemChild);
+                if (UtilValidate.isNotEmpty(childElementList)) {
+                    List<DataFieldForIntentBasedNavigation.Mapping> mappings = new ArrayList<>();
+                    for (Element element : childElementList) {
+                        String tagName = element.getTagName();
+                        if ("Mapping".equals(tagName)) {
+                            //添加mapping
+                            DataFieldForIntentBasedNavigation.Mapping mapping =
+                                    new DataFieldForIntentBasedNavigation.Mapping(element.getAttribute("LocalProperty"), element.getAttribute("SemanticObjectProperty"));
+                            mappings.add(mapping);
+                        }
+                    }
+                    fieldForIntentBasedNavigation.setMappings(mappings);
+                }
+                lineItem.addDataField(fieldForIntentBasedNavigation);
             } else if (lineItemChildTag.equals("Criticality")) {
                 String value = lineItemChild.getAttribute("Value");
                 if (criticalityTypes.contains(value)) {
@@ -1475,6 +1546,42 @@ public class EdmConfigLoader {
                     dataFieldForAction.setImportance(ImportanceType.valueOf(importance));
                 }
                 identification.addDataField(dataFieldForAction);
+            }  else if (lineItemChildTag.equals("DataFieldForIntentBasedNavigation")) {
+                String childLabel = identChildren.getAttribute("Label");
+                String semanticObject = identChildren.getAttribute("SemanticObject");
+                String action = identChildren.getAttribute("Action");
+                String inline = identChildren.getAttribute("Inline");
+                String hidden = identChildren.getAttribute("Hidden");
+                String iconUrl = identChildren.getAttribute("IconUrl");
+                DataFieldForIntentBasedNavigation fieldForIntentBasedNavigation = new DataFieldForIntentBasedNavigation();
+                fieldForIntentBasedNavigation.setLabel(getLabel(delegator, childLabel, locale));
+                fieldForIntentBasedNavigation.setSemanticObject(semanticObject);
+                fieldForIntentBasedNavigation.setAction(action);
+                if (UtilValidate.isNotEmpty(inline)) {
+                    fieldForIntentBasedNavigation.setInLine(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    fieldForIntentBasedNavigation.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(iconUrl)) {
+                    fieldForIntentBasedNavigation.setIconUrl(iconUrl);
+                }
+                //Mapping
+                List<? extends Element> childElementList = UtilXml.childElementList(identChildren);
+                if (UtilValidate.isNotEmpty(childElementList)) {
+                    List<DataFieldForIntentBasedNavigation.Mapping> mappings = new ArrayList<>();
+                    for (Element element : childElementList) {
+                        String tagName = element.getTagName();
+                        if ("Mapping".equals(tagName)) {
+                            //添加mapping
+                            DataFieldForIntentBasedNavigation.Mapping mapping =
+                                    new DataFieldForIntentBasedNavigation.Mapping(element.getAttribute("LocalProperty"), element.getAttribute("SemanticObjectProperty"));
+                            mappings.add(mapping);
+                        }
+                    }
+                    fieldForIntentBasedNavigation.setMappings(mappings);
+                }
+                identification.addDataField(fieldForIntentBasedNavigation);
             }
         }
         return identification;

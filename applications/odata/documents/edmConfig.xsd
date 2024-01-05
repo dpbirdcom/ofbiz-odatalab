@@ -308,6 +308,12 @@
             <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="Mapping">
+        <xs:complexType>
+            <xs:attribute name="LocalProperty" type="xs:anyURI"/>
+            <xs:attribute name="SemanticObjectProperty" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="ParameterConstant">
         <xs:complexType>
             <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
@@ -340,6 +346,19 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DataFieldForIntentBasedNavigation">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="Mapping"/>
+            </xs:choice>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="SemanticObject" type="xs:anyURI"/>
+            <xs:attribute name="Action" type="xs:anyURI"/>
+            <xs:attribute name="Inline" type="xs:boolean"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithUrl">
@@ -381,6 +400,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
@@ -389,6 +409,7 @@
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
