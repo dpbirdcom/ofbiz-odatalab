@@ -1006,10 +1006,10 @@ public class EdmConfigLoader {
                 csdlEntityType.getActionList().forEach(edmWebConfig::addAction);
                 csdlEntityType.getFunctionList().forEach(edmWebConfig::addFunction);
             } else if (tagName.equals("Action")) {
-                OfbizCsdlAction csdlAction = loadActionFromElement(currentElt, locale, delegator);
+                OfbizCsdlAction csdlAction = loadActionFromElement(currentElt, locale, delegator, new ArrayList<>());
                 edmWebConfig.addAction(csdlAction);
             } else if (tagName.equals("Function")) {
-                OfbizCsdlFunction csdlFunction = loadFunctionFromElement(currentElt, locale, delegator);
+                OfbizCsdlFunction csdlFunction = loadFunctionFromElement(currentElt, locale, delegator, new ArrayList<>());
                 edmWebConfig.addFunction(csdlFunction);
             } else if (tagName.equals("EntityContainer")) {
                 List<? extends Element> containerChildren = UtilXml.childElementList(currentElt);
@@ -1338,18 +1338,26 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(csdlAnnotation);
             }
             // Action
-            if (inEntityTagName.equals("Action")) {
-                actionList.add(loadActionFromElement(inEntityElement, locale,delegator));
-            }
-            // Function
-            if (inEntityTagName.equals("Function")) {
-                functionList.add(loadFunctionFromElement(inEntityElement, locale, delegator));
-            }
+//            if (inEntityTagName.equals("Action")) {
+//                actionList.add(loadActionFromElement(inEntityElement, locale,delegator));
+//            }
+//            // Function
+//            if (inEntityTagName.equals("Function")) {
+//                functionList.add(loadFunctionFromElement(inEntityElement, locale, delegator));
+//            }
             // AutoValueList
             if (inEntityTagName.equals("ValueList")) {
                 terms.add(loadAutoValueListFromElement(modelEntity, inEntityElement, locale, delegator));
                 autoValueList = true;
             }
+        }
+        List<? extends Element> actionElements = UtilXml.childElementList(entityTypeElement, "Action");
+        for (Element actionElement : actionElements) {
+            actionList.add(loadActionFromElement(actionElement, locale,delegator, csdlProperties));
+        }
+        List<? extends Element> functionElements = UtilXml.childElementList(entityTypeElement, "Function");
+        for (Element functionElement : functionElements) {
+            functionList.add(loadFunctionFromElement(functionElement, locale, delegator, csdlProperties));
         }
         OfbizCsdlEntityType csdlEntityType = createEntityType(delegator, dispatcher, fullQualifiedName, ofbizEntity,
                 attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
@@ -2479,7 +2487,7 @@ public class EdmConfigLoader {
         return new Text(path, textArrangement, qualifier);
     }
 
-    private static OfbizCsdlFunction loadFunctionFromElement(Element functionElement, Locale locale, Delegator delegator) {
+    private static OfbizCsdlFunction loadFunctionFromElement(Element functionElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = functionElement.getAttribute("Name");
         boolean isBound = UtilValidate.isNotEmpty(functionElement.getAttribute("IsBound")) && "true".equals(functionElement.getAttribute("IsBound"));
         String ofbizService = name;
@@ -2497,7 +2505,7 @@ public class EdmConfigLoader {
         for (Element inFunctionElement : functionChildren) {
             String inFunctionTagName = inFunctionElement.getTagName();
             if (inFunctionTagName.equals("Parameter")) { // <Parameter>
-                CsdlParameter parameter = loadParameterFromElement(inFunctionElement, locale, delegator);
+                CsdlParameter parameter = loadParameterFromElement(inFunctionElement, locale, delegator, boundProperties);
                 parameters.add(parameter);
             } // </Parameter>
             if (inFunctionTagName.equals("ReturnType")) {
@@ -2532,7 +2540,7 @@ public class EdmConfigLoader {
         return csdlFunction;
     }
 
-    private static OfbizCsdlAction loadActionFromElement(Element actionElement, Locale locale, Delegator delegator) {
+    private static OfbizCsdlAction loadActionFromElement(Element actionElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = actionElement.getAttribute("Name");
         String ofbizService = name;
         if (UtilValidate.isNotEmpty(actionElement.getAttribute("OfbizService"))) {
@@ -2550,7 +2558,7 @@ public class EdmConfigLoader {
         for (Element inActionElement : actionChildren) {
             String inActionTagName = inActionElement.getTagName();
             if (inActionTagName.equals("Parameter")) { // <Parameter>
-                CsdlParameter parameter = loadParameterFromElement(inActionElement, locale, delegator);
+                CsdlParameter parameter = loadParameterFromElement(inActionElement, locale, delegator, boundProperties);
                 parameters.add(parameter);
             } // </Parameter>
             if (inActionTagName.equals("ReturnType")) {
@@ -2561,7 +2569,7 @@ public class EdmConfigLoader {
                 isBound, ofbizService, isEntityAction, stickySession, entitySetPath, sideEffects);
     }
 
-    private static CsdlParameter loadParameterFromElement(Element parameterElement, Locale locale, Delegator delegator) {
+    private static CsdlParameter loadParameterFromElement(Element parameterElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = parameterElement.getAttribute("Name");
         String type = parameterElement.getAttribute("Type");
         String precision = parameterElement.getAttribute("Precision");
@@ -2591,7 +2599,15 @@ public class EdmConfigLoader {
         String label = parameterElement.getAttribute("Label");
         if (UtilValidate.isNotEmpty(label) ) {
             label = getLabel(delegator, label, locale);
-//            label = parseValue(label, locale);
+        } else {
+            //根据bound对象字段获取label
+            for (CsdlProperty boundProperty : boundProperties) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) boundProperty;
+                if (boundProperty.getName().equals(name)) {
+                    label = csdlProperty.getLabel();
+                    break;
+                }
+            }
         }
         if (UtilValidate.isNotEmpty(fieldControl)) {
             parameter.setFieldControl(FieldControlType.valueOf(fieldControl));
