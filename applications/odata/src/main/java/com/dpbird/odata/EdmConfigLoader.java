@@ -223,6 +223,8 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateFacets(csdlEntityType, (Facets) term, locale));
             } else if (term instanceof HeaderFacets) {
                 csdlAnnotationList.add(generateHeaderFacets(csdlEntityType, (HeaderFacets) term, locale));
+            } else if (term instanceof QuickViewFacets) {
+                csdlAnnotationList.add(generateQuickViewFacets(csdlEntityType, (QuickViewFacets) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -653,6 +655,14 @@ public class EdmConfigLoader {
     }
 
     private static CsdlAnnotation generateFacets(OfbizCsdlEntityType csdlEntityType, Facets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateQuickViewFacets(OfbizCsdlEntityType csdlEntityType, QuickViewFacets facets, Locale locale) {
         List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
         CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
         CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
@@ -1331,6 +1341,8 @@ public class EdmConfigLoader {
                 terms.add(loadFacetsFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("HeaderFacets")) {
                 terms.add(loadHeaderFacetsFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("QuickViewFacets")) {
+                terms.add(loadQuickViewFacetsFromElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1616,6 +1628,29 @@ public class EdmConfigLoader {
         }
         facets.setReferenceFacets(referenceFacets);
         return facets;
+    }
+
+    private static Term loadQuickViewFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        QuickViewFacets quickViewFacets = new QuickViewFacets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        quickViewFacets.setReferenceFacets(referenceFacets);
+        return quickViewFacets;
     }
 
     private static Term loadHeaderFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {

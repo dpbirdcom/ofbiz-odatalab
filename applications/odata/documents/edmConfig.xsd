@@ -71,6 +71,7 @@
                 <xs:element minOccurs="0" ref="ValueList"/>
                 <xs:element ref="Facets"/>
                 <xs:element ref="HeaderFacets"/>
+                <xs:element ref="QuickViewFacets"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -434,6 +435,13 @@
         </xs:complexType>
     </xs:element>
     <xs:element name="HeaderFacets">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="QuickViewFacets">
         <xs:complexType>
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
