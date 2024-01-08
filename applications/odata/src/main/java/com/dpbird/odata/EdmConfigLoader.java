@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -718,7 +719,9 @@ public class EdmConfigLoader {
         String title = dataPoint.getTitle();
         String value = dataPoint.getValue();
         CriticalityType criticality = dataPoint.getCriticality();
+        VisualizationType visualization = dataPoint.getVisualization();
         String criticalityPath = dataPoint.getCriticalityPath();
+        String targetValue = dataPoint.getTargetValue();
         CsdlAnnotation csdlAnnotation = createAnnotation(dataPoint.getTermName(), dataPoint.getQualifier());
         CsdlRecord csdlRecord = new CsdlRecord();
         csdlRecord.setType("UI.DataPointType");
@@ -734,6 +737,12 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(criticality)) {
             csdlPropertyValues.add(createPropertyValueEnum("Criticality", criticality));
+        }
+        if (UtilValidate.isNotEmpty(targetValue)) {
+            csdlPropertyValues.add(createPropertyValueDecimal("TargetValue", targetValue));
+        }
+        if (UtilValidate.isNotEmpty(visualization)) {
+            csdlPropertyValues.add(createPropertyValueEnum("Visualization", visualization));
         }
         csdlRecord.setPropertyValues(csdlPropertyValues);
         csdlAnnotation.setExpression(csdlRecord);
@@ -1791,18 +1800,26 @@ public class EdmConfigLoader {
 
     private static Term loadDataPointFromElement(Element dataPointElement, Locale locale, Delegator delegator) {
         List<String> criticalityTypes = UtilMisc.toList("VeryNegative", "Neutral", "Negative", "Critical", "Positive", "VeryPositive");
+        List<String> visualizationTypes = UtilMisc.toList("Rating", "Progress", "Number");
         String qualifier = dataPointElement.getAttribute("Qualifier");
         String value = dataPointElement.getAttribute("Value");
         String title = dataPointElement.getAttribute("Title");
         String criticality = dataPointElement.getAttribute("Criticality");
+        String targetValue = dataPointElement.getAttribute("TargetValue");
+        String visualization = dataPointElement.getAttribute("Visualization");
         DataPoint dataPoint = new DataPoint(qualifier);
         dataPoint.setTitle(getLabel(delegator, title, locale));
         dataPoint.setValue(value);
+        dataPoint.setTargetValue(targetValue);
         if (criticalityTypes.contains(criticality)) {
             CriticalityType criticalityType = CriticalityType.valueOf(criticality);
             dataPoint.setCriticality(criticalityType);
         } else {
             dataPoint.setCriticalityPath(criticality);
+        }
+        if (visualizationTypes.contains(visualization)) {
+            VisualizationType visualizationType = VisualizationType.valueOf(visualization);
+            dataPoint.setVisualization(visualizationType);
         }
         return dataPoint;
     }
@@ -3399,6 +3416,12 @@ public class EdmConfigLoader {
         return constantExpression;
     }
 
+    private static CsdlExpression createExpressionDecimal(String value) {
+        CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.Decimal);
+        constantExpression.setValue(value);
+        return constantExpression;
+    }
+
     private static CsdlExpression createExpressionEnum(Enum value) {
         CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.EnumMember);
         constantExpression.setValue(value.toString());
@@ -3474,6 +3497,13 @@ public class EdmConfigLoader {
         CsdlPropertyValue propertyValue = new CsdlPropertyValue();
         propertyValue.setProperty(property);
         propertyValue.setValue(createExpressionEnumMember(value));
+        return propertyValue;
+    }
+
+    private static CsdlPropertyValue createPropertyValueDecimal(String property, String value) {
+        CsdlPropertyValue propertyValue = new CsdlPropertyValue();
+        propertyValue.setProperty(property);
+        propertyValue.setValue(createExpressionDecimal(value));
         return propertyValue;
     }
 

@@ -420,7 +420,9 @@
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Value" type="xs:anyURI"/>
             <xs:attribute name="Title" type="xs:anyURI"/>
+            <xs:attribute name="TargetValue" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Visualization" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="FieldGroup">
