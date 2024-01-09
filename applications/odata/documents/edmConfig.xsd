@@ -349,6 +349,16 @@
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="DataFieldForAnnotation">
+        <xs:complexType>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="Target" type="xs:anyURI"/>
+            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Hidden" type="xs:NCName"/>
+            <xs:attribute name="Importance" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="DataFieldForIntentBasedNavigation">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -400,6 +410,7 @@
                 <xs:element minOccurs="0" ref="Criticality"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
             </xs:choice>
