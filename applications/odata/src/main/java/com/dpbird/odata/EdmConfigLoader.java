@@ -335,7 +335,7 @@ public class EdmConfigLoader {
                 DataFieldForAnnotation dataFieldForAnnotation = (DataFieldForAnnotation) dataFieldAbstract;
                 CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAnnotation.getLabel());
                 propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("Target", dataFieldForAnnotation.getTarget());
+                propertyValue = createPropertyValueAnnotationPath("Target", dataFieldForAnnotation.getTarget());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueEnum("InvocationGrouping", dataFieldForAnnotation.getInvocationGrouping());
                 propertyValues.add(propertyValue);
