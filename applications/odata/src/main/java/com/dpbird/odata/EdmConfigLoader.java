@@ -2652,6 +2652,19 @@ public class EdmConfigLoader {
                 }
             }
         }
+        String maxLength = parameterElement.getAttribute("MaxLength");
+        if (UtilValidate.isEmpty(maxLength)) {
+            //根据bound对象字段获取maxLength
+            for (CsdlProperty boundProperty : boundProperties) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) boundProperty;
+                if (boundProperty.getName().equals(name)) {
+                    parameter.setMaxLength(csdlProperty.getMaxLength());
+                    break;
+                }
+            }
+        } else {
+            parameter.setMaxLength(Integer.parseInt(maxLength));
+        }
         if (UtilValidate.isNotEmpty(fieldControl)) {
             parameter.setFieldControl(FieldControlType.valueOf(fieldControl));
         }
