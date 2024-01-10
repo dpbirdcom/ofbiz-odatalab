@@ -334,6 +334,7 @@
     <xs:element name="DataField">
         <xs:complexType>
             <xs:attribute name="Values"/>
+            <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
         </xs:complexType>

@@ -289,30 +289,14 @@ public class EdmConfigLoader {
                 if (UtilValidate.isNotEmpty(dataField.getCriticalityPath())) {
                     propertyValues.add(createPropertyValuePath("Criticality", dataField.getCriticalityPath()));
                 }
+                // add Label
+                String label = dataField.getLabel();
+                if (UtilValidate.isNotEmpty(label)) {
+                    propertyValue = createPropertyValueString("Label", label);
+                    propertyValues.add(propertyValue);
+                }
                 String recordType = "UI.DataField";
                 csdlRecord.setType(recordType);
-                // add Label
-//                String label = dataField.getLabel();
-//                if (label == null && withLabel) {
-//                    CsdlProperty csdlProperty = csdlEntityType.getProperty((String) dataField.getValue());
-//                    if (csdlProperty != null) {
-//                        label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(csdlProperty.getName()));
-//                    } else {
-//                        String fieldValue = (String) dataField.getValue();
-//                        if (fieldValue.contains("/")) {
-//                            //多段式字段
-//                            String uiLabelKey = Arrays.stream(fieldValue.split("/")).map(s -> s.substring(0, 1).toUpperCase() + s.substring(1))
-//                                    .reduce("", String::concat);
-//                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + uiLabelKey);
-//                        } else {
-//                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(fieldValue));
-//                        }
-//                    }
-//                }
-//                if (label != null) {
-//                    propertyValue = createPropertyValueString("Label", label);
-//                    propertyValues.add(propertyValue);
-//                }
             } else if (dataFieldAbstract instanceof DataFieldForAction) {
                 DataFieldForAction dataFieldForAction = (DataFieldForAction) dataFieldAbstract;
                 CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAction.getLabel());
@@ -1413,8 +1397,16 @@ public class EdmConfigLoader {
                 String criticality = lineItemChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = lineItemChild.getAttribute("Importance");
-                for (String propertyName : propertyNames) {
-                    DataField dataField = new DataField(propertyName);
+                String labelsAttr = lineItemChild.getAttribute("Labels");
+                List<String> labels = StringUtil.split(labelsAttr, ",");
+                for (int i = 0; i < propertyNames.size(); i++) {
+                    DataField dataField = new DataField(propertyNames.get(i));
+                    if (UtilValidate.isNotEmpty(labels)) {
+                        if (i < labels.size()) {
+                            String dataFieldLabel = labels.get(i);
+                            dataField.setLabel(getLabel(delegator, dataFieldLabel, locale));
+                        }
+                    }
                     if (UtilValidate.isNotEmpty(importance)) {
                         dataField.setImportance(ImportanceType.valueOf(importance));
                     }
@@ -1427,7 +1419,6 @@ public class EdmConfigLoader {
                     }
                     lineItem.addDataField(dataField);
                 }
-
             } else if (lineItemChildTag.equals("DataFieldForAction")) {
                 String label = loadAttributeValue(lineItemChild, "Label", locale, delegator);
                 String action = lineItemChild.getAttribute("Action");
