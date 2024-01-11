@@ -538,6 +538,7 @@
             <xs:attribute name="Scale" type="xs:integer"/>
             <xs:attribute name="FieldControl" type="xs:NCName"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="MaxLength" type="xs:int"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="DefaultValue" type="xs:anyURI"/>
             <xs:attribute name="DefaultValuePath" type="xs:anyURI"/>
