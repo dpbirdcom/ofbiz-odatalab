@@ -3051,7 +3051,7 @@ public class EdmConfigLoader {
         }
         String annotationString = annotationElement.getAttribute("String");
         if (UtilValidate.isNotEmpty(annotationString)) {
-            csdlAnnotation.setExpression(createExpressionString(annotationString));
+            csdlAnnotation.setExpression(createExpressionI18nString(annotationString, delegator, locale));
         }
         String annotationBool = annotationElement.getAttribute("Bool");
         if (UtilValidate.isNotEmpty(annotationBool)) {
@@ -3410,6 +3410,15 @@ public class EdmConfigLoader {
 
     private static CsdlExpression createExpressionString(String value) {
         CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.String);
+        constantExpression.setValue(value);
+        return constantExpression;
+    }
+
+    private static CsdlExpression createExpressionI18nString(String value, Delegator delegator, Locale locale) {
+        CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.String);
+        if (value.startsWith("${uiLabelMap.")) {
+            value = getLabel(delegator, value, locale);
+        }
         constantExpression.setValue(value);
         return constantExpression;
     }
