@@ -337,6 +337,7 @@
             <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="Hidden"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForAction">

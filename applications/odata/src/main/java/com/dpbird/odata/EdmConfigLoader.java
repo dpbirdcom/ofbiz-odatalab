@@ -17,6 +17,7 @@ import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.transaction.TransactionFactoryLoader;
 import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -84,13 +85,6 @@ public class EdmConfigLoader {
         // load app edmconfig
         Document configDoc = UtilXml.readXmlDocument(edmConfigInputStream, false, null);
         Element rootElement = configDoc.getDocumentElement();
-        if (requireGlobal(rootElement)) {
-            // load global edmconfig
-            URL globalEdmConfigUrl = UtilURL.fromResource(EDM_CONFIG_FILENAME);
-            Document globalConfigDoc = UtilXml.readXmlDocument(globalEdmConfigUrl, false);
-            Element globalRootElement = globalConfigDoc.getDocumentElement();
-            addToEdmWebConfig(delegator, dispatcher, edmWebConfig, globalRootElement, locale);
-        }
         for (String importEdm : getImportEdm(rootElement)) {
             URL importUrl = FlexibleLocation.resolveLocation(importEdm);
             Document importDoc = UtilXml.readXmlDocument(importUrl, false);
@@ -102,19 +96,12 @@ public class EdmConfigLoader {
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
+        addToEdmWebConfigFromDB(delegator, dispatcher, edmWebConfig, webapp, locale);
         createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
 //        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 
-    private static boolean requireGlobal(Element rootElement) {
-        boolean importGlobal = false;
-        String importGlobalAttr = rootElement.getAttribute("ImportGlobal");
-        if (UtilValidate.isNotEmpty(importGlobalAttr)) {
-            importGlobal = Boolean.valueOf(importGlobalAttr);
-        }
-        return importGlobal;
-    }
 
     /**
      * 获取Import
@@ -1053,6 +1040,109 @@ public class EdmConfigLoader {
         generateNavigationBindings(edmWebConfig);
     }
 
+    /**
+     * 从数据库中添加元素
+     */
+    private static void addToEdmWebConfigFromDB(Delegator delegator, LocalDispatcher dispatcher, EdmWebConfig edmWebConfig,
+                                          String webApp, Locale locale) throws GenericEntityException {
+        GenericValue edmService = EntityQuery.use(delegator).from("EdmService").where("serviceName", webApp).queryFirst();
+        if (UtilValidate.isEmpty(edmService)) {
+            return;
+        }
+        List<GenericValue> lineItems = EntityQuery.use(delegator).from("LineItem").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue lineItemGv : lineItems) {
+            //构建LineItem
+            String target = lineItemGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            LineItem lineItem = TermUtil.getLineItemFromGv(lineItemGv, delegator, locale);
+            //构建LineItem DataField
+            List<GenericValue> dataFieldGvList = lineItemGv.getRelatedMulti("LineItemDataField", "DataField");
+            for (GenericValue dataFieldGv : dataFieldGvList) {
+                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
+                for (DataField dataField : dataFieldFromGv) {
+                    lineItem.addDataField(dataField);
+                }
+            }
+            //构建LineItem DataFieldForAction
+            List<GenericValue> dataFieldForActionGvList = lineItemGv.getRelatedMulti("LineItemDataFieldForAction", "DataFieldForAction");
+            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
+                lineItem.addDataField(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
+            }
+            entityType.addTerm(lineItem);
+        }
+        //构建FieldGroup
+        List<GenericValue> fieldGroupGvs = EntityQuery.use(delegator).from("FieldGroup").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue fieldGroupGv : fieldGroupGvs) {
+            String target = fieldGroupGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            FieldGroup fieldGroup = TermUtil.getFieldGroupFromGv(fieldGroupGv, delegator, locale);
+            //构建FieldGroup DataField
+            List<GenericValue> dataFieldGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataField", "DataField");
+            for (GenericValue dataFieldGv : dataFieldGvList) {
+                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
+                for (DataField dataField : dataFieldFromGv) {
+                    fieldGroup.addData(dataField);
+                }
+            }
+            //构建FieldGroup DataFieldForAction
+            List<GenericValue> dataFieldForActionGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldForAction", "DataFieldForAction");
+            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
+                fieldGroup.addData(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
+            }
+            entityType.addTerm(fieldGroup);
+        }
+        //构建HeaderFacets
+        List<GenericValue> headerFacetsList = EntityQuery.use(delegator).from("HeaderFacets").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue headerFacetsGv : headerFacetsList) {
+            String target = headerFacetsGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            HeaderFacets headerFacets = new HeaderFacets(null);
+            List<GenericValue> referenceFacetsList = headerFacetsGv.getRelatedMulti("HeaderFacetsReferenceFacet", "ReferenceFacet");
+            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
+            List<ReferenceFacet> referenceFacets = new ArrayList<>();
+            for (GenericValue referenceFacetGv : referenceFacetsList) {
+                if ("Y".equals(referenceFacetGv.getString("enable"))) {
+                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
+                }
+            }
+            headerFacets.setReferenceFacets(referenceFacets);
+            entityType.addTerm(headerFacets);
+        }
+        //构建Facets
+        List<GenericValue> facetsList = EntityQuery.use(delegator).from("Facets").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue facetsGv : facetsList) {
+            String target = facetsGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            Facets facets = new Facets(null);
+            List<GenericValue> referenceFacetsList = facetsGv.getRelatedMulti("FacetsReferenceFacet", "ReferenceFacet");
+            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
+            List<ReferenceFacet> referenceFacets = new ArrayList<>();
+            for (GenericValue referenceFacetGv : referenceFacetsList) {
+                if ("Y".equals(referenceFacetGv.getString("enable"))) {
+                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
+                }
+            }
+            facets.setReferenceFacets(referenceFacets);
+            entityType.addTerm(facets);
+        }
+    }
+
     private static void generateNavigationBindings(EdmWebConfig edmWebConfig) throws OfbizODataException {
         Collection<OfbizCsdlEntityType> entityTypes = edmWebConfig.getEntityTypes();
         for (OfbizCsdlEntityType entityType : entityTypes) {
@@ -1394,6 +1484,7 @@ public class EdmConfigLoader {
             String lineItemChildTag = lineItemChild.getTagName();
             if (lineItemChildTag.equals("DataField")) {
                 String values = lineItemChild.getAttribute("Values");
+                String hidden = lineItemChild.getAttribute("Hidden");
                 String criticality = lineItemChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = lineItemChild.getAttribute("Importance");
@@ -1409,6 +1500,9 @@ public class EdmConfigLoader {
                     }
                     if (UtilValidate.isNotEmpty(importance)) {
                         dataField.setImportance(ImportanceType.valueOf(importance));
+                    }
+                    if (UtilValidate.isNotEmpty(hidden)) {
+                        dataField.setHidden(hidden);
                     }
                     if (UtilValidate.isNotEmpty(criticality)) {
                         if (criticalityTypes.contains(criticality)) {

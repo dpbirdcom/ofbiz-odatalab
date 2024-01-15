@@ -28,25 +28,171 @@ under the License.
     <copyright></copyright>
     <version></version>
 
+    <entity entity-name="LineItem" package-name="com.dpbird.odata">
+        <field name="lineItemId" type="id"/>
+        <field name="qualifier" type="value"/>
+        <field name="criticality" type="value"/>
+        <field name="target" type="value"/>
+        <field name="edmServiceId" type="id"/>
+        <field name="description" type="value"/>
+        <prim-key field="lineItemId"/>
+        <relation type="one" rel-entity-name="EdmService" fk-name="LITEM_EDM_SV">
+            <key-map field-name="edmServiceId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="FieldGroup" package-name="com.dpbird.odata">
+        <field name="fieldGroupId" type="id"/>
+        <field name="label" type="value"/>
+        <field name="qualifier" type="value"/>
+        <field name="target" type="value"/>
+        <field name="edmServiceId" type="id"/>
+        <field name="description" type="value"/>
+        <prim-key field="fieldGroupId"/>
+        <relation type="one" rel-entity-name="EdmService" fk-name="FGRO_EDM_SV">
+            <key-map field-name="edmServiceId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="DataField" package-name="com.dpbird.odata">
+        <field name="dataFieldId" type="id"/>
+        <field name="importance" type="value"/>
+        <field name="fieldValues" type="value"/>
+        <field name="fieldLabels" type="value"/>
+        <field name="criticality" type="value"/>
+        <field name="hidden" type="value"/>
+        <field name="description" type="value"/>
+        <prim-key field="dataFieldId"/>
+    </entity>
+
+    <entity entity-name="DataFieldForAction" package-name="com.dpbird.odata">
+        <field name="dataFieldId" type="id"/>
+        <field name="importance" type="value"/>
+        <field name="inline" type="indicator"/>
+        <field name="criticality" type="value"/>
+        <field name="action" type="value"/>
+        <field name="label" type="value"/>
+        <field name="hidden" type="value"/>
+        <field name="invocationGrouping" type="value"/>
+        <field name="description" type="value"/>
+        <prim-key field="dataFieldId"/>
+    </entity>
+
+    <entity entity-name="LineItemDataField" package-name="com.dpbird.odata">
+        <description>LineItem和DataField的关联对象</description>
+        <field name="lineItemDataFieldId" type="id"/>
+        <field name="lineItemId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="lineItemDataFieldId"/>
+        <relation rel-entity-name="LineItem" type="one" fk-name="LI_DF_LI">
+            <key-map field-name="lineItemId"/>
+        </relation>
+        <relation rel-entity-name="DataField" type="one" fk-name="LI_DF_DF">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="LineItemDataFieldForAction" package-name="com.dpbird.odata">
+        <description>LineItem和DataFieldForAction的关联对象</description>
+        <field name="lineItemDataFieldId" type="id"/>
+        <field name="lineItemId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="lineItemDataFieldId"/>
+        <relation rel-entity-name="LineItem" type="one" fk-name="LI_DFFA_LI">
+            <key-map field-name="lineItemId"/>
+        </relation>
+        <relation rel-entity-name="DataFieldForAction" type="one" fk-name="LI_DFFA_DFFA">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="FieldGroupDataField" package-name="com.dpbird.odata">
+        <description>FieldGroup和DataField的关联对象</description>
+        <field name="fieldGroupDataFieldId" type="id"/>
+        <field name="fieldGroupId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="fieldGroupDataFieldId"/>
+        <relation rel-entity-name="FieldGroup" type="one" fk-name="FG_DF_FG">
+            <key-map field-name="fieldGroupId"/>
+        </relation>
+        <relation rel-entity-name="DataField" type="one" fk-name="FG_DF_DF">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="FieldGroupDataFieldForAction" package-name="com.dpbird.odata">
+        <description>FieldGroup和DataFieldForAction的关联对象</description>
+        <field name="fieldGroupDataFieldId" type="id"/>
+        <field name="fieldGroupId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="fieldGroupDataFieldId"/>
+        <relation rel-entity-name="FieldGroup" type="one" fk-name="FG_DFFA_FG">
+            <key-map field-name="fieldGroupId"/>
+        </relation>
+        <relation rel-entity-name="DataFieldForAction" type="one" fk-name="FG_DFFA_DFFA">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
     <entity entity-name="Facets" package-name="com.dpbird.odata">
         <field name="facetsId" type="id"/>
-        <!-- Facets or HeaderFacets -->
-        <field name="facetsTypeId" type="id"/>
+        <field name="target" type="value"/>
+        <field name="edmServiceId" type="id"/>
+        <field name="description" type="value"/>
         <prim-key field="facetsId"/>
-        <relation rel-entity-name="ReferenceFacet" type="many">
-            <key-map field-name="facetsId"/>
+        <relation type="one" rel-entity-name="EdmService" fk-name="FC_EDM_SV">
+            <key-map field-name="edmServiceId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="HeaderFacets" package-name="com.dpbird.odata">
+        <field name="headerFacetsId" type="id"/>
+        <field name="target" type="value"/>
+        <field name="edmServiceId" type="id"/>
+        <field name="description" type="value"/>
+        <prim-key field="headerFacetsId"/>
+        <relation type="one" rel-entity-name="EdmService" fk-name="HDFC_EDM_SV">
+            <key-map field-name="edmServiceId"/>
         </relation>
     </entity>
 
     <entity entity-name="ReferenceFacet" package-name="com.dpbird.odata">
         <field name="referenceFacetId" type="id"/>
-        <field name="facetsId" type="id"/>
-        <field name="id" type="name"/>
-        <field name="label" type="name"/>
-        <field name="target" type="name"/>
+        <field name="recordId" type="value"/>
+        <field name="enable" type="indicator"/>
+        <field name="label" type="value"/>
+        <field name="target" type="value"/>
+        <field name="hidden" type="value"/>
+        <field name="description" type="value"/>
+        <field name="sequenceNum" type="numeric"/>
         <prim-key field="referenceFacetId"/>
-        <relation rel-entity-name="Facets" type="one" fk-name="REFER_FACET_FACET">
+    </entity>
+
+    <entity entity-name="FacetsReferenceFacet" package-name="com.dpbird.odata">
+        <description>Facets和ReferenceFacet的关联对象</description>
+        <field name="facetsReferenceFacetId" type="id"/>
+        <field name="facetsId" type="id"/>
+        <field name="referenceFacetId" type="id"/>
+        <prim-key field="facetsReferenceFacetId"/>
+        <relation rel-entity-name="Facets" type="one" fk-name="FC_REF_FC_FC">
             <key-map field-name="facetsId"/>
+        </relation>
+        <relation rel-entity-name="ReferenceFacet" type="one" fk-name="FC_REF_FC_REF_FC">
+            <key-map field-name="referenceFacetId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="HeaderFacetsReferenceFacet" package-name="com.dpbird.odata">
+        <description>HeaderFacets和ReferenceFacet的关联对象</description>
+        <field name="headerFacetsReferenceFacetId" type="id"/>
+        <field name="headerFacetsId" type="id"/>
+        <field name="referenceFacetId" type="id"/>
+        <prim-key field="headerFacetsReferenceFacetId"/>
+        <relation rel-entity-name="HeaderFacets" type="one" fk-name="HF_REF_FC_HF">
+            <key-map field-name="headerFacetsId"/>
+        </relation>
+        <relation rel-entity-name="ReferenceFacet" type="one" fk-name="HF_REF_FC_REF_FC">
+            <key-map field-name="referenceFacetId"/>
         </relation>
     </entity>
 
