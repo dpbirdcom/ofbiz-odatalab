@@ -78,6 +78,17 @@ under the License.
         <prim-key field="dataFieldId"/>
     </entity>
 
+    <entity entity-name="DataFieldWithUrl" package-name="com.dpbird.odata">
+        <field name="dataFieldId" type="id"/>
+        <field name="label" type="value"/>
+        <field name="value" type="value"/>
+        <field name="url" type="value"/>
+        <field name="iconUrl" type="value"/>
+        <field name="criticality" type="value"/>
+        <field name="description" type="value"/>
+        <prim-key field="dataFieldId"/>
+    </entity>
+
     <entity entity-name="LineItemDataField" package-name="com.dpbird.odata">
         <description>LineItem和DataField的关联对象</description>
         <field name="lineItemDataFieldId" type="id"/>
@@ -106,6 +117,20 @@ under the License.
         </relation>
     </entity>
 
+    <entity entity-name="LineItemDataFieldWithUrl" package-name="com.dpbird.odata">
+        <description>LineItem和DataFieldWithUrl的关联对象</description>
+        <field name="lineItemDataFieldId" type="id"/>
+        <field name="lineItemId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="lineItemDataFieldId"/>
+        <relation rel-entity-name="LineItem" type="one" fk-name="LI_DFWU_LI">
+            <key-map field-name="lineItemId"/>
+        </relation>
+        <relation rel-entity-name="DataFieldWithUrl" type="one" fk-name="LI_DFWU_DFWU">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
     <entity entity-name="FieldGroupDataField" package-name="com.dpbird.odata">
         <description>FieldGroup和DataField的关联对象</description>
         <field name="fieldGroupDataFieldId" type="id"/>
@@ -130,6 +155,20 @@ under the License.
             <key-map field-name="fieldGroupId"/>
         </relation>
         <relation rel-entity-name="DataFieldForAction" type="one" fk-name="FG_DFFA_DFFA">
+            <key-map field-name="dataFieldId"/>
+        </relation>
+    </entity>
+
+    <entity entity-name="FieldGroupDataFieldWithUrl" package-name="com.dpbird.odata">
+        <description>FieldGroup和DataFieldWithUrl的关联对象</description>
+        <field name="fieldGroupDataFieldId" type="id"/>
+        <field name="fieldGroupId" type="id"/>
+        <field name="dataFieldId" type="value"/>
+        <prim-key field="fieldGroupDataFieldId"/>
+        <relation rel-entity-name="FieldGroup" type="one" fk-name="FG_DFWU_FG">
+            <key-map field-name="fieldGroupId"/>
+        </relation>
+        <relation rel-entity-name="DataFieldWithUrl" type="one" fk-name="FG_DFWU_DFWU">
             <key-map field-name="dataFieldId"/>
         </relation>
     </entity>

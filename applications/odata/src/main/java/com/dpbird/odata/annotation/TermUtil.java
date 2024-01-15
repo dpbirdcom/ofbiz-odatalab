@@ -135,6 +135,27 @@ public class TermUtil {
     }
 
 
+    /**
+     * GenericValue转换为DataFieldForAction
+     */
+    public static DataFieldWithUrl getDataFieldWithUrlFromGv(GenericValue dataFieldWithUrlGv, Delegator delegator, Locale locale) {
+        String label = getLabel(delegator, dataFieldWithUrlGv.getString("label"), locale);
+        String criticality = dataFieldWithUrlGv.getString("criticality");
+        String value = dataFieldWithUrlGv.getString("value");
+        String url = dataFieldWithUrlGv.getString("url");
+        String iconUrl = dataFieldWithUrlGv.getString("iconUrl");
+        DataFieldWithUrl dataFieldWithUrl = new DataFieldWithUrl();
+        dataFieldWithUrl.setValue(value);
+        dataFieldWithUrl.setLabel(label);
+        dataFieldWithUrl.setUrl(url);
+        dataFieldWithUrl.setIconUrl(iconUrl);
+        if (UtilValidate.isNotEmpty(criticality)) {
+            dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
+        }
+        return dataFieldWithUrl;
+    }
+
+
     private static String getLabel(Delegator delegator, String property, Locale locale) {
         try {
             if (UtilValidate.isNotEmpty(property) && property.startsWith("${uiLabelMap.")) {

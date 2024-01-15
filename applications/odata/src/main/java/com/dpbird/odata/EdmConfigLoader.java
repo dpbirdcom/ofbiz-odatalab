@@ -1067,6 +1067,11 @@ public class EdmConfigLoader {
                     lineItem.addDataField(dataField);
                 }
             }
+            //构建LineItem DataFieldWithUrl
+            List<GenericValue> dataFieldWithUrlGvList = lineItemGv.getRelatedMulti("LineItemDataFieldWithUrl", "DataFieldWithUrl");
+            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
+                lineItem.addDataField(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
+            }
             //构建LineItem DataFieldForAction
             List<GenericValue> dataFieldForActionGvList = lineItemGv.getRelatedMulti("LineItemDataFieldForAction", "DataFieldForAction");
             for (GenericValue fieldActionGv : dataFieldForActionGvList) {
@@ -1091,6 +1096,11 @@ public class EdmConfigLoader {
                 for (DataField dataField : dataFieldFromGv) {
                     fieldGroup.addData(dataField);
                 }
+            }
+            //构建FieldGroup DataFieldWithUrl
+            List<GenericValue> dataFieldWithUrlGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldWithUrl", "DataFieldWithUrl");
+            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
+                fieldGroup.addData(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
             }
             //构建FieldGroup DataFieldForAction
             List<GenericValue> dataFieldForActionGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldForAction", "DataFieldForAction");
