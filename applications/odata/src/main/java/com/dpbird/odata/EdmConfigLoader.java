@@ -3675,7 +3675,7 @@ public class EdmConfigLoader {
             for (CsdlProperty property : properties) {
                 OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
                 //忽略Complex字段
-                if (!modelEntity.isField(property.getName()) && !property.getType().contains(OfbizMapOdata.NAMESPACE)) {
+                if ((!modelEntity.isField(property.getName()) && !property.getType().contains(OfbizMapOdata.NAMESPACE)) || property.getType().endsWith("Date")) {
                     String ofbizPropertyType = getPropertyOfbizType(entityType, ofbizCsdlProperty, delegator);
                     modelEntity.addField(ModelField.create(modelEntity, property.getName(), ofbizPropertyType, false));
                 }
