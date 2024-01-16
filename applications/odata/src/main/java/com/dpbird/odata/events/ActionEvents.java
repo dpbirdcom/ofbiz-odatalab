@@ -1,9 +1,11 @@
 package com.dpbird.odata.events;
 
+import com.banfftech.common.util.CommonUtils;
 import com.dpbird.odata.OdataParts;
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
+import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
 import org.apache.ofbiz.base.util.GeneralException;
@@ -78,6 +80,57 @@ public class ActionEvents {
         }
         return null;
     }
+
+    /**
+     * Update entity
+     */
+    public static Object updateEntity(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
+            throws OfbizODataException {
+        Delegator delegator = (Delegator) oDataContext.get("delegator");
+        GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
+        LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
+        OdataOfbizEntity boundEntity = Util.getBoundEntity(actionParameters);
+        if (UtilValidate.isEmpty(boundEntity) || UtilValidate.isEmpty(boundEntity.getGenericValue())) {
+            throw new OfbizODataException("The bound data is empty");
+        }
+        GenericValue genericValue = boundEntity.getGenericValue();
+        actionParameters.putAll(genericValue.getPrimaryKey());
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
+        //get service
+        String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "update", delegator);
+        try {
+            for (Map.Entry<String, Object> entry : actionParameters.entrySet()){
+                if (UtilValidate.isEmpty(entry.getValue())) {
+                    actionParameters.put(entry.getKey(), null);
+                    continue;
+                }
+                CsdlProperty property = csdlEntityType.getProperty(entry.getKey());
+                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+                    GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
+                    actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
+                }
+            }
+            actionParameters.put("userLogin", userLogin);
+
+            Map<String, Object> validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, actionParameters, userLogin, null, null);
+            Map<String, Object> result = dispatcher.runSync(createService, validFieldsForService);
+            //Return Entity
+            ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+            List<String> primaryKeys = modelEntity.getPkFieldNames();
+            if (result.keySet().containsAll(primaryKeys)) {
+                Map<String, Object> pkMap = new HashMap<>();
+                for (String primaryKey : primaryKeys) {
+                    pkMap.put(primaryKey, result.get(primaryKey));
+                }
+                return delegator.findOne(csdlEntityType.getOfbizEntity(), pkMap, false);
+            }
+        } catch (GeneralException e) {
+            throw new OfbizODataException(e.getMessage());
+        }
+        return null;
+    }
+
 
 
     /**
