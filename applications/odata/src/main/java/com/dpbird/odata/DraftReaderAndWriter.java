@@ -34,6 +34,7 @@ import org.apache.olingo.server.core.uri.queryoption.LevelsOptionImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.*;
 
 /**
@@ -152,6 +153,7 @@ public class DraftReaderAndWriter {
     public Entity updateEntityData(Map<String, Object> keyMap, Entity entityToWrite) throws OfbizODataException {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
         ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
+        ModelEntity draftModelEntity = delegator.getModelEntity(csdlEntityType.getDraftEntityName());
         Map<String, Object> toUpdateFields = Util.entityToMap(entityToWrite);
         keyMap = Util.fieldToProperty(keyMap, csdlEntityType);
         for (Map.Entry<String, Object> entry : toUpdateFields.entrySet()) {
@@ -161,10 +163,16 @@ public class DraftReaderAndWriter {
                 continue;
             }
             //如果传递过来的时间格式不对,根据字段类型转换格式
-            ModelField field = modelEntity.getField(entry.getKey());
-            if (UtilValidate.isNotEmpty(field) && "date".equals(field.getType()) && entry.getValue() instanceof GregorianCalendar) {
+            if (entry.getValue() instanceof GregorianCalendar) {
                 GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
-                toUpdateFields.put(entry.getKey(), new Date(calendar.getTime().getTime()));
+                ModelField field = draftModelEntity.getField(entry.getKey());
+                if (UtilValidate.isNotEmpty(field)) {
+                    if ("date".equals(field.getType())) {
+                        toUpdateFields.put(entry.getKey(), new Date(calendar.getTime().getTime()));
+                    } else {
+                        toUpdateFields.put(entry.getKey(), new Timestamp(calendar.getTime().getTime()));
+                    }
+                }
             }
         }
         toUpdateFields.put("isActiveEntity", "N");

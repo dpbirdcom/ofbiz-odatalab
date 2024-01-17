@@ -1762,24 +1762,35 @@ under the License.
         <key-map field-name="parentTypeId" rel-field-name="partyIdentificationTypeId"/>
       </relation>
     </entity>
-  
-    <entity entity-name="PartyGeoPoint"
-        package-name="org.apache.ofbiz.party.party"
-        title="Party Geo Location with history">
-        <field name="partyId" type="id"></field>
-        <field name="geoPointId" type="id"></field>
-        <field name="fromDate" type="date-time"></field>
-        <field name="thruDate" type="date-time"></field>
-        <prim-key field="partyId"/>
-        <prim-key field="geoPointId"/>
-        <prim-key field="fromDate"/>
-        <relation type="one" fk-name="PARTYGEOPT_PARTY" rel-entity-name="Party">
-            <key-map field-name="partyId"/>
-        </relation>
-        <relation type="one" fk-name="PARTYGEOPT_GEOPT" rel-entity-name="GeoPoint">
-            <key-map field-name="geoPointId"/>
-        </relation>
-    </entity>
+
+  <entity entity-name="PartyGeoPoint"
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Geo Location with history">
+    <field name="partyGeoPointId" type="id"></field>
+    <field name="partyGeoPointTypeId" type="id"></field>
+    <field name="partyId" type="id"></field>
+    <field name="geoPointId" type="id"></field>
+    <field name="fromDate" type="date-time"></field>
+    <field name="thruDate" type="date-time"></field>
+    <prim-key field="partyGeoPointId"/>
+    <relation type="one" fk-name="PARTYGEOPT_PARTY" rel-entity-name="Party">
+      <key-map field-name="partyId"/>
+    </relation>
+    <relation type="one" fk-name="PARTYGEOPT_GEOPT" rel-entity-name="GeoPoint">
+      <key-map field-name="geoPointId"/>
+    </relation>
+    <relation type="one" fk-name="PARTYGEOPT_TYPE" rel-entity-name="PartyGeoPointType">
+      <key-map field-name="partyGeoPointTypeId"/>
+    </relation>
+  </entity>
+
+  <entity entity-name="PartyGeoPointType"
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Geo Point Type">
+    <field name="partyGeoPointTypeId" type="id"></field>
+    <field name="description" type="description"></field>
+    <prim-key field="partyGeoPointTypeId"/>
+  </entity>
     <view-entity entity-name="PartyAndGeoPoint"
         package-name="org.apache.ofbiz.party.party"
         title="Party and Geo Point View Entity">
@@ -1972,15 +1983,13 @@ under the License.
     <entity entity-name="PartyContent"
             package-name="org.apache.ofbiz.party.party"
             title="Party Data Object Entity">
+      <field name="partyContentId" type="id"></field>
       <field name="partyId" type="id"></field>
       <field name="contentId" type="id"></field>
       <field name="partyContentTypeId" type="id"></field>
       <field name="fromDate" type="date-time"></field>
       <field name="thruDate" type="date-time"></field>
-      <prim-key field="partyId"/>
-      <prim-key field="contentId"/>
-      <prim-key field="partyContentTypeId"/>
-      <prim-key field="fromDate"/>
+      <prim-key field="partyContentId"/>
       <relation type="one" fk-name="PARTY_CNT_PARTY" rel-entity-name="Party">
         <key-map field-name="partyId"/>
       </relation>
@@ -2157,22 +2166,24 @@ under the License.
     </relation>
   </view-entity>
   <entity entity-name="PartyNameHistory"
-        package-name="org.apache.ofbiz.party.party"
-        title="Party Name History Entity">
-        <field name="partyId" type="id"></field>
-        <field name="changeDate" type="date-time"></field>
-        <field name="groupName" type="name"><description>For Party Groups only</description></field>
-        <field name="firstName" type="name"></field>
-        <field name="middleName" type="name"></field>
-        <field name="lastName" type="name"></field>
-        <field name="personalTitle" type="name"></field>
-        <field name="suffix" type="name"></field>
-        <prim-key field="partyId"/>
-        <prim-key field="changeDate"/>
-        <relation type="one" fk-name="PTY_NMHIS_PARTY" rel-entity-name="Party">
-            <key-map field-name="partyId"/>
-        </relation>
-    </entity>
+          package-name="org.apache.ofbiz.party.party"
+          title="Party Name History Entity">
+    <field name="partyNameHistoryId" type="id"></field>
+    <field name="partyId" type="id"></field>
+    <field name="changeDate" type="date-time"></field>
+    <field name="groupName" type="name"><description>For Party Groups only</description></field>
+    <field name="firstName" type="name"></field>
+    <field name="middleName" type="name"></field>
+    <field name="lastName" type="name"></field>
+    <field name="personalTitle" type="name"></field>
+    <field name="suffix" type="name"></field>
+    <prim-key field="partyNameHistoryId"/>
+    <!--        <prim-key field="partyId"/>-->
+    <!--        <prim-key field="changeDate"/>-->
+    <relation type="one" fk-name="PTY_NMHIS_PARTY" rel-entity-name="Party">
+      <key-map field-name="partyId"/>
+    </relation>
+  </entity>
     <view-entity entity-name="PartyNameView"
             package-name="org.apache.ofbiz.party.party"
             title="Party Name View Entity">

@@ -17,6 +17,7 @@ import org.apache.ofbiz.entity.jdbc.DatabaseUtil;
 import org.apache.ofbiz.entity.model.*;
 import org.apache.ofbiz.entity.transaction.TransactionFactoryLoader;
 import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.entity.util.EntityUtil;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -31,6 +32,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -83,13 +85,6 @@ public class EdmConfigLoader {
         // load app edmconfig
         Document configDoc = UtilXml.readXmlDocument(edmConfigInputStream, false, null);
         Element rootElement = configDoc.getDocumentElement();
-        if (requireGlobal(rootElement)) {
-            // load global edmconfig
-            URL globalEdmConfigUrl = UtilURL.fromResource(EDM_CONFIG_FILENAME);
-            Document globalConfigDoc = UtilXml.readXmlDocument(globalEdmConfigUrl, false);
-            Element globalRootElement = globalConfigDoc.getDocumentElement();
-            addToEdmWebConfig(delegator, dispatcher, edmWebConfig, globalRootElement, locale);
-        }
         for (String importEdm : getImportEdm(rootElement)) {
             URL importUrl = FlexibleLocation.resolveLocation(importEdm);
             Document importDoc = UtilXml.readXmlDocument(importUrl, false);
@@ -101,19 +96,12 @@ public class EdmConfigLoader {
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
+        addToEdmWebConfigFromDB(delegator, dispatcher, edmWebConfig, webapp, locale);
         createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
 //        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
     }
 
-    private static boolean requireGlobal(Element rootElement) {
-        boolean importGlobal = false;
-        String importGlobalAttr = rootElement.getAttribute("ImportGlobal");
-        if (UtilValidate.isNotEmpty(importGlobalAttr)) {
-            importGlobal = Boolean.valueOf(importGlobalAttr);
-        }
-        return importGlobal;
-    }
 
     /**
      * 获取Import
@@ -217,6 +205,14 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateHeaderInfo((HeaderInfo) term, locale));
             } else if (term instanceof DataPoint) {
                 csdlAnnotationList.add(generateDataPoint((DataPoint) term, locale));
+            } else if (term instanceof Identification) {
+                csdlAnnotationList.add(generateIdentification(csdlEntityType, (Identification) term, locale));
+            } else if (term instanceof Facets) {
+                csdlAnnotationList.add(generateFacets(csdlEntityType, (Facets) term, locale));
+            } else if (term instanceof HeaderFacets) {
+                csdlAnnotationList.add(generateHeaderFacets(csdlEntityType, (HeaderFacets) term, locale));
+            } else if (term instanceof QuickViewFacets) {
+                csdlAnnotationList.add(generateQuickViewFacets(csdlEntityType, (QuickViewFacets) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -280,30 +276,14 @@ public class EdmConfigLoader {
                 if (UtilValidate.isNotEmpty(dataField.getCriticalityPath())) {
                     propertyValues.add(createPropertyValuePath("Criticality", dataField.getCriticalityPath()));
                 }
+                // add Label
+                String label = dataField.getLabel();
+                if (UtilValidate.isNotEmpty(label)) {
+                    propertyValue = createPropertyValueString("Label", label);
+                    propertyValues.add(propertyValue);
+                }
                 String recordType = "UI.DataField";
                 csdlRecord.setType(recordType);
-                // add Label
-//                String label = dataField.getLabel();
-//                if (label == null && withLabel) {
-//                    CsdlProperty csdlProperty = csdlEntityType.getProperty((String) dataField.getValue());
-//                    if (csdlProperty != null) {
-//                        label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(csdlProperty.getName()));
-//                    } else {
-//                        String fieldValue = (String) dataField.getValue();
-//                        if (fieldValue.contains("/")) {
-//                            //多段式字段
-//                            String uiLabelKey = Arrays.stream(fieldValue.split("/")).map(s -> s.substring(0, 1).toUpperCase() + s.substring(1))
-//                                    .reduce("", String::concat);
-//                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + uiLabelKey);
-//                        } else {
-//                            label = (String) Util.getUiLabelMap(locale).get(csdlEntityType.getLabelPrefix() + Util.firstUpperCase(fieldValue));
-//                        }
-//                    }
-//                }
-//                if (label != null) {
-//                    propertyValue = createPropertyValueString("Label", label);
-//                    propertyValues.add(propertyValue);
-//                }
             } else if (dataFieldAbstract instanceof DataFieldForAction) {
                 DataFieldForAction dataFieldForAction = (DataFieldForAction) dataFieldAbstract;
                 CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAction.getLabel());
@@ -326,13 +306,66 @@ public class EdmConfigLoader {
                 DataFieldForAnnotation dataFieldForAnnotation = (DataFieldForAnnotation) dataFieldAbstract;
                 CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAnnotation.getLabel());
                 propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("Target", dataFieldForAnnotation.getTarget());
+                propertyValue = createPropertyValueAnnotationPath("Target", dataFieldForAnnotation.getTarget());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueEnum("InvocationGrouping", dataFieldForAnnotation.getInvocationGrouping());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueEnum("Criticality", dataFieldForAnnotation.getCriticality());
                 propertyValues.add(propertyValue);
                 String recordType = "UI.DataFieldForAnnotation";
+                csdlRecord.setType(recordType);
+            } else if (dataFieldAbstract instanceof DataFieldWithUrl) {
+                DataFieldWithUrl dataFieldWithUrl = (DataFieldWithUrl) dataFieldAbstract;
+                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldWithUrl.getLabel());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValuePath("Value", dataFieldWithUrl.getValue());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValuePath("Url", dataFieldWithUrl.getUrl());
+                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(dataFieldWithUrl.getIconUrl())) {
+                    propertyValue = createPropertyValueString("IconUrl", dataFieldWithUrl.getIconUrl());
+                    propertyValues.add(propertyValue);
+                }
+                if (UtilValidate.isNotEmpty(dataFieldWithUrl.getCriticality())) {
+                    propertyValue = createPropertyValueEnum("Criticality", dataFieldWithUrl.getCriticality());
+                    propertyValues.add(propertyValue);
+                }
+                String recordType = "UI.DataFieldWithUrl";
+                csdlRecord.setType(recordType);
+            } else if (dataFieldAbstract instanceof DataFieldForIntentBasedNavigation) {
+                DataFieldForIntentBasedNavigation intentBasedNavigation = (DataFieldForIntentBasedNavigation) dataFieldAbstract;
+                CsdlPropertyValue propertyValue = createPropertyValueString("Label", intentBasedNavigation.getLabel());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueString("Action", intentBasedNavigation.getAction());
+                propertyValues.add(propertyValue);
+                propertyValue = createPropertyValueBool("Inline", intentBasedNavigation.getInLine());
+                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(intentBasedNavigation.getIconUrl())) {
+                    propertyValue = createPropertyValueString("IconUrl", intentBasedNavigation.getIconUrl());
+                    propertyValues.add(propertyValue);
+                }
+                List<DataFieldForIntentBasedNavigation.Mapping> mappings = intentBasedNavigation.getMappings();
+                if (UtilValidate.isNotEmpty(mappings)) {
+                    propertyValue = new CsdlPropertyValue();
+                    propertyValue.setProperty("Mapping");
+                    CsdlCollection mappingCollection = new CsdlCollection();
+                    List<CsdlExpression> csdlExpressions = new ArrayList<>();
+                    for (DataFieldForIntentBasedNavigation.Mapping mapping : mappings) {
+                        CsdlPropertyValue localProperty = createPropertyValuePropertyPath("LocalProperty", mapping.getLocalProperty());
+                        CsdlPropertyValue semanticObjectProperty = createPropertyValueString("SemanticObjectProperty", mapping.getSemanticObjectProperty());
+                        CsdlRecord mappingRecord = new CsdlRecord();
+                        mappingRecord.setType("Common.SemanticObjectMappingType");
+                        mappingRecord.setPropertyValues(UtilMisc.toList(localProperty, semanticObjectProperty));
+                        csdlExpressions.add(mappingRecord);
+                    }
+                    mappingCollection.setItems(csdlExpressions);
+                    propertyValue.setValue(mappingCollection);
+                    propertyValues.add(propertyValue);
+                }
+
+                String recordType = "UI.DataFieldForIntentBasedNavigation";
                 csdlRecord.setType(recordType);
             }
             csdlRecord.setPropertyValues(propertyValues);
@@ -349,6 +382,33 @@ public class EdmConfigLoader {
             }
             csdlRecord.setAnnotations(annotationList);
             collectionItems.add(csdlRecord);
+        }
+        csdlCollection.setItems(collectionItems);
+        return csdlCollection;
+    }
+
+    private static CsdlCollection createCollectionReferenceFacet(OfbizCsdlEntityType csdlEntityType,
+                                                            List<ReferenceFacet> referenceFacets, Locale locale) {
+        CsdlCollection csdlCollection = new CsdlCollection();
+        List<CsdlExpression> collectionItems = new ArrayList<>();
+        for (ReferenceFacet referenceFacet : referenceFacets) {
+            CsdlRecord csdlRecord = new CsdlRecord();
+            List<CsdlPropertyValue> propertyValues = new ArrayList<>();
+            propertyValues.add(createPropertyValueString("ID", referenceFacet.getId()));
+            propertyValues.add(createPropertyValueString("Label", referenceFacet.getLabel()));
+            propertyValues.add(createPropertyValueAnnotationPath("Target", referenceFacet.getTarget()));
+            String recordType = "UI.ReferenceFacet";
+            csdlRecord.setType(recordType);
+            csdlRecord.setPropertyValues(propertyValues);
+            collectionItems.add(csdlRecord);
+            //add annotation
+            List<CsdlAnnotation> annotationList = new ArrayList<>();
+            String hidden = referenceFacet.getHidden();
+            if (UtilValidate.isNotEmpty(hidden)) {
+                CsdlAnnotation hiddenAnnotation = createAnnotationPath("UI.Hidden", hidden, null);
+                annotationList.add(hiddenAnnotation);
+            }
+            csdlRecord.setAnnotations(annotationList);
         }
         csdlCollection.setItems(collectionItems);
         return csdlCollection;
@@ -559,6 +619,37 @@ public class EdmConfigLoader {
         return csdlAnnotation;
     }
 
+    private static CsdlAnnotation generateIdentification(OfbizCsdlEntityType csdlEntityType, Identification identification, Locale locale) {
+        CsdlAnnotation csdlAnnotation = createAnnotation(identification.getTermName(), identification.getQualifier());
+        CsdlCollection csdlCollection = createCollectionDataField(csdlEntityType, identification.getDataFields(), true, locale);
+        csdlAnnotation.setExpression(csdlCollection);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateFacets(OfbizCsdlEntityType csdlEntityType, Facets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateQuickViewFacets(OfbizCsdlEntityType csdlEntityType, QuickViewFacets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+
+    private static CsdlAnnotation generateHeaderFacets(OfbizCsdlEntityType csdlEntityType, HeaderFacets facets, Locale locale) {
+        List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
+        CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
+        CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
+        csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+
     private static CsdlAnnotation generateHeaderInfo(HeaderInfo headerInfo, Locale locale) {
         HeaderInfoType headerInfoType = headerInfo.getHeaderInfoType();
         CsdlAnnotation csdlAnnotation = createAnnotation(headerInfo.getTermName(), headerInfo.getQualifier());
@@ -599,7 +690,9 @@ public class EdmConfigLoader {
         String title = dataPoint.getTitle();
         String value = dataPoint.getValue();
         CriticalityType criticality = dataPoint.getCriticality();
+        VisualizationType visualization = dataPoint.getVisualization();
         String criticalityPath = dataPoint.getCriticalityPath();
+        String targetValue = dataPoint.getTargetValue();
         CsdlAnnotation csdlAnnotation = createAnnotation(dataPoint.getTermName(), dataPoint.getQualifier());
         CsdlRecord csdlRecord = new CsdlRecord();
         csdlRecord.setType("UI.DataPointType");
@@ -608,13 +701,19 @@ public class EdmConfigLoader {
             csdlPropertyValues.add(createPropertyValueString("Title", title));
         }
         if (UtilValidate.isNotEmpty(value)) {
-            csdlPropertyValues.add(createPropertyValueString("Value", value));
+            csdlPropertyValues.add(createPropertyValuePath("Value", value));
         }
         if (UtilValidate.isNotEmpty(criticalityPath)) {
             csdlPropertyValues.add(createPropertyValuePath("Criticality", criticalityPath));
         }
         if (UtilValidate.isNotEmpty(criticality)) {
             csdlPropertyValues.add(createPropertyValueEnum("Criticality", criticality));
+        }
+        if (UtilValidate.isNotEmpty(targetValue)) {
+            csdlPropertyValues.add(createPropertyValueDecimal("TargetValue", targetValue));
+        }
+        if (UtilValidate.isNotEmpty(visualization)) {
+            csdlPropertyValues.add(createPropertyValueEnum("Visualization", visualization));
         }
         csdlRecord.setPropertyValues(csdlPropertyValues);
         csdlAnnotation.setExpression(csdlRecord);
@@ -790,6 +889,18 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(csdlParameter.getFieldControl())) {
             csdlAnnotationList.add(createAnnotationEnum("Common.FieldControl", csdlParameter.getFieldControl(), null));
         }
+        if (UtilValidate.isNotEmpty(csdlParameter.getHidden())) {
+            csdlAnnotationList.add(createAnnotationBool("UI.Hidden", csdlParameter.getHidden(), null));
+        }
+        if (UtilValidate.isNotEmpty(csdlParameter.getDefaultValue())) {
+            csdlAnnotationList.add(createAnnotationString("UI.ParameterDefaultValue", csdlParameter.getDefaultValue(), null));
+        }
+        if (UtilValidate.isNotEmpty(csdlParameter.getDefaultValuePath())) {
+            csdlAnnotationList.add(createAnnotationPath("UI.ParameterDefaultValue", csdlParameter.getDefaultValuePath(), null));
+        }
+        if (csdlParameter.isMultiLineText()) {
+            csdlAnnotationList.add(createAnnotation("UI.MultiLineText", null));
+        }
         List<Term> terms = csdlParameter.getTerms();
         if (terms != null) {
             for (Term term : terms) {
@@ -888,10 +999,10 @@ public class EdmConfigLoader {
                 csdlEntityType.getActionList().forEach(edmWebConfig::addAction);
                 csdlEntityType.getFunctionList().forEach(edmWebConfig::addFunction);
             } else if (tagName.equals("Action")) {
-                OfbizCsdlAction csdlAction = loadActionFromElement(currentElt, locale, delegator);
+                OfbizCsdlAction csdlAction = loadActionFromElement(currentElt, locale, delegator, new ArrayList<>());
                 edmWebConfig.addAction(csdlAction);
             } else if (tagName.equals("Function")) {
-                OfbizCsdlFunction csdlFunction = loadFunctionFromElement(currentElt, locale, delegator);
+                OfbizCsdlFunction csdlFunction = loadFunctionFromElement(currentElt, locale, delegator, new ArrayList<>());
                 edmWebConfig.addFunction(csdlFunction);
             } else if (tagName.equals("EntityContainer")) {
                 List<? extends Element> containerChildren = UtilXml.childElementList(currentElt);
@@ -930,6 +1041,119 @@ public class EdmConfigLoader {
         }
 
         generateNavigationBindings(edmWebConfig);
+    }
+
+    /**
+     * 从数据库中添加元素
+     */
+    private static void addToEdmWebConfigFromDB(Delegator delegator, LocalDispatcher dispatcher, EdmWebConfig edmWebConfig,
+                                          String webApp, Locale locale) throws GenericEntityException {
+        GenericValue edmService = EntityQuery.use(delegator).from("EdmService").where("serviceName", webApp).queryFirst();
+        if (UtilValidate.isEmpty(edmService)) {
+            return;
+        }
+        List<GenericValue> lineItems = EntityQuery.use(delegator).from("LineItem").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue lineItemGv : lineItems) {
+            //构建LineItem
+            String target = lineItemGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            LineItem lineItem = TermUtil.getLineItemFromGv(lineItemGv, delegator, locale);
+            //构建LineItem DataField
+            List<GenericValue> dataFieldGvList = lineItemGv.getRelatedMulti("LineItemDataField", "DataField");
+            for (GenericValue dataFieldGv : dataFieldGvList) {
+                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
+                for (DataField dataField : dataFieldFromGv) {
+                    lineItem.addDataField(dataField);
+                }
+            }
+            //构建LineItem DataFieldWithUrl
+            List<GenericValue> dataFieldWithUrlGvList = lineItemGv.getRelatedMulti("LineItemDataFieldWithUrl", "DataFieldWithUrl");
+            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
+                lineItem.addDataField(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
+            }
+            //构建LineItem DataFieldForAction
+            List<GenericValue> dataFieldForActionGvList = lineItemGv.getRelatedMulti("LineItemDataFieldForAction", "DataFieldForAction");
+            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
+                lineItem.addDataField(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
+            }
+            entityType.addTerm(lineItem);
+        }
+        //构建FieldGroup
+        List<GenericValue> fieldGroupGvs = EntityQuery.use(delegator).from("FieldGroup").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue fieldGroupGv : fieldGroupGvs) {
+            String target = fieldGroupGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            FieldGroup fieldGroup = TermUtil.getFieldGroupFromGv(fieldGroupGv, delegator, locale);
+            //构建FieldGroup DataField
+            List<GenericValue> dataFieldGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataField", "DataField");
+            for (GenericValue dataFieldGv : dataFieldGvList) {
+                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
+                for (DataField dataField : dataFieldFromGv) {
+                    fieldGroup.addData(dataField);
+                }
+            }
+            //构建FieldGroup DataFieldWithUrl
+            List<GenericValue> dataFieldWithUrlGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldWithUrl", "DataFieldWithUrl");
+            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
+                fieldGroup.addData(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
+            }
+            //构建FieldGroup DataFieldForAction
+            List<GenericValue> dataFieldForActionGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldForAction", "DataFieldForAction");
+            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
+                fieldGroup.addData(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
+            }
+            entityType.addTerm(fieldGroup);
+        }
+        //构建HeaderFacets
+        List<GenericValue> headerFacetsList = EntityQuery.use(delegator).from("HeaderFacets").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue headerFacetsGv : headerFacetsList) {
+            String target = headerFacetsGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            HeaderFacets headerFacets = new HeaderFacets(null);
+            List<GenericValue> referenceFacetsList = headerFacetsGv.getRelatedMulti("HeaderFacetsReferenceFacet", "ReferenceFacet");
+            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
+            List<ReferenceFacet> referenceFacets = new ArrayList<>();
+            for (GenericValue referenceFacetGv : referenceFacetsList) {
+                if ("Y".equals(referenceFacetGv.getString("enable"))) {
+                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
+                }
+            }
+            headerFacets.setReferenceFacets(referenceFacets);
+            entityType.addTerm(headerFacets);
+        }
+        //构建Facets
+        List<GenericValue> facetsList = EntityQuery.use(delegator).from("Facets").where(edmService.getPrimaryKey()).queryList();
+        for (GenericValue facetsGv : facetsList) {
+            String target = facetsGv.getString("target");
+            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
+            if (UtilValidate.isEmpty(entityType)) {
+                Debug.logWarning("Target not found: " + target, module);
+                continue;
+            }
+            Facets facets = new Facets(null);
+            List<GenericValue> referenceFacetsList = facetsGv.getRelatedMulti("FacetsReferenceFacet", "ReferenceFacet");
+            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
+            List<ReferenceFacet> referenceFacets = new ArrayList<>();
+            for (GenericValue referenceFacetGv : referenceFacetsList) {
+                if ("Y".equals(referenceFacetGv.getString("enable"))) {
+                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
+                }
+            }
+            facets.setReferenceFacets(referenceFacets);
+            entityType.addTerm(facets);
+        }
     }
 
     private static void generateNavigationBindings(EdmWebConfig edmWebConfig) throws OfbizODataException {
@@ -1207,11 +1431,14 @@ public class EdmConfigLoader {
                 terms.add(loadHeaderInfoFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("DataPoint")) {
                 terms.add(loadDataPointFromElement(inEntityElement, locale, delegator));
-            }
-            // manually added Annotation
-            if (inEntityTagName.equals("Annotation")) {
-                CsdlAnnotation csdlAnnotation = loadAnnotationFromElement(inEntityElement, locale, delegator);
-                csdlAnnotationList.add(csdlAnnotation);
+            } else if (inEntityTagName.equals("Identification")) {
+                terms.add(loadIdentificationFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("Facets")) {
+                terms.add(loadFacetsFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("HeaderFacets")) {
+                terms.add(loadHeaderFacetsFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("QuickViewFacets")) {
+                terms.add(loadQuickViewFacetsFromElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1219,18 +1446,26 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(csdlAnnotation);
             }
             // Action
-            if (inEntityTagName.equals("Action")) {
-                actionList.add(loadActionFromElement(inEntityElement, locale,delegator));
-            }
-            // Function
-            if (inEntityTagName.equals("Function")) {
-                functionList.add(loadFunctionFromElement(inEntityElement, locale, delegator));
-            }
+//            if (inEntityTagName.equals("Action")) {
+//                actionList.add(loadActionFromElement(inEntityElement, locale,delegator));
+//            }
+//            // Function
+//            if (inEntityTagName.equals("Function")) {
+//                functionList.add(loadFunctionFromElement(inEntityElement, locale, delegator));
+//            }
             // AutoValueList
             if (inEntityTagName.equals("ValueList")) {
                 terms.add(loadAutoValueListFromElement(modelEntity, inEntityElement, locale, delegator));
                 autoValueList = true;
             }
+        }
+        List<? extends Element> actionElements = UtilXml.childElementList(entityTypeElement, "Action");
+        for (Element actionElement : actionElements) {
+            actionList.add(loadActionFromElement(actionElement, locale,delegator, csdlProperties));
+        }
+        List<? extends Element> functionElements = UtilXml.childElementList(entityTypeElement, "Function");
+        for (Element functionElement : functionElements) {
+            functionList.add(loadFunctionFromElement(functionElement, locale, delegator, csdlProperties));
         }
         OfbizCsdlEntityType csdlEntityType = createEntityType(delegator, dispatcher, fullQualifiedName, ofbizEntity,
                 attrEntityName, attrNumericEntityName, attrDateEntityName, handlerClass, autoProperties,
@@ -1262,13 +1497,25 @@ public class EdmConfigLoader {
             String lineItemChildTag = lineItemChild.getTagName();
             if (lineItemChildTag.equals("DataField")) {
                 String values = lineItemChild.getAttribute("Values");
+                String hidden = lineItemChild.getAttribute("Hidden");
                 String criticality = lineItemChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = lineItemChild.getAttribute("Importance");
-                for (String propertyName : propertyNames) {
-                    DataField dataField = new DataField(propertyName);
+                String labelsAttr = lineItemChild.getAttribute("Labels");
+                List<String> labels = StringUtil.split(labelsAttr, ",");
+                for (int i = 0; i < propertyNames.size(); i++) {
+                    DataField dataField = new DataField(propertyNames.get(i));
+                    if (UtilValidate.isNotEmpty(labels)) {
+                        if (i < labels.size()) {
+                            String dataFieldLabel = labels.get(i);
+                            dataField.setLabel(getLabel(delegator, dataFieldLabel, locale));
+                        }
+                    }
                     if (UtilValidate.isNotEmpty(importance)) {
                         dataField.setImportance(ImportanceType.valueOf(importance));
+                    }
+                    if (UtilValidate.isNotEmpty(hidden)) {
+                        dataField.setHidden(hidden);
                     }
                     if (UtilValidate.isNotEmpty(criticality)) {
                         if (criticalityTypes.contains(criticality)) {
@@ -1279,7 +1526,6 @@ public class EdmConfigLoader {
                     }
                     lineItem.addDataField(dataField);
                 }
-
             } else if (lineItemChildTag.equals("DataFieldForAction")) {
                 String label = loadAttributeValue(lineItemChild, "Label", locale, delegator);
                 String action = lineItemChild.getAttribute("Action");
@@ -1326,6 +1572,57 @@ public class EdmConfigLoader {
                     dataFieldForAnnotation.setImportance(ImportanceType.valueOf(importance));
                 }
                 lineItem.addDataField(dataFieldForAnnotation);
+            } else if (lineItemChildTag.equals("DataFieldWithUrl")) {
+                String childLabel = lineItemChild.getAttribute("Label");
+                String value = lineItemChild.getAttribute("Value");
+                String url = lineItemChild.getAttribute("Url");
+                String criticality = lineItemChild.getAttribute("Criticality");
+                String iconUrl = lineItemChild.getAttribute("IconUrl");
+                DataFieldWithUrl dataFieldWithUrl = new DataFieldWithUrl();
+                dataFieldWithUrl.setValue(value);
+                dataFieldWithUrl.setLabel(getLabel(delegator, childLabel, locale));
+                dataFieldWithUrl.setUrl(url);
+                dataFieldWithUrl.setIconUrl(iconUrl);
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                lineItem.addDataField(dataFieldWithUrl);
+            }  else if (lineItemChildTag.equals("DataFieldForIntentBasedNavigation")) {
+                String childLabel = lineItemChild.getAttribute("Label");
+                String semanticObject = lineItemChild.getAttribute("SemanticObject");
+                String action = lineItemChild.getAttribute("Action");
+                String inline = lineItemChild.getAttribute("Inline");
+                String hidden = lineItemChild.getAttribute("Hidden");
+                String iconUrl = lineItemChild.getAttribute("IconUrl");
+                DataFieldForIntentBasedNavigation fieldForIntentBasedNavigation = new DataFieldForIntentBasedNavigation();
+                fieldForIntentBasedNavigation.setLabel(getLabel(delegator, childLabel, locale));
+                fieldForIntentBasedNavigation.setSemanticObject(semanticObject);
+                fieldForIntentBasedNavigation.setAction(action);
+                if (UtilValidate.isNotEmpty(inline)) {
+                    fieldForIntentBasedNavigation.setInLine(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    fieldForIntentBasedNavigation.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(iconUrl)) {
+                    fieldForIntentBasedNavigation.setIconUrl(iconUrl);
+                }
+                //Mapping
+                List<? extends Element> childElementList = UtilXml.childElementList(lineItemChild);
+                if (UtilValidate.isNotEmpty(childElementList)) {
+                    List<DataFieldForIntentBasedNavigation.Mapping> mappings = new ArrayList<>();
+                    for (Element element : childElementList) {
+                        String tagName = element.getTagName();
+                        if ("Mapping".equals(tagName)) {
+                            //添加mapping
+                            DataFieldForIntentBasedNavigation.Mapping mapping =
+                                    new DataFieldForIntentBasedNavigation.Mapping(element.getAttribute("LocalProperty"), element.getAttribute("SemanticObjectProperty"));
+                            mappings.add(mapping);
+                        }
+                    }
+                    fieldForIntentBasedNavigation.setMappings(mappings);
+                }
+                lineItem.addDataField(fieldForIntentBasedNavigation);
             } else if (lineItemChildTag.equals("Criticality")) {
                 String value = lineItemChild.getAttribute("Value");
                 if (criticalityTypes.contains(value)) {
@@ -1338,6 +1635,152 @@ public class EdmConfigLoader {
         }
 
         return lineItem;
+    }
+
+    private static Term loadIdentificationFromElement(Element identificationElement, Locale locale, Delegator delegator) {
+        List<? extends Element> identificationChildren = UtilXml.childElementList(identificationElement);
+        if (UtilValidate.isEmpty(identificationChildren)) {
+            return null;
+        }
+        String qualifier = identificationElement.getAttribute("Qualifier");
+        Identification identification = new Identification(qualifier);
+        for (Element identChildren : identificationChildren) {
+            String lineItemChildTag = identChildren.getTagName();
+            if (lineItemChildTag.equals("DataFieldForAction")) {
+                String label = loadAttributeValue(identChildren, "Label", locale, delegator);
+                String action = identChildren.getAttribute("Action");
+                String invocationGrouping = identChildren.getAttribute("InvocationGrouping");
+                String criticality = identChildren.getAttribute("Criticality");
+                String inline = identChildren.getAttribute("Inline");
+                String hidden = identChildren.getAttribute("Hidden");
+                String importance = identChildren.getAttribute("Importance");
+                DataFieldForAction dataFieldForAction = new DataFieldForAction();
+                dataFieldForAction.setLabel(label);
+                dataFieldForAction.setAction(OfbizMapOdata.NAMESPACE + "." + action);
+                if (UtilValidate.isNotEmpty(invocationGrouping)) {
+                    dataFieldForAction.setInvocationGrouping(OperationGroupingType.valueOf(invocationGrouping));
+                }
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldForAction.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                if (UtilValidate.isNotEmpty(inline)) {
+                    dataFieldForAction.setInline(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    dataFieldForAction.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(importance)) {
+                    dataFieldForAction.setImportance(ImportanceType.valueOf(importance));
+                }
+                identification.addDataField(dataFieldForAction);
+            }  else if (lineItemChildTag.equals("DataFieldForIntentBasedNavigation")) {
+                String childLabel = identChildren.getAttribute("Label");
+                String semanticObject = identChildren.getAttribute("SemanticObject");
+                String action = identChildren.getAttribute("Action");
+                String inline = identChildren.getAttribute("Inline");
+                String hidden = identChildren.getAttribute("Hidden");
+                String iconUrl = identChildren.getAttribute("IconUrl");
+                DataFieldForIntentBasedNavigation fieldForIntentBasedNavigation = new DataFieldForIntentBasedNavigation();
+                fieldForIntentBasedNavigation.setLabel(getLabel(delegator, childLabel, locale));
+                fieldForIntentBasedNavigation.setSemanticObject(semanticObject);
+                fieldForIntentBasedNavigation.setAction(action);
+                if (UtilValidate.isNotEmpty(inline)) {
+                    fieldForIntentBasedNavigation.setInLine(Boolean.valueOf(inline));
+                }
+                if (UtilValidate.isNotEmpty(hidden)) {
+                    fieldForIntentBasedNavigation.setHidden(hidden);
+                }
+                if (UtilValidate.isNotEmpty(iconUrl)) {
+                    fieldForIntentBasedNavigation.setIconUrl(iconUrl);
+                }
+                //Mapping
+                List<? extends Element> childElementList = UtilXml.childElementList(identChildren);
+                if (UtilValidate.isNotEmpty(childElementList)) {
+                    List<DataFieldForIntentBasedNavigation.Mapping> mappings = new ArrayList<>();
+                    for (Element element : childElementList) {
+                        String tagName = element.getTagName();
+                        if ("Mapping".equals(tagName)) {
+                            //添加mapping
+                            DataFieldForIntentBasedNavigation.Mapping mapping =
+                                    new DataFieldForIntentBasedNavigation.Mapping(element.getAttribute("LocalProperty"), element.getAttribute("SemanticObjectProperty"));
+                            mappings.add(mapping);
+                        }
+                    }
+                    fieldForIntentBasedNavigation.setMappings(mappings);
+                }
+                identification.addDataField(fieldForIntentBasedNavigation);
+            }
+        }
+        return identification;
+    }
+
+    private static Term loadFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        Facets facets = new Facets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        facets.setReferenceFacets(referenceFacets);
+        return facets;
+    }
+
+    private static Term loadQuickViewFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        QuickViewFacets quickViewFacets = new QuickViewFacets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        quickViewFacets.setReferenceFacets(referenceFacets);
+        return quickViewFacets;
+    }
+
+    private static Term loadHeaderFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
+        List<? extends Element> facetsChildrenEles = UtilXml.childElementList(facetsElement);
+        if (UtilValidate.isEmpty(facetsChildrenEles)) {
+            return null;
+        }
+        String qualifier = facetsElement.getAttribute("Qualifier");
+        HeaderFacets headerFacets = new HeaderFacets(qualifier);
+        List<ReferenceFacet> referenceFacets = new ArrayList<>();
+        for (Element facetsChild : facetsChildrenEles) {
+            String lineItemChildTag = facetsChild.getTagName();
+            if (lineItemChildTag.equals("ReferenceFacet")) {
+                ReferenceFacet referenceFacet = new ReferenceFacet();
+                referenceFacet.setId(facetsChild.getAttribute("ID"));
+                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
+                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                referenceFacets.add(referenceFacet);
+            }
+        }
+        headerFacets.setReferenceFacets(referenceFacets);
+        return headerFacets;
     }
 
     private static Term loadHeaderInfoFromElement(Element headerInfoElement, Locale locale, Delegator delegator) {
@@ -1395,6 +1838,7 @@ public class EdmConfigLoader {
             String fieldGroupChildTag = fieldGroupChild.getTagName();
             if (fieldGroupChildTag.equals("DataField")) {
                 String values = fieldGroupChild.getAttribute("Values");
+                String criticality = fieldGroupChild.getAttribute("Criticality");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String labelsAttr = fieldGroupChild.getAttribute("Labels");
                 List<String> labels = StringUtil.split(labelsAttr, ",");
@@ -1404,9 +1848,11 @@ public class EdmConfigLoader {
                     if (UtilValidate.isNotEmpty(labels)) {
                         if (i < labels.size()) {
                             String dataFieldLabel = labels.get(i);
-//                            dataField.setLabel(parseValue(dataFieldLabel, locale));
                             dataField.setLabel(getLabel(delegator, dataFieldLabel, locale));
                         }
+                    }
+                    if (UtilValidate.isNotEmpty(criticality)) {
+                        dataField.setCriticalityPath(criticality);
                     }
                     fieldGroup.addData(dataField);
                 }
@@ -1429,6 +1875,21 @@ public class EdmConfigLoader {
                     dataFieldForAction.setCriticality(CriticalityType.valueOf(criticality));
                 }
                 fieldGroup.addData(dataFieldForAction);
+            } else if (fieldGroupChildTag.equals("DataFieldWithUrl")) {
+                String childLabel = fieldGroupChild.getAttribute("Label");
+                String value = fieldGroupChild.getAttribute("Value");
+                String url = fieldGroupChild.getAttribute("Url");
+                String criticality = fieldGroupChild.getAttribute("Criticality");
+                String iconUrl = fieldGroupChild.getAttribute("IconUrl");
+                DataFieldWithUrl dataFieldWithUrl = new DataFieldWithUrl();
+                dataFieldWithUrl.setValue(value);
+                dataFieldWithUrl.setLabel(getLabel(delegator, childLabel, locale));
+                dataFieldWithUrl.setUrl(url);
+                dataFieldWithUrl.setIconUrl(iconUrl);
+                if (UtilValidate.isNotEmpty(criticality)) {
+                    dataFieldWithUrl.setCriticality(CriticalityType.valueOf(criticality));
+                }
+                fieldGroup.addData(dataFieldWithUrl);
             }
         }
 
@@ -1437,18 +1898,26 @@ public class EdmConfigLoader {
 
     private static Term loadDataPointFromElement(Element dataPointElement, Locale locale, Delegator delegator) {
         List<String> criticalityTypes = UtilMisc.toList("VeryNegative", "Neutral", "Negative", "Critical", "Positive", "VeryPositive");
+        List<String> visualizationTypes = UtilMisc.toList("Rating", "Progress", "Number");
         String qualifier = dataPointElement.getAttribute("Qualifier");
         String value = dataPointElement.getAttribute("Value");
         String title = dataPointElement.getAttribute("Title");
         String criticality = dataPointElement.getAttribute("Criticality");
+        String targetValue = dataPointElement.getAttribute("TargetValue");
+        String visualization = dataPointElement.getAttribute("Visualization");
         DataPoint dataPoint = new DataPoint(qualifier);
-        dataPoint.setTitle(title);
+        dataPoint.setTitle(getLabel(delegator, title, locale));
         dataPoint.setValue(value);
+        dataPoint.setTargetValue(targetValue);
         if (criticalityTypes.contains(criticality)) {
             CriticalityType criticalityType = CriticalityType.valueOf(criticality);
             dataPoint.setCriticality(criticalityType);
         } else {
             dataPoint.setCriticalityPath(criticality);
+        }
+        if (visualizationTypes.contains(visualization)) {
+            VisualizationType visualizationType = VisualizationType.valueOf(visualization);
+            dataPoint.setVisualization(visualizationType);
         }
         return dataPoint;
     }
@@ -2078,9 +2547,7 @@ public class EdmConfigLoader {
         String collectionPath = valueListElement.getAttribute("CollectionPath");
         String label = loadAttributeValue(valueListElement, "Label", locale, delegator);
         if (UtilValidate.isEmpty(label)) {
-            if (UtilValidate.isNotEmpty(csdlParameter.getLabel())) {
-                label = csdlParameter.getLabel();
-            }
+            label = UtilValidate.isNotEmpty(csdlParameter.getLabel()) ? csdlParameter.getLabel() : csdlParameter.getName();
         }
         String qualifier = valueListElement.getAttribute("Qualifier");
         if (UtilValidate.isEmpty(qualifier)) {
@@ -2170,7 +2637,7 @@ public class EdmConfigLoader {
         return new Text(path, textArrangement, qualifier);
     }
 
-    private static OfbizCsdlFunction loadFunctionFromElement(Element functionElement, Locale locale, Delegator delegator) {
+    private static OfbizCsdlFunction loadFunctionFromElement(Element functionElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = functionElement.getAttribute("Name");
         boolean isBound = UtilValidate.isNotEmpty(functionElement.getAttribute("IsBound")) && "true".equals(functionElement.getAttribute("IsBound"));
         String ofbizService = name;
@@ -2188,7 +2655,7 @@ public class EdmConfigLoader {
         for (Element inFunctionElement : functionChildren) {
             String inFunctionTagName = inFunctionElement.getTagName();
             if (inFunctionTagName.equals("Parameter")) { // <Parameter>
-                CsdlParameter parameter = loadParameterFromElement(inFunctionElement, locale, delegator);
+                CsdlParameter parameter = loadParameterFromElement(inFunctionElement, locale, delegator, boundProperties);
                 parameters.add(parameter);
             } // </Parameter>
             if (inFunctionTagName.equals("ReturnType")) {
@@ -2223,7 +2690,7 @@ public class EdmConfigLoader {
         return csdlFunction;
     }
 
-    private static OfbizCsdlAction loadActionFromElement(Element actionElement, Locale locale, Delegator delegator) {
+    private static OfbizCsdlAction loadActionFromElement(Element actionElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = actionElement.getAttribute("Name");
         String ofbizService = name;
         if (UtilValidate.isNotEmpty(actionElement.getAttribute("OfbizService"))) {
@@ -2241,7 +2708,7 @@ public class EdmConfigLoader {
         for (Element inActionElement : actionChildren) {
             String inActionTagName = inActionElement.getTagName();
             if (inActionTagName.equals("Parameter")) { // <Parameter>
-                CsdlParameter parameter = loadParameterFromElement(inActionElement, locale, delegator);
+                CsdlParameter parameter = loadParameterFromElement(inActionElement, locale, delegator, boundProperties);
                 parameters.add(parameter);
             } // </Parameter>
             if (inActionTagName.equals("ReturnType")) {
@@ -2252,7 +2719,7 @@ public class EdmConfigLoader {
                 isBound, ofbizService, isEntityAction, stickySession, entitySetPath, sideEffects);
     }
 
-    private static CsdlParameter loadParameterFromElement(Element parameterElement, Locale locale, Delegator delegator) {
+    private static CsdlParameter loadParameterFromElement(Element parameterElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
         String name = parameterElement.getAttribute("Name");
         String type = parameterElement.getAttribute("Type");
         String precision = parameterElement.getAttribute("Precision");
@@ -2260,6 +2727,10 @@ public class EdmConfigLoader {
         String nullable = parameterElement.getAttribute("Nullable");
         String isCollection = parameterElement.getAttribute("IsCollection");
         String fieldControl = parameterElement.getAttribute("FieldControl");
+        String hidden = parameterElement.getAttribute("Hidden");
+        String defaultValue = parameterElement.getAttribute("DefaultValue");
+        String defaultValuePath = parameterElement.getAttribute("DefaultValuePath");
+        String multiLineText = parameterElement.getAttribute("MultiLineText");
         FullQualifiedName paramFullQualifiedName;
         EdmPrimitiveTypeKind paramEdmType = OfbizMapOdata.PARAM_TYPE_MAP.get(type);
         if (paramEdmType != null) {
@@ -2279,10 +2750,43 @@ public class EdmConfigLoader {
         String label = parameterElement.getAttribute("Label");
         if (UtilValidate.isNotEmpty(label) ) {
             label = getLabel(delegator, label, locale);
-//            label = parseValue(label, locale);
+        } else {
+            //根据bound对象字段获取label
+            for (CsdlProperty boundProperty : boundProperties) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) boundProperty;
+                if (boundProperty.getName().equals(name)) {
+                    label = csdlProperty.getLabel();
+                    break;
+                }
+            }
+        }
+        String maxLength = parameterElement.getAttribute("MaxLength");
+        if (UtilValidate.isEmpty(maxLength)) {
+            //根据bound对象字段获取maxLength
+            for (CsdlProperty boundProperty : boundProperties) {
+                OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) boundProperty;
+                if (boundProperty.getName().equals(name)) {
+                    parameter.setMaxLength(csdlProperty.getMaxLength());
+                    break;
+                }
+            }
+        } else {
+            parameter.setMaxLength(Integer.parseInt(maxLength));
         }
         if (UtilValidate.isNotEmpty(fieldControl)) {
             parameter.setFieldControl(FieldControlType.valueOf(fieldControl));
+        }
+        if (UtilValidate.isNotEmpty(hidden)) {
+            parameter.setHidden(hidden);
+        }
+        if (UtilValidate.isNotEmpty(defaultValue)) {
+            parameter.setDefaultValue(defaultValue);
+        }
+        if (UtilValidate.isNotEmpty(defaultValuePath)) {
+            parameter.setDefaultValuePath(defaultValuePath);
+        }
+        if (UtilValidate.isNotEmpty(multiLineText)) {
+            parameter.setMultiLineText(Boolean.parseBoolean(multiLineText));
         }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));
@@ -2484,9 +2988,9 @@ public class EdmConfigLoader {
 
     private static String getLabel(Delegator delegator, String property, Locale locale) {
         try {
-            if (UtilValidate.isNotEmpty(property) && property.startsWith("${")) {
+            if (UtilValidate.isNotEmpty(property) && property.startsWith("${uiLabelMap.")) {
                 //是变量
-                property = property.substring(2, property.length() - 1);
+                property = property.substring(property.indexOf(".") + 1, property.length() - 1);
                 GenericValue i18n = EntityQuery.use(delegator).from("Internationalization")
                         .where("lang", locale.getLanguage(), "property", property).queryFirst();
                 if (UtilValidate.isNotEmpty(i18n)) {
@@ -2658,7 +3162,7 @@ public class EdmConfigLoader {
         }
         String annotationString = annotationElement.getAttribute("String");
         if (UtilValidate.isNotEmpty(annotationString)) {
-            csdlAnnotation.setExpression(createExpressionString(annotationString));
+            csdlAnnotation.setExpression(createExpressionI18nString(annotationString, delegator, locale));
         }
         String annotationBool = annotationElement.getAttribute("Bool");
         if (UtilValidate.isNotEmpty(annotationBool)) {
@@ -3021,9 +3525,24 @@ public class EdmConfigLoader {
         return constantExpression;
     }
 
+    private static CsdlExpression createExpressionI18nString(String value, Delegator delegator, Locale locale) {
+        CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.String);
+        if (value.startsWith("${uiLabelMap.")) {
+            value = getLabel(delegator, value, locale);
+        }
+        constantExpression.setValue(value);
+        return constantExpression;
+    }
+
     private static CsdlExpression createExpressionBool(boolean value) {
         CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.Bool);
         constantExpression.setValue(Boolean.toString(value));
+        return constantExpression;
+    }
+
+    private static CsdlExpression createExpressionDecimal(String value) {
+        CsdlConstantExpression constantExpression = new CsdlConstantExpression(CsdlConstantExpression.ConstantExpressionType.Decimal);
+        constantExpression.setValue(value);
         return constantExpression;
     }
 
@@ -3105,6 +3624,13 @@ public class EdmConfigLoader {
         return propertyValue;
     }
 
+    private static CsdlPropertyValue createPropertyValueDecimal(String property, String value) {
+        CsdlPropertyValue propertyValue = new CsdlPropertyValue();
+        propertyValue.setProperty(property);
+        propertyValue.setValue(createExpressionDecimal(value));
+        return propertyValue;
+    }
+
     public static void createDraftTable(EdmWebConfig edmWebConfig, String webapp, Delegator delegator, LocalDispatcher dispatcher) throws GenericEntityException {
         ModelReader modelReader = delegator.getModelReader();
         Map<String, ModelEntity> entityCache = modelReader.getEntityCache();
@@ -3156,7 +3682,7 @@ public class EdmConfigLoader {
             for (CsdlProperty property : properties) {
                 OfbizCsdlProperty ofbizCsdlProperty = (OfbizCsdlProperty) property;
                 //忽略Complex字段
-                if (!modelEntity.isField(property.getName()) && !property.getType().contains(OfbizMapOdata.NAMESPACE)) {
+                if ((!modelEntity.isField(property.getName()) && !property.getType().contains(OfbizMapOdata.NAMESPACE)) || property.getType().endsWith("Date")) {
                     String ofbizPropertyType = getPropertyOfbizType(entityType, ofbizCsdlProperty, delegator);
                     modelEntity.addField(ModelField.create(modelEntity, property.getName(), ofbizPropertyType, false));
                 }

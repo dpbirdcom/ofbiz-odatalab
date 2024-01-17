@@ -60,6 +60,7 @@
                 <xs:element ref="Key"/>
                 <xs:element ref="HeaderInfo"/>
                 <xs:element ref="LineItem"/>
+                <xs:element ref="Identification"/>
                 <xs:element ref="DataPoint"/>
                 <xs:element ref="FieldGroup"/>
                 <xs:element ref="SelectionFields"/>
@@ -68,6 +69,9 @@
                 <xs:element ref="Action"/>
                 <xs:element ref="Function"/>
                 <xs:element minOccurs="0" ref="ValueList"/>
+                <xs:element ref="Facets"/>
+                <xs:element ref="HeaderFacets"/>
+                <xs:element ref="QuickViewFacets"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -305,6 +309,12 @@
             <xs:attribute name="LocalDataProperty" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="Mapping">
+        <xs:complexType>
+            <xs:attribute name="LocalProperty" type="xs:anyURI"/>
+            <xs:attribute name="SemanticObjectProperty" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="ParameterConstant">
         <xs:complexType>
             <xs:attribute name="ValueListProperty" type="xs:anyURI"/>
@@ -324,8 +334,10 @@
     <xs:element name="DataField">
         <xs:complexType>
             <xs:attribute name="Values"/>
+            <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="Hidden"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForAction">
@@ -337,6 +349,38 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DataFieldForAnnotation">
+        <xs:complexType>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="Target" type="xs:anyURI"/>
+            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Hidden" type="xs:NCName"/>
+            <xs:attribute name="Importance" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DataFieldForIntentBasedNavigation">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="Mapping"/>
+            </xs:choice>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="SemanticObject" type="xs:anyURI"/>
+            <xs:attribute name="Action" type="xs:anyURI"/>
+            <xs:attribute name="Inline" type="xs:boolean"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DataFieldWithUrl">
+        <xs:complexType>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Value" type="xs:anyURI"/>
+            <xs:attribute name="Url" type="xs:anyURI"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Criticality">
@@ -368,6 +412,18 @@
                 <xs:element minOccurs="0" ref="Criticality"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
+            </xs:choice>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Identification">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
@@ -375,9 +431,11 @@
     <xs:element name="DataPoint">
         <xs:complexType>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
-            <xs:attribute name="Value" type="xs:NCName"/>
-            <xs:attribute name="Title" type="xs:NCName"/>
+            <xs:attribute name="Value" type="xs:anyURI"/>
+            <xs:attribute name="Title" type="xs:anyURI"/>
+            <xs:attribute name="TargetValue" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
+            <xs:attribute name="Visualization" type="xs:NCName"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="FieldGroup">
@@ -385,9 +443,39 @@
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="HeaderFacets">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="QuickViewFacets">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Facets">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ReferenceFacet">
+        <xs:complexType>
+            <xs:attribute name="ID" type="xs:anyURI"/>
+            <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="Target" type="xs:anyURI"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="PropertyRef">
@@ -450,7 +538,12 @@
             <xs:attribute name="Precision" type="xs:integer"/>
             <xs:attribute name="Scale" type="xs:integer"/>
             <xs:attribute name="FieldControl" type="xs:NCName"/>
-            <xs:attribute name="Label"/>
+            <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="MaxLength" type="xs:int"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
+            <xs:attribute name="DefaultValue" type="xs:anyURI"/>
+            <xs:attribute name="DefaultValuePath" type="xs:anyURI"/>
+            <xs:attribute name="MultiLineText" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">

@@ -18,14 +18,7 @@
  *******************************************************************************/
 package org.apache.ofbiz.common.email;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
@@ -169,6 +162,7 @@ public class EmailServices {
         String authPass = (String) context.get("authPass");
         String messageId = (String) context.get("messageId");
         String contentType = (String) context.get("contentType");
+        String personal = (String) context.get("personal");
         Boolean sendPartial = (Boolean) context.get("sendPartial");
         Boolean isStartTLSEnabled = (Boolean) context.get("startTLSEnabled");
 
@@ -256,7 +250,11 @@ public class EmailServices {
                 mail.setHeader("In-Reply-To", messageId);
                 mail.setHeader("References", messageId);
             }
-            mail.setFrom(new InternetAddress(sendFrom));
+            InternetAddress internetAddress = new InternetAddress(sendFrom);
+            if (UtilValidate.isNotEmpty(personal)) {
+                internetAddress.setPersonal(personal);
+            }
+            mail.setFrom(internetAddress);
             mail.setSubject(subject, "UTF-8");
             mail.setHeader("X-Mailer", "Apache OFBiz, The Open For Business Project");
             mail.setSentDate(new Date());
@@ -308,7 +306,7 @@ public class EmailServices {
                 }
                 mail.saveChanges();
             }
-        } catch (MessagingException e) {
+        } catch (MessagingException | UnsupportedEncodingException e) {
             Debug.logError(e, "MessagingException when creating message to [" + sendTo + "] from [" + sendFrom + "] cc [" + sendCc + "] bcc [" + sendBcc + "] subject [" + subject + "]", module);
             Debug.logError("Email message that could not be created to [" + sendTo + "] had context: " + context, module);
             return ServiceUtil.returnError(UtilProperties.getMessage(resource, "CommonEmailSendMessagingException", UtilMisc.toMap("sendTo", sendTo, "sendFrom", sendFrom, "sendCc", sendCc, "sendBcc", sendBcc, "subject", subject), locale));

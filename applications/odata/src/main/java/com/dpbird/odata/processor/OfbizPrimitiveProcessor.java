@@ -23,16 +23,14 @@ import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
+import org.apache.olingo.commons.api.http.HttpMethod;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.*;
 import org.apache.olingo.server.api.processor.PrimitiveValueProcessor;
 import org.apache.olingo.server.api.serializer.ODataSerializer;
 import org.apache.olingo.server.api.serializer.PrimitiveSerializerOptions;
 import org.apache.olingo.server.api.serializer.SerializerResult;
-import org.apache.olingo.server.api.uri.UriInfo;
-import org.apache.olingo.server.api.uri.UriResource;
-import org.apache.olingo.server.api.uri.UriResourceFunction;
-import org.apache.olingo.server.api.uri.UriResourcePrimitiveProperty;
+import org.apache.olingo.server.api.uri.*;
 import org.apache.olingo.server.api.uri.queryoption.AliasQueryOption;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -159,6 +158,9 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
         Property property;
         UriResource lastUriResource = ListUtil.getLast(resourcePaths);
         String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+        if (UtilValidate.isEmpty(sapContextId)) {
+            sapContextId = httpServletRequest.getParameter("SAP-ContextId");
+        }
         UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
         Map<String, Object> propertyInfo = new HashMap<>();
         if (lastUriResource instanceof UriResourceFunction) {
@@ -256,7 +258,8 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             throws ODataApplicationException, ODataLibraryException {
         try {
             byte[] mediaData = IOUtils.toByteArray(request.getBody());
-            String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+//            String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+            String sapContextId = checkSapContextId(delegator, request, uriInfo);
             UriResourceProcessor uriResourceProcessor = new UriResourceProcessor(getOdataContext(), new HashMap<>(), sapContextId);
             List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
             List<UriResource> uriResourceList = new ArrayList<>(resourcePaths.subList(0, resourcePaths.size() - 1));
@@ -268,9 +271,7 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             GenericValue genericValue = ofbizEntity.getGenericValue();
             //update
             Map<String, Object> toWrite = UtilMisc.toMap(segmentValue, mediaData);
-            if (genericValue.containsKey("mimeTypeId")) {
-                toWrite.put("mimeTypeId", requestFormat.toContentTypeString());
-            }
+            toWrite.putAll(generateFileInfo(uriInfo, requestFormat, genericValue, new ByteArrayInputStream(mediaData)));
             EdmEntityType edmEntityType = odataParts.getEdmEntityType();
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             Entity entityToWrite = Util.mapToEntity(csdlEntityType, toWrite);
@@ -281,10 +282,12 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
             final InputStream responseContent = odata.createFixedFormatSerializer().binary(mediaData);
             response.setContent(responseContent);
             response.setStatusCode(HttpStatusCode.OK.getStatusCode());
-            response.setHeader(HttpHeader.CONTENT_TYPE, requestFormat.toContentTypeString());
+            if (UtilValidate.isNotEmpty(requestFormat)) {
+                response.setHeader(HttpHeader.CONTENT_TYPE, requestFormat.toContentTypeString());
+            }
         } catch (OfbizODataException e) {
             throw new ODataApplicationException(e.getMessage(), Integer.parseInt(e.getODataErrorCode()), Locale.ENGLISH);
-        } catch (GenericServiceException | IOException e) {
+        } catch (GenericServiceException | IOException | GenericEntityException e) {
             throw new ODataApplicationException(e.getMessage(), HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
         }
     }
@@ -303,6 +306,70 @@ public class OfbizPrimitiveProcessor implements PrimitiveValueProcessor {
     @Override
     public void deletePrimitiveValue(ODataRequest request, ODataResponse response, UriInfo uriInfo) throws ODataApplicationException, ODataLibraryException {
         throw new ODataApplicationException("Not supported.", HttpStatusCode.NOT_IMPLEMENTED.getStatusCode(), Locale.ROOT);
+    }
+
+    private String checkSapContextId(Delegator delegator, ODataRequest request, UriInfo uriInfo) throws OfbizODataException, GenericEntityException {
+        String sapContextId = DataModifyActions.checkSapContextId(delegator, request, null);
+        if (UtilValidate.isNotEmpty(sapContextId)) {
+            return sapContextId;
+        }
+        //查询Draft获取sapContextId
+        if (request.getMethod().equals(HttpMethod.PUT)) {
+            List<UriResource> uriResourceParts = uriInfo.getUriResourceParts();
+            UriResource uriResource = uriResourceParts.get(uriResourceParts.size() - 2);
+            UriResourceEntitySet uriResourceEntitySet = (UriResourceEntitySet) uriResource;
+            EdmEntitySet edmEntitySet = uriResourceEntitySet.getEntitySet();
+            EdmEntityType edmEntityType = edmEntitySet.getEntityType();
+            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            String draftEntityName = csdlEntityType.getDraftEntityName();
+            if (UtilValidate.isEmpty(draftEntityName)) {
+                return null;
+            }
+            Map<String, Object> primaryKey = Util.uriParametersToMap(uriResourceEntitySet.getKeyPredicates(), edmEntitySet.getEntityType(), edmProvider);
+            GenericValue userDraftData = EntityQuery.use(delegator).from(draftEntityName).where(primaryKey).queryFirst();
+            if (UtilValidate.isEmpty(userDraftData)) {
+                return null;
+            }
+            GenericValue draftAdministrativeData = userDraftData.getRelatedOne("DraftAdministrativeData", false);
+            return getTopDraftId(draftAdministrativeData, delegator);
+        }
+        return null;
+    }
+
+    private String getTopDraftId(GenericValue currentDraft, Delegator delegator) throws GenericEntityException {
+        String parentDraftUUID = currentDraft.getString("parentDraftUUID");
+        if (UtilValidate.isNotEmpty(parentDraftUUID)) {
+            GenericValue parentDraftAdmin = EntityQuery.use(delegator).from("DraftAdministrativeData")
+                    .where("draftUUID", parentDraftUUID).queryFirst();
+            return getTopDraftId(parentDraftAdmin, delegator);
+        }
+        return currentDraft.getString("draftUUID");
+    }
+
+    private Map<String, Object> generateFileInfo(UriInfo uriInfo, ContentType requestFormat, GenericValue genericValue, InputStream inputStream) throws OfbizODataException, IOException {
+        Map<String, Object> infoMap = new HashMap<>();
+        String mimeTypeId = UtilValidate.isNotEmpty(requestFormat) ? requestFormat.toContentTypeString() :
+                URLConnection.guessContentTypeFromStream(inputStream);
+        if (genericValue.containsKey("mimeTypeId")) {
+            infoMap.put("mimeTypeId", mimeTypeId);
+        }
+        List<UriResource> resourcePaths = uriInfo.getUriResourceParts();
+        UriResourceEntitySet uriResourceSet = (UriResourceEntitySet) resourcePaths.get(resourcePaths.size() - 2);
+        UriResourcePrimitiveProperty primitiveProperty = (UriResourcePrimitiveProperty) ListUtil.getLast(resourcePaths);
+        OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(uriResourceSet.getEntityType().getFullQualifiedName());
+        OfbizCsdlProperty csdlProperty = (OfbizCsdlProperty) csdlEntityType.getProperty(primitiveProperty.getSegmentValue());
+        String fileNamePath = csdlProperty.getFileNamePath();
+        if (UtilValidate.isNotEmpty(fileNamePath)) {
+            String fileName = UUID.randomUUID().toString();
+            if (UtilValidate.isNotEmpty(mimeTypeId)) {
+                String extension = OfbizMapOdata.MIME_EXTENSIONS.get(mimeTypeId);
+                if (UtilValidate.isNotEmpty(extension)) {
+                    fileName += extension;
+                }
+            }
+            infoMap.put(fileNamePath, fileName);
+        }
+        return infoMap;
     }
 
 }

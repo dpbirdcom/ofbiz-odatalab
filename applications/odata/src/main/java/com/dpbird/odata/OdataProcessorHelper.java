@@ -1584,7 +1584,13 @@ public class OdataProcessorHelper {
             }
             EntityTypeRelAlias propertyRelAlias = csdlProperty.getRelAlias();
             if (propertyRelAlias.getName().equals(relAliasName)) {
-                fieldMap.put(csdlProperty.getOfbizFieldName(), property.getValue());
+                Object value = property.getValue();
+                if (value != null && property.getType().contains("Boolean")) {
+                    if (!"Y".equals(value.toString()) && !"N".equals(value.toString())) {
+                        value = Boolean.parseBoolean(value.toString()) ? "Y" : "N";
+                    }
+                }
+                fieldMap.put(csdlProperty.getOfbizFieldName(), value);
             }
         }
         return fieldMap;

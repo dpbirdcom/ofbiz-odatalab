@@ -356,5 +356,26 @@ public class OfbizMapOdata {
             add("long-varchar");
         }
     };
+    public static final Map<String, String> MIME_EXTENSIONS = new HashMap<String, String>() {
+        {
+            put("application/x-tar", ".tar");
+            put("image/gif", ".gif");
+            put("text/plain", ".txt");
+            put("text/html", ".html");
+            put("image/png", ".png");
+            put("image/tiff", ".tif");
+            put("video/mpeg", ".mpeg");
+            put("application/pdf", ".pdf");
+            put("application/xml", ".xml");
+            put("application/zip", ".zip");
+            put("image/jpeg", ".jpg");
+            put("application/msword", ".doc");
+            put("application/vnd.ms-excel", ".xls");
+            put("vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx");
+            put("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx");
+//            put("application/octet-stream", ".mpeg");
+
+        }
+    };
 
 }

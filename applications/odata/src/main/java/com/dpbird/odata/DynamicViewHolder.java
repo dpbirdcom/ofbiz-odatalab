@@ -195,6 +195,7 @@ public class DynamicViewHolder {
                 dynamicViewEntity.addViewLink(modelViewLink);
             }
             lastRalAlias = relEntityAlias;
+            entityAliasName = null;
         }
         return lastRalAlias;
     }

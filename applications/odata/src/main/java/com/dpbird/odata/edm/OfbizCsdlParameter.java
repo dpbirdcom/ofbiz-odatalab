@@ -10,6 +10,10 @@ public class OfbizCsdlParameter extends CsdlParameter {
 	private String label;
 	private FieldControlType fieldControl;
 	private List<Term> terms;
+	private String hidden;
+	private String defaultValue;
+	private String defaultValuePath;
+	private boolean isMultiLineText = false;
 
 
 	public List<Term> getTerms() {
@@ -34,5 +38,37 @@ public class OfbizCsdlParameter extends CsdlParameter {
 
 	public void setFieldControl(FieldControlType fieldControl) {
 		this.fieldControl = fieldControl;
+	}
+
+	public String getHidden() {
+		return hidden;
+	}
+
+	public void setHidden(String hidden) {
+		this.hidden = hidden;
+	}
+
+	public String getDefaultValue() {
+		return defaultValue;
+	}
+
+	public void setDefaultValue(String defaultValue) {
+		this.defaultValue = defaultValue;
+	}
+
+	public String getDefaultValuePath() {
+		return defaultValuePath;
+	}
+
+	public void setDefaultValuePath(String defaultValuePath) {
+		this.defaultValuePath = defaultValuePath;
+	}
+
+	public boolean isMultiLineText() {
+		return isMultiLineText;
+	}
+
+	public void setMultiLineText(boolean multiLineText) {
+		isMultiLineText = multiLineText;
 	}
 }

@@ -7,6 +7,7 @@ import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlSchema;
 import org.apache.ofbiz.base.location.FlexibleLocation;
 import org.apache.ofbiz.base.util.Debug;
+import org.apache.ofbiz.base.util.FileUtil;
 import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
@@ -91,7 +92,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
     private void reloadAppSchema(CsdlSchemaCache csdlSchemaCache, Locale locale) throws OfbizODataException {
         String prefix = "component://" ;
         String filePath = prefix+ componentName + "/config/" + this.webapp + "EdmConfig.xml";
-        InputStream edmConfigInputStream = getFileInputStream(filePath);
+        InputStream edmConfigInputStream = getEdmFileInputStream(filePath);
         EdmWebConfig edmWebConfig;
         try {
             edmWebConfig = EdmConfigLoader.loadAppEdmConfig(delegator, dispatcher, this.webapp, edmConfigInputStream, locale);
@@ -106,7 +107,7 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
                 Map.Entry<String, String> entry = referenceIt.next();
                 CsdlSchema referenceSchema = referenceSchemaMap.get(entry.getKey());
                 if (referenceSchema == null) {
-                    InputStream inputStream = getFileInputStream(prefix + "odata/config"+entry.getValue());
+                    InputStream inputStream = getSchemaInputStream(prefix + "odata/config"+entry.getValue());
                     EdmWebConfig edmReferenceConfig = EdmConfigLoader.loadEdmReference(delegator, dispatcher, inputStream, locale);
                     this.edmReferenceConfigMap.put(entry.getKey(), edmReferenceConfig);
                     referenceSchema = this.createSchema(entry.getKey(), edmReferenceConfig, null);
@@ -416,26 +417,38 @@ public class OfbizAppEdmProvider extends CsdlAbstractEdmProvider {
         return null;
     }
 
-
-    private InputStream getFileInputStream(String filePath) {
+    private InputStream getEdmFileInputStream(String filePath) {
         try {
-//            String fileName = "component://" + componentName + "/config" + filePath;
+            //Load from db
+            GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmService").where("serviceName", webapp).queryFirst();
+            if (edmAppConfig != null) {
+                GenericValue edmContent = EntityQuery.use(delegator).from("EdmServiceContent")
+                        .where("edmServiceId", edmAppConfig.getString("edmServiceId"), "format", "xml").queryFirst();
+                if (UtilValidate.isNotEmpty(edmContent) && UtilValidate.isNotEmpty(edmContent.getString("edmContent"))) {
+                    String edmConfigContent = edmContent.getString("edmContent");
+                    return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+            //Load from local file
             String fileUrl = FlexibleLocation.resolveLocation(filePath).getFile();
             File file = new File(fileUrl);
             if (file.exists()) {
                 return new FileInputStream(file);
-            } else {
-                GenericValue edmAppConfig = EntityQuery.use(delegator).from("EdmService").where("serviceName", webapp).queryFirst();
-                if (edmAppConfig != null) {
-                    GenericValue edmContent = EntityQuery.use(delegator).from("EdmServiceContent")
-                            .where("edmServiceId", edmAppConfig.getString("edmServiceId"), "format", "xml").queryFirst();
-                    if (UtilValidate.isNotEmpty(edmContent)) {
-                        String edmConfigContent = edmContent.getString("edmContent");
-                        return new ByteArrayInputStream(edmConfigContent.getBytes(StandardCharsets.UTF_8));
-                    }
-                }
             }
         } catch (FileNotFoundException | MalformedURLException | GenericEntityException e) {
+            Debug.logInfo("------- didn't find file " + filePath + filePath, module);
+        }
+        return null;
+    }
+
+    private InputStream getSchemaInputStream(String filePath) {
+        try {
+            String fileUrl = FlexibleLocation.resolveLocation(filePath).getFile();
+            File file = new File(fileUrl);
+            if (file.exists()) {
+                return new FileInputStream(file);
+            }
+        } catch (FileNotFoundException | MalformedURLException e) {
             Debug.logInfo("------- didn't find file " + filePath + filePath, module);
         }
         return null;
