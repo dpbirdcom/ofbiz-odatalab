@@ -898,6 +898,9 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(csdlParameter.getDefaultValuePath())) {
             csdlAnnotationList.add(createAnnotationPath("UI.ParameterDefaultValue", csdlParameter.getDefaultValuePath(), null));
         }
+        if (csdlParameter.isMultiLineText()) {
+            csdlAnnotationList.add(createAnnotation("UI.MultiLineText", null));
+        }
         List<Term> terms = csdlParameter.getTerms();
         if (terms != null) {
             for (Term term : terms) {
@@ -2727,6 +2730,7 @@ public class EdmConfigLoader {
         String hidden = parameterElement.getAttribute("Hidden");
         String defaultValue = parameterElement.getAttribute("DefaultValue");
         String defaultValuePath = parameterElement.getAttribute("DefaultValuePath");
+        String multiLineText = parameterElement.getAttribute("MultiLineText");
         FullQualifiedName paramFullQualifiedName;
         EdmPrimitiveTypeKind paramEdmType = OfbizMapOdata.PARAM_TYPE_MAP.get(type);
         if (paramEdmType != null) {
@@ -2780,6 +2784,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(defaultValuePath)) {
             parameter.setDefaultValuePath(defaultValuePath);
+        }
+        if (UtilValidate.isNotEmpty(multiLineText)) {
+            parameter.setMultiLineText(Boolean.parseBoolean(multiLineText));
         }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));
