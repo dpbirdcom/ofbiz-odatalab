@@ -5,6 +5,7 @@ import com.dpbird.odata.OdataParts;
 import com.dpbird.odata.OfbizAppEdmProvider;
 import com.dpbird.odata.OfbizODataException;
 import com.dpbird.odata.Util;
+import com.dpbird.odata.edm.EntityTypeRelAlias;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlEntityType;
 import com.dpbird.odata.edm.OfbizCsdlNavigationProperty;
@@ -14,11 +15,14 @@ import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.model.ModelEntity;
+import org.apache.ofbiz.entity.model.ModelKeyMap;
+import org.apache.ofbiz.entity.model.ModelRelation;
 import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,12 +46,29 @@ public class ActionEvents {
         Delegator delegator = (Delegator) oDataContext.get("delegator");
         GenericValue userLogin = (GenericValue) oDataContext.get("userLogin");
         LocalDispatcher dispatcher = (LocalDispatcher) oDataContext.get("dispatcher");
+        List<OdataParts> odataParts = UtilGenerics.checkList(oDataContext.get("odataParts"));
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
         HttpServletRequest request = (HttpServletRequest) oDataContext.get("httpServletRequest");
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
         try {
+            if (UtilValidate.isNotEmpty(odataParts) && odataParts.size() > 1) {
+                //多段式创建 向前一段获取relation key
+                OdataParts mainEntityParts = odataParts.get(odataParts.size() - 2);
+                OdataParts navEntityParts = odataParts.get(odataParts.size() - 1);
+                OdataOfbizEntity mainEntity = (OdataOfbizEntity) mainEntityParts.getEntityData();
+                GenericValue mainGenericValue = mainEntity.getGenericValue();
+                OfbizCsdlEntityType mainCsdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(mainEntityParts.getEdmEntityType().getFullQualifiedName());
+                OfbizCsdlNavigationProperty navigationProperty = (OfbizCsdlNavigationProperty)  mainCsdlEntityType.getNavigationProperty(navEntityParts.getUriResource().getSegmentValue());
+                EntityTypeRelAlias relAlias = navigationProperty.getRelAlias();
+                if (UtilValidate.isNotEmpty(relAlias) && relAlias.getRelations().size() == 1) {
+                    ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getRelations().get(0));
+                    for (ModelKeyMap keyMap : modelRelation.getKeyMaps()) {
+                        actionParameters.put(keyMap.getFieldName(), mainGenericValue.get(keyMap.getRelFieldName()));
+                    }
+                }
+            }
             for (Map.Entry<String, Object> entry : actionParameters.entrySet()){
                 String key = entry.getKey();
                 if (UtilValidate.isEmpty(entry.getValue())){
