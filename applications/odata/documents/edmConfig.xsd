@@ -372,6 +372,22 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="IconUrl" type="xs:anyURI"/>
+            <xs:attribute name="Importance" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DataFieldWithIntentBasedNavigation">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="0" ref="Mapping"/>
+            </xs:choice>
+            <xs:attribute name="Label"/>
+            <xs:attribute name="Value"/>
+            <xs:attribute name="SemanticObject" type="xs:anyURI"/>
+            <xs:attribute name="Action" type="xs:anyURI"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
+            <xs:attribute name="Criticality" type="xs:anyURI"/>
+            <xs:attribute name="Importance" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithUrl">
@@ -415,6 +431,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForIntentBasedNavigation"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
         </xs:complexType>
@@ -444,6 +461,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
