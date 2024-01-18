@@ -375,7 +375,7 @@ public class EdmConfigLoader {
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueString("Action", intentBasedNavigation.getAction());
                 propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("Value", intentBasedNavigation.getValue());
+                propertyValue = createPropertyValuePath("Value", intentBasedNavigation.getValue());
                 propertyValues.add(propertyValue);
                 if (UtilValidate.isNotEmpty(intentBasedNavigation.getIconUrl())) {
                     propertyValue = createPropertyValueString("IconUrl", intentBasedNavigation.getIconUrl());
