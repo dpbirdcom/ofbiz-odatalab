@@ -562,6 +562,7 @@
             <xs:attribute name="DefaultValue" type="xs:anyURI"/>
             <xs:attribute name="DefaultValuePath" type="xs:anyURI"/>
             <xs:attribute name="MultiLineText" type="xs:boolean"/>
+            <xs:attribute name="Path" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReturnType">

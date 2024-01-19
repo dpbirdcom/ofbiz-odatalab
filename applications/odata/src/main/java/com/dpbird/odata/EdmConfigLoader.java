@@ -2866,6 +2866,7 @@ public class EdmConfigLoader {
         String defaultValue = parameterElement.getAttribute("DefaultValue");
         String defaultValuePath = parameterElement.getAttribute("DefaultValuePath");
         String multiLineText = parameterElement.getAttribute("MultiLineText");
+        String path = parameterElement.getAttribute("Path");
         FullQualifiedName paramFullQualifiedName;
         EdmPrimitiveTypeKind paramEdmType = OfbizMapOdata.PARAM_TYPE_MAP.get(type);
         if (paramEdmType != null) {
@@ -2922,6 +2923,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(multiLineText)) {
             parameter.setMultiLineText(Boolean.parseBoolean(multiLineText));
+        }
+        if (UtilValidate.isNotEmpty(path)) {
+            parameter.setPath(path);
         }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));

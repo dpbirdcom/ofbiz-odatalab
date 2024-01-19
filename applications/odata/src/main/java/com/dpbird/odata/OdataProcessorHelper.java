@@ -881,7 +881,7 @@ public class OdataProcessorHelper {
                             ofbizCsdlProperty.isNumericAttribute() ? csdlEntityType.getAttrNumericEntityName() : csdlEntityType.getAttrDateEntityName();
                     Map<String, Object> attrPkMap = new HashMap<>(pkMap);
                     attrPkMap.put("attrName", entry.getKey());
-                    GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, true);
+                    GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, false);
                     Object attrValue = entry.getValue();
                     if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
                         if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {

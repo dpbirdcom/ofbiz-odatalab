@@ -14,6 +14,7 @@ public class OfbizCsdlParameter extends CsdlParameter {
 	private String defaultValue;
 	private String defaultValuePath;
 	private boolean isMultiLineText = false;
+	private String path;
 
 
 	public List<Term> getTerms() {
@@ -70,5 +71,13 @@ public class OfbizCsdlParameter extends CsdlParameter {
 
 	public void setMultiLineText(boolean multiLineText) {
 		isMultiLineText = multiLineText;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 }
