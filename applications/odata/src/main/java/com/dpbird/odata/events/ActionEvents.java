@@ -76,8 +76,9 @@ public class ActionEvents {
                 if (UtilValidate.isEmpty(entry.getValue())) {
                     continue;
                 }
-                CsdlProperty property = csdlEntityType.getProperty(key);
-                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+//                CsdlProperty property = csdlEntityType.getProperty(key);
+//                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+                if (entry.getValue() instanceof GregorianCalendar) {
                     GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
                     actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
                 }
@@ -136,8 +137,9 @@ public class ActionEvents {
                     actionParameters.put(entry.getKey(), null);
                     continue;
                 }
-                CsdlProperty property = csdlEntityType.getProperty(entry.getKey());
-                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+//                CsdlProperty property = csdlEntityType.getProperty(entry.getKey());
+//                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
+                if (entry.getValue() instanceof GregorianCalendar) {
                     GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
                     actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
                 }
