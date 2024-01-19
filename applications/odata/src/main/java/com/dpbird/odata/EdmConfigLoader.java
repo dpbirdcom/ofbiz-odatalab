@@ -213,6 +213,8 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateHeaderFacets(csdlEntityType, (HeaderFacets) term, locale));
             } else if (term instanceof QuickViewFacets) {
                 csdlAnnotationList.add(generateQuickViewFacets(csdlEntityType, (QuickViewFacets) term, locale));
+            } else if (term instanceof Contact) {
+                csdlAnnotationList.add(generateContact(csdlEntityType, (Contact) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -678,6 +680,72 @@ public class EdmConfigLoader {
         CsdlAnnotation csdlAnnotation = createAnnotation(facets.getTermName(), facets.getQualifier());
         CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, referenceFacets, locale);
         csdlAnnotation.setExpression(collectionReferenceFacet);
+        return csdlAnnotation;
+    }
+    private static CsdlAnnotation generateContact(OfbizCsdlEntityType csdlEntityType, Contact contact, Locale locale) {
+        CsdlAnnotation csdlAnnotation = createAnnotation(contact.getTermName(), contact.getQualifier());
+        CsdlRecord csdlRecord = new CsdlRecord();
+        csdlRecord.setType("Communication.ContactType");
+        List<CsdlPropertyValue> csdlPropertyValues = new ArrayList<>();
+        if (UtilValidate.isNotEmpty(contact.getPhoto())) {
+            csdlPropertyValues.add(createPropertyValuePath("photo", contact.getPhoto()));
+        }
+        if (UtilValidate.isNotEmpty(contact.getFn())) {
+            csdlPropertyValues.add(createPropertyValuePath("fn", contact.getFn()));
+        }
+        if (UtilValidate.isNotEmpty(contact.getOrg())) {
+            csdlPropertyValues.add(createPropertyValuePath("org", contact.getOrg()));
+        }
+
+        CsdlPropertyValue csdlPropertyValueData = new CsdlPropertyValue();
+        csdlPropertyValueData.setProperty("tel");
+        CsdlCollection csdlCollection = new CsdlCollection();
+        List<CsdlExpression> collectionItems = new ArrayList<>();
+        if (UtilValidate.isNotEmpty(contact.getPhoneMobile())) {
+            CsdlRecord telCsdlRecord = new CsdlRecord();
+            telCsdlRecord.setType("Communication.PhoneNumberType");
+            List<CsdlPropertyValue> telPropertyValues = new ArrayList<>();
+            telPropertyValues.add(createPropertyValueEnumMember("type", "Communication.PhoneType/cell"));
+            telPropertyValues.add(createPropertyValuePath("uri", contact.getPhoneMobile()));
+            telCsdlRecord.setPropertyValues(telPropertyValues);
+            collectionItems.add(telCsdlRecord);
+        }
+        if(UtilValidate.isNotEmpty(contact.getPrimaryPhone())) {
+            CsdlRecord phoneCsdlRecord = new CsdlRecord();
+            phoneCsdlRecord.setType("Communication.PhoneNumberType");
+            List<CsdlPropertyValue> phePropertyValues = new ArrayList<>();
+            phePropertyValues.add(createPropertyValueEnumMember("type", "Communication.PhoneType/preferred"));
+            phePropertyValues.add(createPropertyValuePath("uri", contact.getPrimaryPhone()));
+            phoneCsdlRecord.setPropertyValues(phePropertyValues);
+            collectionItems.add(phoneCsdlRecord);
+        }
+        if (UtilValidate.isNotEmpty(collectionItems)) {
+            csdlCollection.setItems(collectionItems);
+            csdlPropertyValueData.setValue(csdlCollection);
+            csdlPropertyValues.add(csdlPropertyValueData);
+        }
+
+        CsdlPropertyValue emailPropertyValueData = new CsdlPropertyValue();
+        emailPropertyValueData.setProperty("email");
+        CsdlCollection emailCsdlCollection = new CsdlCollection();
+        List<CsdlExpression> emailCollectionItems = new ArrayList<>();
+        if (UtilValidate.isNotEmpty(contact.getEmail())) {
+            CsdlRecord emaCsdlRecord = new CsdlRecord();
+            emaCsdlRecord.setType("Communication.PhoneNumberType");
+            List<CsdlPropertyValue> emailPropertyValues = new ArrayList<>();
+            emailPropertyValues.add(createPropertyValueEnumMember("type", "Communication.ContactInformationType/work"));
+            emailPropertyValues.add(createPropertyValuePath("address", contact.getEmail()));
+            emaCsdlRecord.setPropertyValues(emailPropertyValues);
+            emailCollectionItems.add(emaCsdlRecord);
+        }
+        if (UtilValidate.isNotEmpty(emailCollectionItems)) {
+            emailCsdlCollection.setItems(emailCollectionItems);
+            emailPropertyValueData.setValue(emailCsdlCollection);
+            csdlPropertyValues.add(emailPropertyValueData);
+        }
+
+        csdlRecord.setPropertyValues(csdlPropertyValues);
+        csdlAnnotation.setExpression(csdlRecord);
         return csdlAnnotation;
     }
 
@@ -1478,6 +1546,8 @@ public class EdmConfigLoader {
                 terms.add(loadHeaderFacetsFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("QuickViewFacets")) {
                 terms.add(loadQuickViewFacetsFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("Contact")) {
+                terms.add(loadContactFromElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1849,6 +1919,24 @@ public class EdmConfigLoader {
         }
         quickViewFacets.setReferenceFacets(referenceFacets);
         return quickViewFacets;
+    }
+
+    private static Term loadContactFromElement(Element contactElement, Locale locale, Delegator delegator) {
+        String qualifier = contactElement.getAttribute("Qualifier");
+        String photo = contactElement.getAttribute("Photo");
+        String fn = contactElement.getAttribute("Fn");
+        String org = contactElement.getAttribute("Org");
+        String phoneMobile = contactElement.getAttribute("PhoneMobile");
+        String primaryPhone = contactElement.getAttribute("PrimaryPhone");
+        String email = contactElement.getAttribute("Email");
+        Contact contact = new Contact(qualifier);
+        contact.setPhoto(photo);
+        contact.setFn(fn);
+        contact.setOrg(org);
+        contact.setPhoneMobile(phoneMobile);
+        contact.setPrimaryPhone(primaryPhone);
+        contact.setEmail(email);
+        return contact;
     }
 
     private static Term loadHeaderFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {

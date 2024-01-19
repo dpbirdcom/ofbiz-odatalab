@@ -72,6 +72,7 @@
                 <xs:element ref="Facets"/>
                 <xs:element ref="HeaderFacets"/>
                 <xs:element ref="QuickViewFacets"/>
+                <xs:element ref="Contact"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -434,6 +435,17 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
             </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Contact">
+        <xs:complexType>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+            <xs:attribute name="Photo" type="xs:anyURI"/>
+            <xs:attribute name="Fn" type="xs:anyURI"/>
+            <xs:attribute name="Org" type="xs:anyURI"/>
+            <xs:attribute name="PhoneMobile" type="xs:anyURI"/>
+            <xs:attribute name="PrimaryPhone" type="xs:anyURI"/>
+            <xs:attribute name="Email" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Identification">
