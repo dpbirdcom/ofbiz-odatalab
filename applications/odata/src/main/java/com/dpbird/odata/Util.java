@@ -73,6 +73,7 @@ public class Util {
     public static final String DATE_TIME_FORMAT_GMT = "yyyy-MM-dd'T'HH:mm:ss.SSS Z";
     public static final String ODATA_PROPERTIES = "odata.properties";
     public static final String ODATA_LAB_PROPERTIES = "odatalab.properties";
+    public static final String CONFIG_PROPERTIES = "gconfig.properties";
     //	private static ResourceBundleMapWrapper uiLabelMap = null;
     private static Map<Locale, ResourceBundleMapWrapper> uiLabelLocaleMap = new HashMap<>();
 
@@ -665,7 +666,7 @@ public class Util {
             uiLabelMap.addBottomResourceBundle("CommonUiLabels");
             uiLabelMap.addBottomResourceBundle("SecurityUiLabels");
             uiLabelMap.addBottomResourceBundle("ServiceErrorUiLabels");
-            uiLabelMap.addBottomResourceBundle("ExtendedUiLabels");
+//            uiLabelMap.addBottomResourceBundle("ExtendedUiLabels");
             uiLabelLocaleMap.put(locale, uiLabelMap);
 
         }
@@ -1853,6 +1854,9 @@ public class Util {
         String property = "service." + entityName + "." + action;
         String serviceName = EntityUtilProperties.getPropertyValue(ODATA_PROPERTIES, property, delegator);
         if (UtilValidate.isEmpty(serviceName)) {
+            serviceName = EntityUtilProperties.getPropertyValue(CONFIG_PROPERTIES, property, delegator);
+        }
+        if (UtilValidate.isEmpty(serviceName)) {
             serviceName = EntityUtilProperties.getPropertyValue(ODATA_LAB_PROPERTIES, property, delegator);
         }
         if (UtilValidate.isEmpty(serviceName)) {
@@ -2758,7 +2762,19 @@ public class Util {
     public static String getTranslation(Delegator delegator, String key, Locale locale) throws GenericEntityException {
         String language = locale.getLanguage();
         GenericValue genericValue = EntityQuery.use(delegator).from("Internationalization").where("lang", language, "property", key).queryFirst();
-        return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("translation") : null;
+        return UtilValidate.isNotEmpty(genericValue) ? genericValue.getString("value") : null;
+    }
+
+    /**
+     * 获取Action,Function绑定的对象
+     */
+    public static OdataOfbizEntity getBoundEntity(Map<String, Object> parameter) {
+        for (Object value : parameter.values()) {
+            if (value instanceof OdataOfbizEntity) {
+                return (OdataOfbizEntity) value;
+            }
+        }
+        return null;
     }
 
 }

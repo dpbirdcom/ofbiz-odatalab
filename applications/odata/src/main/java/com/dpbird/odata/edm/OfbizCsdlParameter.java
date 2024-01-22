@@ -1,5 +1,6 @@
 package com.dpbird.odata.edm;
 
+import com.dpbird.odata.annotation.FieldControlType;
 import com.dpbird.odata.annotation.Term;
 import org.apache.olingo.commons.api.edm.provider.CsdlParameter;
 
@@ -7,7 +8,13 @@ import java.util.List;
 
 public class OfbizCsdlParameter extends CsdlParameter {
 	private String label;
+	private FieldControlType fieldControl;
 	private List<Term> terms;
+	private String hidden;
+	private String defaultValue;
+	private String defaultValuePath;
+	private boolean isMultiLineText = false;
+	private String path;
 
 
 	public List<Term> getTerms() {
@@ -24,5 +31,53 @@ public class OfbizCsdlParameter extends CsdlParameter {
 
 	public void setLabel(String label) {
 		this.label = label;
+	}
+
+	public FieldControlType getFieldControl() {
+		return fieldControl;
+	}
+
+	public void setFieldControl(FieldControlType fieldControl) {
+		this.fieldControl = fieldControl;
+	}
+
+	public String getHidden() {
+		return hidden;
+	}
+
+	public void setHidden(String hidden) {
+		this.hidden = hidden;
+	}
+
+	public String getDefaultValue() {
+		return defaultValue;
+	}
+
+	public void setDefaultValue(String defaultValue) {
+		this.defaultValue = defaultValue;
+	}
+
+	public String getDefaultValuePath() {
+		return defaultValuePath;
+	}
+
+	public void setDefaultValuePath(String defaultValuePath) {
+		this.defaultValuePath = defaultValuePath;
+	}
+
+	public boolean isMultiLineText() {
+		return isMultiLineText;
+	}
+
+	public void setMultiLineText(boolean multiLineText) {
+		isMultiLineText = multiLineText;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 }

@@ -44,41 +44,20 @@ public class AppOdataEvents {
     public static String odataSvc(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         LocalDispatcher dispatcher = (LocalDispatcher) req.getAttribute("dispatcher");
         final Delegator delegator = (Delegator) req.getAttribute("delegator");
+        ServletContext servletCtx = (ServletContext) req.getAttribute("servletContext");
+        String componentName =  Util.getRequestComponentName(req);
+        String componentPath =Util.getRequestComponentPath(req,componentName);
         GenericValue userLogin = (GenericValue) req.getAttribute("userLogin");
-        Map<String, Object> ctx = UtilHttp.getParameterMap(req);
-        String odataApp = req.getParameter("app");
-        boolean isAppParam = true;
         String reloadStr = req.getParameter("reload");
         try {
             Locale locale = Util.getLocale(req);
-
-            // create odata handler and configure it with CsdlEdmProvider and Processor
-            String servletPath = req.getServletPath();
-            Debug.logInfo("------------------------------------ request servletPath = " + servletPath, module);
-
-            ServletContext servletCtx = (ServletContext) req.getAttribute("servletContext");
-            String componentName =  Util.getRequestComponentName(req);
-            String componentPath =Util.getRequestComponentPath(req,componentName);
-
-            if (UtilValidate.isEmpty(odataApp)) {
-                String pathInfo = req.getPathInfo();
-                List<String> pathSegments = StringUtil.split(pathInfo, "/");
-                if (pathSegments.size() < 2) {
-                    return "error";
-                }
-                odataApp = pathSegments.get(1);
-                isAppParam = false;
-            }
-            Debug.logInfo("------------------------------------ odataApp = " + odataApp, module);
-            Debug.logInfo("------------------------------------ componentName = " + componentName, module);
-            if (!hasOdataPermission(req, odataApp)) {
-                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                try(ServletOutputStream outputStream = resp.getOutputStream()) {
-                    outputStream.print("The current user does not have access");
-                }
+            String pathInfo = req.getPathInfo();
+            List<String> pathSegments = StringUtil.split(pathInfo, "/");
+            if (pathSegments.size() < 2) {
                 return "error";
             }
-
+            String odataApp = pathSegments.get(1);
+            Debug.logInfo("------------------------------------ odataApp = " + odataApp, module);
             boolean reload = false; // always reload metadata from xml file and database
             if ("true".equals(reloadStr)) {
                 reload = true;
@@ -93,7 +72,6 @@ public class AppOdataEvents {
             EdmxReferenceInclude referenceInclude = new EdmxReferenceInclude("Org.OData.Measures.V1", "Measures");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
-
             edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Core.xml"));
             referenceInclude = new EdmxReferenceInclude("Org.OData.Core.V1", "Core");
             edmxReference.addInclude(referenceInclude);
@@ -114,11 +92,22 @@ public class AppOdataEvents {
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
 
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Aggregation.xml"));
+            referenceInclude = new EdmxReferenceInclude("Org.OData.Aggregation.V1", "Aggregation");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Session.xml"));
+            referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Session.v1", "Session");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
             ServiceMetadataETagSupport eTagSupport = new ETagSupportImpl(edmProvider.getETag());
             ServiceMetadata edm = odata.createServiceMetadata(edmProvider, edmxReferences, eTagSupport);
 
             ODataHttpHandler handler = odata.createHandler(edm);
             handler.register(new CustomDefaultProcessor());
+            handler.register(new CustomContentTypeSupportImpl());
             handler.register(new OfbizEntityCollectionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizEntityProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizActionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
@@ -128,11 +117,7 @@ public class AppOdataEvents {
             handler.register(new OfbizComplexProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizReferenceProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             // let the handler do the work
-            if (isAppParam) {
-                handler.setSplit(1);
-            } else {
-                handler.setSplit(2);
-            }
+            handler.setSplit(2);
             handler.process(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
@@ -217,6 +202,7 @@ public class AppOdataEvents {
 
             ODataHttpHandler handler = odata.createHandler(edm);
             handler.register(new CustomDefaultProcessor());
+            handler.register(new CustomContentTypeSupportImpl());
             handler.register(new OfbizEntityCollectionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizEntityProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizActionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
@@ -225,7 +211,6 @@ public class AppOdataEvents {
             handler.register(new OfbizPrimitiveCollectionProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizComplexProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
             handler.register(new OfbizReferenceProcessor(req, delegator, dispatcher, edmProvider, userLogin, locale));
-
             // let the handler do the work
             handler.setSplit(2);
             handler.process(req, resp);
@@ -250,8 +235,13 @@ public class AppOdataEvents {
         Delegator delegator = (Delegator) request.getAttribute("delegator");
         GenericValue userLogin = (GenericValue) request.getAttribute("userLogin");
         //访问当前edm需要的权限
-        List<String> requiredPermissions = EntityQuery.use(delegator).from("OdataAppPermission")
-                .where("appId", odataApp).cache().getFieldList("permissionId");
+        GenericValue edmService = EntityQuery.use(delegator).from("EdmService")
+                .where("serviceName", odataApp).queryFirst();
+        if (UtilValidate.isEmpty(edmService)) {
+            return true;
+        }
+        List<String> requiredPermissions = EntityQuery.use(delegator).from("EdmServicePermission")
+                .where(edmService.getPrimaryKey()).getFieldList("permissionId");
         if (UtilValidate.isEmpty(requiredPermissions)) {
             //不需要权限
             return true;

@@ -34,6 +34,7 @@ public class ActionProcessor extends OdataWriter {
             throws OfbizODataException {
         EdmAction edmAction = uriResourceAction.getAction();
         OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
+        odataContext.put("action", csdlAction);
         OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlAction.getOfbizMethod(), parameters, edmBindingTarget);
     }
 
@@ -45,13 +46,14 @@ public class ActionProcessor extends OdataWriter {
         EdmAction edmAction = uriResourceAction.getAction();
         EdmEntityType edmReturnType = (EdmEntityType) edmAction.getReturnType().getType();
         OfbizCsdlAction csdlAction = (OfbizCsdlAction) edmProvider.getActions(edmAction.getFullQualifiedName()).get(0);
+        odataContext.put("action", csdlAction);
         Object actionReturn = OdataProcessorHelper.callFunctionActionMethod(odataContext, csdlAction.getOfbizMethod(), parameters, edmBindingTarget);
         Entity entity = resultToEntity(actionReturn, delegator, edmProvider, edmReturnType, locale);
         OFbizEntityActionResult result = new OFbizEntityActionResult();
         result.setEntity(entity);
         if (UtilValidate.isNotEmpty(queryOptions) && queryOptions.get("expandOption") != null) {
             OdataOfbizEntity resultEntity = (OdataOfbizEntity) result.getEntity();
-            addExpandOption((ExpandOption) queryOptions.get("expandOption"), resultEntity,
+            addExpandOption((ExpandOption) queryOptions.get("expandOption"), resultEntity, null,
                     (EdmEntityType) edmAction.getReturnType().getType());
         }
         return result;

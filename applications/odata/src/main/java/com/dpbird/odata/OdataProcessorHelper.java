@@ -154,12 +154,8 @@ public class OdataProcessorHelper {
             return method.invoke(objectClass, oDataContext, paramMap, edmBindingTarget);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
-            if (e instanceof InvocationTargetException) {
-                InvocationTargetException invocationTargetException = (InvocationTargetException) e;
-                throw (OfbizODataException) invocationTargetException.getTargetException();
-            } else {
-                throw new OfbizODataException(OfbizMapOdata.ERROR_CODE_TWO, e.getMessage());
-            }
+            String locale = Util.getExceptionMsg(e, (Locale) oDataContext.get("locale"));
+            throw new OfbizODataException(locale);
         }
     }
 
@@ -669,17 +665,18 @@ public class OdataProcessorHelper {
             }
             GenericValue genericValue = odataOfbizEntity.getGenericValue();
             for (OfbizCsdlProperty attrProperty : attrProperties) {
-                Map<String, Object> attrMapKey = new HashMap<>(genericValue.getPrimaryKey());
-                String attrPropertyName = attrProperty.getName();
-                attrMapKey.put("attrName", attrPropertyName);
                 //查询attrEntity 或者是attrNumericEntity 或者是attrDateEntity
                 String attrEntity = attrProperty.isAttribute() ? attrEntityName :
                         attrProperty.isNumericAttribute() ? attrNumericEntityName : attrDateEntityName;
+                ModelEntity attrModelEntity = delegator.getModelEntity(attrEntity);
+                String attrPk = attrModelEntity.getFirstPkFieldName();
+                Map<String, Object> attrMapKey = UtilMisc.toMap(attrPk, genericValue.get(attrPk));
+                String attrPropertyName = attrProperty.getName();
+                attrMapKey.put("attrName", attrPropertyName);
                 GenericValue attrGenericValue = delegator.findOne(attrEntity, attrMapKey, true);
                 if (attrGenericValue == null) {
                     continue;
                 }
-
                 if (attrProperty.isAttribute()) {
                     if (attrProperty.getType().contains("Boolean")) {
                         Boolean attrValue = attrGenericValue.getBoolean("attrValue");
@@ -760,7 +757,7 @@ public class OdataProcessorHelper {
             Map<String, Object> propertyMap = Util.entityToMap(delegator, edmProvider, entityToCreate);
             //添加DefaultValue
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
-                propertyMap.putIfAbsent(entry.getKey(), entry.getValue());
+                propertyMap.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
             //转成数据库字段
             Map<String, Object> fieldMap = Util.propertyToField(propertyMap, csdlEntityType);
@@ -884,7 +881,7 @@ public class OdataProcessorHelper {
                             ofbizCsdlProperty.isNumericAttribute() ? csdlEntityType.getAttrNumericEntityName() : csdlEntityType.getAttrDateEntityName();
                     Map<String, Object> attrPkMap = new HashMap<>(pkMap);
                     attrPkMap.put("attrName", entry.getKey());
-                    GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, true);
+                    GenericValue attributeEntity = delegator.findOne(attrEntityName, attrPkMap, false);
                     Object attrValue = entry.getValue();
                     if (attrValue != null && ofbizCsdlProperty.getType().contains("Boolean")) {
                         if (!"Y".equals(attrValue.toString()) && !"N".equals(attrValue.toString())) {
@@ -1587,7 +1584,13 @@ public class OdataProcessorHelper {
             }
             EntityTypeRelAlias propertyRelAlias = csdlProperty.getRelAlias();
             if (propertyRelAlias.getName().equals(relAliasName)) {
-                fieldMap.put(csdlProperty.getOfbizFieldName(), property.getValue());
+                Object value = property.getValue();
+                if (value != null && property.getType().contains("Boolean")) {
+                    if (!"Y".equals(value.toString()) && !"N".equals(value.toString())) {
+                        value = Boolean.parseBoolean(value.toString()) ? "Y" : "N";
+                    }
+                }
+                fieldMap.put(csdlProperty.getOfbizFieldName(), value);
             }
         }
         return fieldMap;

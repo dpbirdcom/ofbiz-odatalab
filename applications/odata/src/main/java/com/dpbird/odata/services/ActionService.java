@@ -3,22 +3,24 @@ package com.dpbird.odata.services;
 import com.dpbird.odata.*;
 import com.dpbird.odata.edm.OdataOfbizEntity;
 import com.dpbird.odata.edm.OfbizCsdlAction;
+import com.dpbird.odata.edm.ParameterContext;
 import com.dpbird.odata.processor.DataModifyActions;
 import com.dpbird.odata.processor.UriResourceProcessor;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.fop.util.ListUtil;
-import org.apache.ofbiz.base.util.UtilGenerics;
-import org.apache.ofbiz.base.util.UtilMisc;
-import org.apache.ofbiz.base.util.UtilValidate;
+import org.apache.ofbiz.base.util.*;
+import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.util.EntityUtilProperties;
 import org.apache.ofbiz.service.DispatchContext;
 import org.apache.ofbiz.service.ServiceUtil;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Parameter;
 import org.apache.olingo.commons.api.data.Property;
-import org.apache.olingo.commons.api.edm.EdmAction;
-import org.apache.olingo.commons.api.edm.EdmBindingTarget;
-import org.apache.olingo.commons.api.edm.EdmEntitySet;
-import org.apache.olingo.commons.api.edm.EdmEntityType;
+import org.apache.olingo.commons.api.edm.*;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.OData;
@@ -26,18 +28,18 @@ import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ODataRequest;
 import org.apache.olingo.server.api.ODataResponse;
 import org.apache.olingo.server.api.deserializer.DeserializerException;
+import org.apache.olingo.server.api.deserializer.FixedFormatDeserializer;
 import org.apache.olingo.server.api.deserializer.ODataDeserializer;
 import org.apache.olingo.server.api.uri.UriResource;
 import org.apache.olingo.server.api.uri.UriResourceAction;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.util.*;
+
+import static org.apache.ofbiz.base.util.UtilGenerics.checkList;
 
 /**
  * 使用Service实现Action
@@ -52,6 +54,8 @@ public class ActionService {
         OData oData = (OData) odataContext.get("oData");
         Locale locale = (Locale) odataContext.get("locale");
         ODataRequest request = (ODataRequest) odataContext.get("oDataRequest");
+        Delegator delegator = (Delegator) odataContext.get("delegator");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         ODataResponse response = (ODataResponse) odataContext.get("oDataResponse");
         ContentType requestFormat = (ContentType) context.get("requestFormat");
         List<UriResource> resourcePaths = UtilGenerics.checkList(context.get("resourcePaths"));
@@ -62,7 +66,8 @@ public class ActionService {
             response.setStatusCode(HttpStatusCode.NO_CONTENT.getStatusCode());
             return ServiceUtil.returnSuccess();
         }
-        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
+//        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
+        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale, httpServletRequest);
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
             List<OdataParts> odataParts = addBoundParam(resourcePaths, odataContext, parameters, edmAction, null);
@@ -81,6 +86,7 @@ public class ActionService {
         Locale locale = (Locale) odataContext.get("locale");
         ODataRequest request = (ODataRequest) odataContext.get("oDataRequest");
         ContentType requestFormat = (ContentType) context.get("requestFormat");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         String sapContextId = (String) context.get("sapContextId");
         ODataResponse response = (ODataResponse) odataContext.get("oDataResponse");
         OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) odataContext.get("edmProvider");
@@ -88,7 +94,7 @@ public class ActionService {
         UriResourceAction uriResourceAction = (UriResourceAction) resourcePaths.get(resourcePaths.size() - 1);
         Map<String, QueryOption> queryOptions = UtilGenerics.checkMap(context.get("queryOptions"));
         EdmAction edmAction = uriResourceAction.getAction();
-        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
+        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale, httpServletRequest);
         EdmBindingTarget edmBindingTarget = null;
         EdmEntityType edmEntityType = null;
         if (uriResourceAction.getAction().isBound()) {
@@ -126,11 +132,12 @@ public class ActionService {
         Map<String, Object> odataContext = UtilGenerics.checkMap(context.get("odataContext"));
         Map<String, QueryOption> queryOptions = UtilGenerics.checkMap(context.get("queryOptions"));
         ContentType requestFormat = (ContentType) context.get("requestFormat");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         ODataRequest request = (ODataRequest) odataContext.get("oDataRequest");
         OData oData = (OData) odataContext.get("oData");
         Locale locale = (Locale) odataContext.get("locale");
         UriResourceAction uriResourceAction = (UriResourceAction) resourcePaths.get(resourcePaths.size() - 1);
-        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
+        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale, httpServletRequest);
         EdmAction edmAction = uriResourceAction.getAction();
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
@@ -151,10 +158,11 @@ public class ActionService {
         Map<String, Object> odataContext = UtilGenerics.checkMap(context.get("odataContext"));
         ContentType requestFormat = (ContentType) context.get("requestFormat");
         ODataRequest request = (ODataRequest) odataContext.get("oDataRequest");
+        HttpServletRequest httpServletRequest = (HttpServletRequest) odataContext.get("httpServletRequest");
         OData oData = (OData) odataContext.get("oData");
         Locale locale = (Locale) odataContext.get("locale");
         UriResourceAction uriResourceAction = (UriResourceAction) resourcePaths.get(resourcePaths.size() - 1);
-        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale);
+        Map<String, Object> parameters = getActionParameters(request, uriResourceAction, requestFormat, oData, locale, httpServletRequest);
         EdmAction edmAction = uriResourceAction.getAction();
         EdmBindingTarget edmBindingTarget = null;
         if (edmAction.isBound()) {
@@ -174,9 +182,13 @@ public class ActionService {
      * 获取action参数
      */
     private static Map<String, Object> getActionParameters(ODataRequest oDataRequest, UriResourceAction uriResourceAction,
-                                                           ContentType requestFormat, OData oData, Locale locale)
+                                                           ContentType requestFormat, OData oData, Locale locale, HttpServletRequest request)
             throws ODataApplicationException {
         try {
+            //上传文件暂时支持单个文件
+            if (requestFormat.isCompatible(ContentType.MULTIPART_FORM_DATA)) {
+                return getFromDataParameters(request, uriResourceAction);
+            }
             final ODataDeserializer deserializer = oData.createDeserializer(requestFormat);
             InputStream body = oDataRequest.getBody();
             if (oDataRequest.getBody().available() == 0) {
@@ -190,6 +202,44 @@ public class ActionService {
                     HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), locale);
         }
     }
+
+    private static Map<String, Object> getFromDataParameters(HttpServletRequest request, UriResourceAction uriResourceAction) {
+        Map<String, Object> formParam = new HashMap<>();
+        EdmAction action = uriResourceAction.getAction();
+        Map<String, Object> multiPartMap = UtilHttp.getMultiPartParameterMap(request);
+        ParameterContext parameterContext = new ParameterContext();
+        for (Map.Entry<String, Object> entry : multiPartMap.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            EdmParameter parameter = action.getParameter(key);
+            if (key.startsWith("_") && key.endsWith("size")) {
+                parameterContext.setFileSize((Long) value);
+                continue;
+            }
+            if (key.startsWith("_") && key.endsWith("fileName")) {
+                parameterContext.setFileName((String) value);
+                continue;
+            }
+            if (key.startsWith("_") && key.endsWith("contentType")) {
+                parameterContext.setFileMimeType((String) value);
+                continue;
+            }
+            if (UtilValidate.isNotEmpty(parameter)) {
+                if (parameter.getType().getName().contains("Stream")) {
+                    parameterContext.setParameterName(key);
+                    parameterContext.setFile((ByteBuffer) value);
+                } else {
+                    formParam.put(key, value);
+                }
+            }
+        }
+        Long fileSize = parameterContext.getFileSize();
+        if (UtilValidate.isNotEmpty(fileSize) && fileSize > 0) {
+            formParam.put(parameterContext.getParameterName(), parameterContext);
+        }
+        return formParam;
+    }
+
 
     /**
      * 向action中添加bound参数，返回EdmBindingTarget

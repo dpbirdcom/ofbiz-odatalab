@@ -213,7 +213,7 @@ public class OdataReader extends OfbizOdataProcessor {
         try {
             //query
             EntityQuery entityQuery = EntityQuery.use(delegator).where(entityCondition).from(dynamicViewEntity);
-            entityQuery = entityQuery.select(getValidSelect()).orderBy(orderBy).maxRows(MAX_ROWS).cursorScrollInsensitive();
+            entityQuery = entityQuery.select(getValidSelect()).orderBy(orderBy).cursorScrollInsensitive();
             int listCount;
             List<GenericValue> dataItems;
             try (EntityListIterator iterator = entityQuery.queryIterator()) {
@@ -244,6 +244,13 @@ public class OdataReader extends OfbizOdataProcessor {
             }
             //后面要处理expand，添加外键
             selectSet.addAll(Util.getEntityFk(modelEntity));
+            //如果有orderby 添加orderby
+            if (UtilValidate.isNotEmpty(orderBy)) {
+                for (String ob : orderBy) {
+                    String obProperty =  ob.replace("-", "").replace(" NULLS LAST", "");
+                    selectSet.add(obProperty);
+                }
+            }
         } else {
             for (String propertyName : edmEntityType.getPropertyNames()) {
                 OfbizCsdlProperty property = (OfbizCsdlProperty) csdlEntityType.getProperty(propertyName);
