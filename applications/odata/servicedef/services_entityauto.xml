@@ -5,7 +5,7 @@
     <description>OData services implemented by entity-auto</description>
     <vendor></vendor>
     <version>1.0</version>
-    
+
     <service name="banfftech.createUILabApp" default-entity-name="UILabApp" engine="entity-auto" invoke="create">
         <description>Create a UILabApp</description>
         <auto-attributes include="pk" mode="INOUT" optional="true"/>
