@@ -3019,6 +3019,12 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(path)) {
             parameter.setPath(path);
         }
+        if ("Date".equals(type)) {
+            //olingo设置日期转换成 sql.Date
+            CsdlMapping csdlMapping = new CsdlMapping();
+            csdlMapping.setMappedJavaClass(java.sql.Date.class);
+            parameter.setMapping(csdlMapping);
+        }
         parameter.setLabel(label);
         parameter.setNullable(!"false".equals(nullable));
         parameter.setCollection("true".equals(isCollection));

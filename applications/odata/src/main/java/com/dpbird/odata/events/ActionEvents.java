@@ -71,18 +71,6 @@ public class ActionEvents {
                     }
                 }
             }
-            for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
-                String key = entry.getKey();
-                if (UtilValidate.isEmpty(entry.getValue())) {
-                    continue;
-                }
-//                CsdlProperty property = csdlEntityType.getProperty(key);
-//                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
-                if (entry.getValue() instanceof GregorianCalendar) {
-                    GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
-                    actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
-                }
-            }
             actionParameters.put("userLogin", userLogin);
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
                 actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
@@ -135,13 +123,6 @@ public class ActionEvents {
             for (Map.Entry<String, Object> entry : actionParameters.entrySet()) {
                 if (UtilValidate.isEmpty(entry.getValue())) {
                     actionParameters.put(entry.getKey(), null);
-                    continue;
-                }
-//                CsdlProperty property = csdlEntityType.getProperty(entry.getKey());
-//                if (UtilValidate.isNotEmpty(property) && "com.dpbird.Date".equals(property.getType()) && entry.getValue() instanceof GregorianCalendar) {
-                if (entry.getValue() instanceof GregorianCalendar) {
-                    GregorianCalendar calendar = (GregorianCalendar) entry.getValue();
-                    actionParameters.put(entry.getKey(), new Date(calendar.getTime().getTime()));
                 }
             }
             actionParameters.put("userLogin", userLogin);
