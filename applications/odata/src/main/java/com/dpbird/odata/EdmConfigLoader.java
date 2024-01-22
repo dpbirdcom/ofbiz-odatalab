@@ -310,10 +310,14 @@ public class EdmConfigLoader {
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueAnnotationPath("Target", dataFieldForAnnotation.getTarget());
                 propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueEnum("InvocationGrouping", dataFieldForAnnotation.getInvocationGrouping());
-                propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueEnum("Criticality", dataFieldForAnnotation.getCriticality());
-                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(dataFieldForAnnotation.getInvocationGrouping())) {
+                    propertyValue = createPropertyValueEnum("InvocationGrouping", dataFieldForAnnotation.getInvocationGrouping());
+                    propertyValues.add(propertyValue);
+                }
+                if (UtilValidate.isNotEmpty(dataFieldForAnnotation.getCriticality())) {
+                    propertyValue = createPropertyValueEnum("Criticality", dataFieldForAnnotation.getCriticality());
+                    propertyValues.add(propertyValue);
+                }
                 String recordType = "UI.DataFieldForAnnotation";
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldWithUrl) {
