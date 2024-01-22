@@ -735,7 +735,7 @@ public class EdmConfigLoader {
         List<CsdlExpression> emailCollectionItems = new ArrayList<>();
         if (UtilValidate.isNotEmpty(contact.getEmail())) {
             CsdlRecord emaCsdlRecord = new CsdlRecord();
-            emaCsdlRecord.setType("Communication.PhoneNumberType");
+            emaCsdlRecord.setType("Communication.EmailAddressType");
             List<CsdlPropertyValue> emailPropertyValues = new ArrayList<>();
             emailPropertyValues.add(createPropertyValueEnumMember("type", "Communication.ContactInformationType/work"));
             emailPropertyValues.add(createPropertyValuePath("address", contact.getEmail()));
