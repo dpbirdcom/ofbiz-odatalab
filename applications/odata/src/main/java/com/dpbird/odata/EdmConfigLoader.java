@@ -96,7 +96,6 @@ public class EdmConfigLoader {
             }
         }
         addToEdmWebConfig(delegator, dispatcher, edmWebConfig, rootElement, locale);
-        addToEdmWebConfigFromDB(delegator, dispatcher, edmWebConfig, webapp, locale);
         createDraftTable(edmWebConfig, webapp, delegator, dispatcher);
 //        saveDraftToSystemProperty(edmWebConfig, webapp, delegator);
         return edmWebConfig;
@@ -258,9 +257,10 @@ public class EdmConfigLoader {
             // add Value
             if (dataFieldAbstract instanceof DataFieldWithNavigationPath) {
                 DataFieldWithNavigationPath dataFieldWithNavigationPath = (DataFieldWithNavigationPath) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldWithNavigationPath.getLabel());
-                propertyValues.add(propertyValue);
-                propertyValue = createNavigationPropertyPath("Target", dataFieldWithNavigationPath.getTarget());
+                if (UtilValidate.isNotEmpty(dataFieldWithNavigationPath.getLabel())) {
+                    propertyValues.add(createPropertyValueString("Label", dataFieldWithNavigationPath.getLabel()));
+                }
+                CsdlPropertyValue propertyValue = createNavigationPropertyPath("Target", dataFieldWithNavigationPath.getTarget());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueEnum("Criticality", dataFieldWithNavigationPath.getCriticality());
                 propertyValues.add(propertyValue);
@@ -288,10 +288,12 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldForAction) {
                 DataFieldForAction dataFieldForAction = (DataFieldForAction) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAction.getLabel());
+                CsdlPropertyValue propertyValue = createPropertyValueString("Action", dataFieldForAction.getAction());
                 propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("Action", dataFieldForAction.getAction());
-                propertyValues.add(propertyValue);
+                if (UtilValidate.isNotEmpty(dataFieldForAction.getLabel())) {
+                    propertyValue = createPropertyValueString("Label", dataFieldForAction.getLabel());
+                    propertyValues.add(propertyValue);
+                }
                 propertyValue = createPropertyValueBool("Inline", dataFieldForAction.isInline());
                 propertyValues.add(propertyValue);
                 if (UtilValidate.isNotEmpty(dataFieldForAction.getInvocationGrouping())) {
@@ -306,9 +308,10 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldForAnnotation) {
                 DataFieldForAnnotation dataFieldForAnnotation = (DataFieldForAnnotation) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldForAnnotation.getLabel());
-                propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueAnnotationPath("Target", dataFieldForAnnotation.getTarget());
+                if(UtilValidate.isNotEmpty(dataFieldForAnnotation.getLabel())) {
+                    propertyValues.add(createPropertyValueString("Label", dataFieldForAnnotation.getLabel()));
+                }
+                CsdlPropertyValue propertyValue = createPropertyValueAnnotationPath("Target", dataFieldForAnnotation.getTarget());
                 propertyValues.add(propertyValue);
                 if (UtilValidate.isNotEmpty(dataFieldForAnnotation.getInvocationGrouping())) {
                     propertyValue = createPropertyValueEnum("InvocationGrouping", dataFieldForAnnotation.getInvocationGrouping());
@@ -322,9 +325,10 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldWithUrl) {
                 DataFieldWithUrl dataFieldWithUrl = (DataFieldWithUrl) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", dataFieldWithUrl.getLabel());
-                propertyValues.add(propertyValue);
-                propertyValue = createPropertyValuePath("Value", dataFieldWithUrl.getValue());
+                if (UtilValidate.isNotEmpty(dataFieldWithUrl.getLabel())) {
+                    propertyValues.add(createPropertyValueString("Label", dataFieldWithUrl.getLabel()));
+                }
+                CsdlPropertyValue propertyValue = createPropertyValuePath("Value", dataFieldWithUrl.getValue());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValuePath("Url", dataFieldWithUrl.getUrl());
                 propertyValues.add(propertyValue);
@@ -340,9 +344,10 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldForIntentBasedNavigation) {
                 DataFieldForIntentBasedNavigation intentBasedNavigation = (DataFieldForIntentBasedNavigation) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", intentBasedNavigation.getLabel());
-                propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
+                if (UtilValidate.isNotEmpty(intentBasedNavigation.getLabel())) {
+                    propertyValues.add(createPropertyValueString("Label", intentBasedNavigation.getLabel()));
+                }
+                CsdlPropertyValue propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueString("Action", intentBasedNavigation.getAction());
                 propertyValues.add(propertyValue);
@@ -375,9 +380,10 @@ public class EdmConfigLoader {
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldWithIntentBasedNavigation) {
                 DataFieldWithIntentBasedNavigation intentBasedNavigation = (DataFieldWithIntentBasedNavigation) dataFieldAbstract;
-                CsdlPropertyValue propertyValue = createPropertyValueString("Label", intentBasedNavigation.getLabel());
-                propertyValues.add(propertyValue);
-                propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
+                if (UtilValidate.isNotEmpty(intentBasedNavigation.getLabel())) {
+                    propertyValues.add(createPropertyValueString("Label", intentBasedNavigation.getLabel()));
+                }
+                CsdlPropertyValue propertyValue = createPropertyValueString("SemanticObject", intentBasedNavigation.getSemanticObject());
                 propertyValues.add(propertyValue);
                 propertyValue = createPropertyValueString("Action", intentBasedNavigation.getAction());
                 propertyValues.add(propertyValue);
@@ -439,8 +445,12 @@ public class EdmConfigLoader {
         for (ReferenceFacet referenceFacet : referenceFacets) {
             CsdlRecord csdlRecord = new CsdlRecord();
             List<CsdlPropertyValue> propertyValues = new ArrayList<>();
-            propertyValues.add(createPropertyValueString("ID", referenceFacet.getId()));
-            propertyValues.add(createPropertyValueString("Label", referenceFacet.getLabel()));
+            if (UtilValidate.isNotEmpty(referenceFacet.getId())) {
+                propertyValues.add(createPropertyValueString("ID", referenceFacet.getId()));
+            }
+            if (UtilValidate.isNotEmpty(referenceFacet.getLabel())) {
+                propertyValues.add(createPropertyValueString("Label", referenceFacet.getLabel()));
+            }
             propertyValues.add(createPropertyValueAnnotationPath("Target", referenceFacet.getTarget()));
             String recordType = "UI.ReferenceFacet";
             csdlRecord.setType(recordType);
@@ -835,12 +845,16 @@ public class EdmConfigLoader {
         CsdlAnnotation csdlAnnotation = createAnnotation(fieldGroup.getTermName(), fieldGroup.getQualifier());
         CsdlRecord csdlRecord = new CsdlRecord();
         csdlRecord.setType("UI.FieldGroupType");
+        List<CsdlPropertyValue> propertyValues = new ArrayList<>();
         CsdlPropertyValue csdlPropertyValueData = new CsdlPropertyValue();
         csdlPropertyValueData.setProperty("Data");
         CsdlCollection csdlCollection = createCollectionDataField(csdlEntityType, fieldGroup.getData(), false, locale);
         csdlPropertyValueData.setValue(csdlCollection);
-        CsdlPropertyValue csdlPropertyValueLabel = createPropertyValueString("Label", fieldGroup.getLabel());
-        csdlRecord.setPropertyValues(UtilMisc.toList(csdlPropertyValueData, csdlPropertyValueLabel));
+        propertyValues.add(csdlPropertyValueData);
+        if (UtilValidate.isNotEmpty(fieldGroup.getLabel())) {
+            propertyValues.add(createPropertyValueString("Label", fieldGroup.getLabel()));
+        }
+        csdlRecord.setPropertyValues(propertyValues);
         csdlAnnotation.setExpression(csdlRecord);
         return csdlAnnotation;
     }
@@ -1152,119 +1166,6 @@ public class EdmConfigLoader {
         }
 
         generateNavigationBindings(edmWebConfig);
-    }
-
-    /**
-     * 从数据库中添加元素
-     */
-    private static void addToEdmWebConfigFromDB(Delegator delegator, LocalDispatcher dispatcher, EdmWebConfig edmWebConfig,
-                                          String webApp, Locale locale) throws GenericEntityException {
-        GenericValue edmService = EntityQuery.use(delegator).from("EdmService").where("serviceName", webApp).queryFirst();
-        if (UtilValidate.isEmpty(edmService)) {
-            return;
-        }
-        List<GenericValue> lineItems = EntityQuery.use(delegator).from("LineItem").where(edmService.getPrimaryKey()).queryList();
-        for (GenericValue lineItemGv : lineItems) {
-            //构建LineItem
-            String target = lineItemGv.getString("target");
-            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
-            if (UtilValidate.isEmpty(entityType)) {
-                Debug.logWarning("Target not found: " + target, module);
-                continue;
-            }
-            LineItem lineItem = TermUtil.getLineItemFromGv(lineItemGv, delegator, locale);
-            //构建LineItem DataField
-            List<GenericValue> dataFieldGvList = lineItemGv.getRelatedMulti("LineItemDataField", "DataField");
-            for (GenericValue dataFieldGv : dataFieldGvList) {
-                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
-                for (DataField dataField : dataFieldFromGv) {
-                    lineItem.addDataField(dataField);
-                }
-            }
-            //构建LineItem DataFieldWithUrl
-            List<GenericValue> dataFieldWithUrlGvList = lineItemGv.getRelatedMulti("LineItemDataFieldWithUrl", "DataFieldWithUrl");
-            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
-                lineItem.addDataField(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
-            }
-            //构建LineItem DataFieldForAction
-            List<GenericValue> dataFieldForActionGvList = lineItemGv.getRelatedMulti("LineItemDataFieldForAction", "DataFieldForAction");
-            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
-                lineItem.addDataField(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
-            }
-            entityType.addTerm(lineItem);
-        }
-        //构建FieldGroup
-        List<GenericValue> fieldGroupGvs = EntityQuery.use(delegator).from("FieldGroup").where(edmService.getPrimaryKey()).queryList();
-        for (GenericValue fieldGroupGv : fieldGroupGvs) {
-            String target = fieldGroupGv.getString("target");
-            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
-            if (UtilValidate.isEmpty(entityType)) {
-                Debug.logWarning("Target not found: " + target, module);
-                continue;
-            }
-            FieldGroup fieldGroup = TermUtil.getFieldGroupFromGv(fieldGroupGv, delegator, locale);
-            //构建FieldGroup DataField
-            List<GenericValue> dataFieldGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataField", "DataField");
-            for (GenericValue dataFieldGv : dataFieldGvList) {
-                List<DataField> dataFieldFromGv = TermUtil.getDataFieldFromGv(dataFieldGv, delegator, locale);
-                for (DataField dataField : dataFieldFromGv) {
-                    fieldGroup.addData(dataField);
-                }
-            }
-            //构建FieldGroup DataFieldWithUrl
-            List<GenericValue> dataFieldWithUrlGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldWithUrl", "DataFieldWithUrl");
-            for (GenericValue dataFieldWithUrlGv : dataFieldWithUrlGvList) {
-                fieldGroup.addData(TermUtil.getDataFieldWithUrlFromGv(dataFieldWithUrlGv, delegator, locale));
-            }
-            //构建FieldGroup DataFieldForAction
-            List<GenericValue> dataFieldForActionGvList = fieldGroupGv.getRelatedMulti("FieldGroupDataFieldForAction", "DataFieldForAction");
-            for (GenericValue fieldActionGv : dataFieldForActionGvList) {
-                fieldGroup.addData(TermUtil.getDataFieldForActionFromGv(fieldActionGv, delegator, locale));
-            }
-            entityType.addTerm(fieldGroup);
-        }
-        //构建HeaderFacets
-        List<GenericValue> headerFacetsList = EntityQuery.use(delegator).from("HeaderFacets").where(edmService.getPrimaryKey()).queryList();
-        for (GenericValue headerFacetsGv : headerFacetsList) {
-            String target = headerFacetsGv.getString("target");
-            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
-            if (UtilValidate.isEmpty(entityType)) {
-                Debug.logWarning("Target not found: " + target, module);
-                continue;
-            }
-            HeaderFacets headerFacets = new HeaderFacets(null);
-            List<GenericValue> referenceFacetsList = headerFacetsGv.getRelatedMulti("HeaderFacetsReferenceFacet", "ReferenceFacet");
-            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
-            List<ReferenceFacet> referenceFacets = new ArrayList<>();
-            for (GenericValue referenceFacetGv : referenceFacetsList) {
-                if ("Y".equals(referenceFacetGv.getString("enable"))) {
-                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
-                }
-            }
-            headerFacets.setReferenceFacets(referenceFacets);
-            entityType.addTerm(headerFacets);
-        }
-        //构建Facets
-        List<GenericValue> facetsList = EntityQuery.use(delegator).from("Facets").where(edmService.getPrimaryKey()).queryList();
-        for (GenericValue facetsGv : facetsList) {
-            String target = facetsGv.getString("target");
-            OfbizCsdlEntityType entityType = edmWebConfig.getEntityType(target);
-            if (UtilValidate.isEmpty(entityType)) {
-                Debug.logWarning("Target not found: " + target, module);
-                continue;
-            }
-            Facets facets = new Facets(null);
-            List<GenericValue> referenceFacetsList = facetsGv.getRelatedMulti("FacetsReferenceFacet", "ReferenceFacet");
-            referenceFacetsList = EntityUtil.orderBy(referenceFacetsList, UtilMisc.toList("sequenceNum"));
-            List<ReferenceFacet> referenceFacets = new ArrayList<>();
-            for (GenericValue referenceFacetGv : referenceFacetsList) {
-                if ("Y".equals(referenceFacetGv.getString("enable"))) {
-                    referenceFacets.add(TermUtil.getReferenceFacetFromGv(referenceFacetGv, delegator, locale));
-                }
-            }
-            facets.setReferenceFacets(referenceFacets);
-            entityType.addTerm(facets);
-        }
     }
 
     private static void generateNavigationBindings(EdmWebConfig edmWebConfig) throws OfbizODataException {
