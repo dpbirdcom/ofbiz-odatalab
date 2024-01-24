@@ -513,6 +513,14 @@
             <xs:attribute name="TargetValue" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Visualization" type="xs:NCName"/>
+            <xs:attribute name="CriticalityRepresentation">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="WithIcon"/>
+                        <xs:enumeration value="WithoutIcon"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="FieldGroup">

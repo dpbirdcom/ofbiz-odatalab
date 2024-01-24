@@ -816,6 +816,7 @@ public class EdmConfigLoader {
         CriticalityType criticality = dataPoint.getCriticality();
         VisualizationType visualization = dataPoint.getVisualization();
         String criticalityPath = dataPoint.getCriticalityPath();
+        CriticalityRepresentationType criticalityRepresentationType = dataPoint.getCriticalityRepresentationType();
         String targetValue = dataPoint.getTargetValue();
         CsdlAnnotation csdlAnnotation = createAnnotation(dataPoint.getTermName(), dataPoint.getQualifier());
         CsdlRecord csdlRecord = new CsdlRecord();
@@ -838,6 +839,9 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(visualization)) {
             csdlPropertyValues.add(createPropertyValueEnum("Visualization", visualization));
+        }
+        if (UtilValidate.isNotEmpty(criticalityRepresentationType)) {
+            csdlPropertyValues.add(createPropertyValueEnum("CriticalityRepresentation", criticalityRepresentationType));
         }
         csdlRecord.setPropertyValues(csdlPropertyValues);
         csdlAnnotation.setExpression(csdlRecord);
@@ -2042,6 +2046,7 @@ public class EdmConfigLoader {
         String value = dataPointElement.getAttribute("Value");
         String title = dataPointElement.getAttribute("Title");
         String criticality = dataPointElement.getAttribute("Criticality");
+        String criticalityRepresentation = dataPointElement.getAttribute("CriticalityRepresentation");
         String targetValue = dataPointElement.getAttribute("TargetValue");
         String visualization = dataPointElement.getAttribute("Visualization");
         DataPoint dataPoint = new DataPoint(qualifier);
@@ -2053,6 +2058,9 @@ public class EdmConfigLoader {
             dataPoint.setCriticality(criticalityType);
         } else {
             dataPoint.setCriticalityPath(criticality);
+        }
+        if (UtilValidate.isNotEmpty(criticalityRepresentation)) {
+            dataPoint.setCriticalityRepresentationType(CriticalityRepresentationType.valueOf(criticalityRepresentation));
         }
         if (visualizationTypes.contains(visualization)) {
             VisualizationType visualizationType = VisualizationType.valueOf(visualization);
