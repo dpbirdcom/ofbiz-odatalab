@@ -278,6 +278,9 @@ public class EdmConfigLoader {
                 if (UtilValidate.isNotEmpty(dataField.getCriticalityPath())) {
                     propertyValues.add(createPropertyValuePath("Criticality", dataField.getCriticalityPath()));
                 }
+                if (UtilValidate.isNotEmpty(dataField.getCriticalityRepresentationType())) {
+                    propertyValues.add(createPropertyValueEnum("CriticalityRepresentation", dataField.getCriticalityRepresentationType()));
+                }
                 // add Label
                 String label = dataField.getLabel();
                 if (UtilValidate.isNotEmpty(label)) {
@@ -1513,6 +1516,7 @@ public class EdmConfigLoader {
                 String values = lineItemChild.getAttribute("Values");
                 String hidden = lineItemChild.getAttribute("Hidden");
                 String criticality = lineItemChild.getAttribute("Criticality");
+                String criticalityRepresentation = lineItemChild.getAttribute("CriticalityRepresentation");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = lineItemChild.getAttribute("Importance");
                 String labelsAttr = lineItemChild.getAttribute("Labels");
@@ -1537,6 +1541,9 @@ public class EdmConfigLoader {
                         } else {
                             dataField.setCriticalityPath(criticality);
                         }
+                    }
+                    if (UtilValidate.isNotEmpty(criticalityRepresentation)) {
+                        dataField.setCriticalityRepresentationType(CriticalityRepresentationType.valueOf(criticalityRepresentation));
                     }
                     lineItem.addDataField(dataField);
                 }
@@ -1923,6 +1930,7 @@ public class EdmConfigLoader {
             if (fieldGroupChildTag.equals("DataField")) {
                 String values = fieldGroupChild.getAttribute("Values");
                 String criticality = fieldGroupChild.getAttribute("Criticality");
+                String criticalityRepresentation = fieldGroupChild.getAttribute("CriticalityRepresentation");
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String labelsAttr = fieldGroupChild.getAttribute("Labels");
                 List<String> labels = StringUtil.split(labelsAttr, ",");
@@ -1937,6 +1945,9 @@ public class EdmConfigLoader {
                     }
                     if (UtilValidate.isNotEmpty(criticality)) {
                         dataField.setCriticalityPath(criticality);
+                    }
+                    if (UtilValidate.isNotEmpty(criticalityRepresentation)) {
+                        dataField.setCriticalityRepresentationType(CriticalityRepresentationType.valueOf(criticalityRepresentation));
                     }
                     fieldGroup.addData(dataField);
                 }

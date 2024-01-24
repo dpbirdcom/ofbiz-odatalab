@@ -337,7 +337,23 @@
             <xs:attribute name="Values"/>
             <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="CriticalityRepresentation">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="WithIcon"/>
+                        <xs:enumeration value="WithoutIcon"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Hidden"/>
         </xs:complexType>
     </xs:element>
@@ -349,7 +365,15 @@
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForAnnotation">
@@ -359,7 +383,15 @@
             <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForIntentBasedNavigation">
@@ -373,7 +405,15 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="IconUrl" type="xs:anyURI"/>
-            <xs:attribute name="Importance" type="xs:anyURI"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithIntentBasedNavigation">
@@ -388,7 +428,15 @@
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="IconUrl" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:anyURI"/>
-            <xs:attribute name="Importance" type="xs:anyURI"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithUrl">
