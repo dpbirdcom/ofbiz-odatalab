@@ -23,6 +23,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="Parameter"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="SideEffectsPath"/>
                 <xs:element minOccurs="0" ref="ReturnType"/>
             </xs:sequence>
             <xs:attribute name="EntitySetPath" type="xs:NCName"/>
@@ -361,7 +362,14 @@
         <xs:complexType>
             <xs:attribute name="Label"/>
             <xs:attribute name="Action" type="xs:NCName"/>
-            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="InvocationGrouping">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Isolated"/>
+                        <xs:enumeration value="ChangeSet"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
@@ -380,7 +388,14 @@
         <xs:complexType>
             <xs:attribute name="Label"/>
             <xs:attribute name="Target" type="xs:anyURI"/>
-            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="InvocationGrouping">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Isolated"/>
+                        <xs:enumeration value="ChangeSet"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="Importance">
@@ -639,6 +654,19 @@
             <xs:attribute name="IsCollection" type="xs:boolean"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Name" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="SideEffectsPath">
+        <xs:complexType>
+            <xs:attribute name="Path" use="required" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        Recommended configuration:
+                        Starting from container: /com.dpbird.O3Container/EntitySetA/NavigationA
+                        Starting from boundEntity: boundEntity/NavigationA
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="NavigationPropertyBinding">

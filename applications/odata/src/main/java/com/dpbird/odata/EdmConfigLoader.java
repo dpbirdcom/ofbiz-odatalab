@@ -148,9 +148,8 @@ public class EdmConfigLoader {
         //generate action parameter Annotations
         for (CsdlAction action : actions) {
             OfbizCsdlAction csdlAction = (OfbizCsdlAction) action;
-            if (csdlAction.isSideEffects())  {
-                OfbizCsdlParameter boundCsdlParameter = (OfbizCsdlParameter) action.getParameters().get(0);
-                CsdlAnnotations actionAnnotations = generateActionAnnotations(action, boundCsdlParameter, locale);
+            CsdlAnnotations actionAnnotations = generateActionAnnotations(csdlAction, locale);
+            if (UtilValidate.isNotEmpty(actionAnnotations)) {
                 csdlAnnotationsList.add(actionAnnotations);
             }
             for (CsdlParameter parameter : action.getParameters()) {
@@ -900,7 +899,7 @@ public class EdmConfigLoader {
         String newActionPath = "com.dpbird.odata.services.ProcessorServices.stickySessionNewAction";
         FullQualifiedName fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, csdlEntityType.getName() + "NewAction");
         OfbizCsdlAction newAction = createAction(fullQualifiedName, parameters, returnType,
-                true, newActionPath, true, true, Util.firstLowerCase(csdlEntityType.getName()), false);
+                true, newActionPath, true, true, Util.firstLowerCase(csdlEntityType.getName()), false, null);
         actionList.add(newAction);
 
         //edit Action
@@ -912,14 +911,14 @@ public class EdmConfigLoader {
         String editActionPath = "com.dpbird.odata.services.ProcessorServices.stickySessionEditAction";
         fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, csdlEntityType.getName() + "EditAction");
         OfbizCsdlAction editAction =  createAction(fullQualifiedName, UtilMisc.toList(editParam), returnType,
-                true, editActionPath, true, true, editParam.getName(), false);
+                true, editActionPath, true, true, editParam.getName(), false, null);
         actionList.add(editAction);
 
         //save Action
         String saveActionPath = "com.dpbird.odata.services.ProcessorServices.stickySessionSaveAction";
         fullQualifiedName = new FullQualifiedName(OfbizMapOdata.NAMESPACE, csdlEntityType.getName() + "SaveAction");
         OfbizCsdlAction saveAction = createAction(fullQualifiedName, UtilMisc.toList(editParam), returnType,
-                true, saveActionPath, true, true, editParam.getName(), false);
+                true, saveActionPath, true, true, editParam.getName(), false, null);
         actionList.add(saveAction);
 
         return actionList;
@@ -985,28 +984,40 @@ public class EdmConfigLoader {
         return csdlAnnotations;
     }
 
-    private static CsdlAnnotations generateActionAnnotations(CsdlOperation csdlOperation, OfbizCsdlParameter boundCsdlParameter, Locale locale) {
-        CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
-        String qualifiedName = Util.getFullQualifiedNameByParamName(csdlOperation.getName()).getFullQualifiedNameAsString();
-        csdlAnnotations.setTarget(qualifiedName);
-        List<CsdlAnnotation> csdlAnnotationList = new ArrayList<>();
-        CsdlAnnotation annotation = createAnnotation("Common.SideEffects", null);
-        CsdlRecord record = new CsdlRecord();
-        List<CsdlExpression> csdlExpressions = new ArrayList<>();
-        csdlExpressions.add(createExpressionNavigationPropertyPath(boundCsdlParameter.getName()));
-        CsdlCollection csdlCollection = new CsdlCollection();
-        csdlCollection.setItems(csdlExpressions);
-        CsdlPropertyValue csdlPropertyValueTar = new CsdlPropertyValue();
-        csdlPropertyValueTar.setProperty("TargetEntities");
-        csdlPropertyValueTar.setValue(csdlCollection);
-        record.setPropertyValues(UtilMisc.toList(csdlPropertyValueTar));
-        annotation.setExpression(record);
-        csdlAnnotationList.add(annotation);
-        if (UtilValidate.isEmpty(csdlAnnotationList)) {
-            return null;
+    private static CsdlAnnotations generateActionAnnotations(OfbizCsdlAction csdlAction, Locale locale) {
+        if (csdlAction.isSideEffects() || UtilValidate.isNotEmpty(csdlAction.getSideEffectsPath())) {
+            CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
+            String qualifiedName = Util.getFullQualifiedNameByParamName(csdlAction.getName()).getFullQualifiedNameAsString();
+            csdlAnnotations.setTarget(qualifiedName);
+            List<CsdlAnnotation> csdlAnnotationList = new ArrayList<>();
+            CsdlAnnotation annotation = createAnnotation("Common.SideEffects", null);
+            CsdlRecord record = new CsdlRecord();
+            List<CsdlExpression> csdlExpressions = new ArrayList<>();
+            if (csdlAction.isSideEffects()) {
+                OfbizCsdlParameter boundCsdlParameter = (OfbizCsdlParameter) csdlAction.getParameters().get(0);
+                csdlExpressions.add(createExpressionNavigationPropertyPath(boundCsdlParameter.getName()));
+            }
+            if (UtilValidate.isNotEmpty(csdlAction.getSideEffectsPath())) {
+                for (String sideEffectsPath : csdlAction.getSideEffectsPath()) {
+                    csdlExpressions.add(createExpressionNavigationPropertyPath(sideEffectsPath));
+                }
+            }
+            CsdlCollection csdlCollection = new CsdlCollection();
+            csdlCollection.setItems(csdlExpressions);
+            CsdlPropertyValue csdlPropertyValueTar = new CsdlPropertyValue();
+            csdlPropertyValueTar.setProperty("TargetEntities");
+            csdlPropertyValueTar.setValue(csdlCollection);
+            record.setPropertyValues(UtilMisc.toList(csdlPropertyValueTar));
+            annotation.setExpression(record);
+            csdlAnnotationList.add(annotation);
+            if (UtilValidate.isEmpty(csdlAnnotationList)) {
+                return null;
+            }
+            csdlAnnotations.setAnnotations(csdlAnnotationList);
+            return csdlAnnotations;
         }
-        csdlAnnotations.setAnnotations(csdlAnnotationList);
-        return csdlAnnotations;
+        return null;
+
     }
 
     private static CsdlAnnotations generateParameterAnnotations(CsdlOperation csdlOperation, OfbizCsdlParameter csdlParameter, Locale locale) {
@@ -2852,6 +2863,7 @@ public class EdmConfigLoader {
         List<? extends Element> actionChildren = UtilXml.childElementList(actionElement);
         List<CsdlParameter> parameters = new ArrayList<CsdlParameter>();
         CsdlReturnType csdlReturnType = null;
+        List<String> sideEffectsPath = new ArrayList<String>();
         for (Element inActionElement : actionChildren) {
             String inActionTagName = inActionElement.getTagName();
             if (inActionTagName.equals("Parameter")) { // <Parameter>
@@ -2861,9 +2873,12 @@ public class EdmConfigLoader {
             if (inActionTagName.equals("ReturnType")) {
                 csdlReturnType = loadReturnTypeFromElement(inActionElement);
             }
+            if (inActionTagName.equals("SideEffectsPath")) {
+                sideEffectsPath.add(inActionElement.getAttribute("Path"));
+            }
         }
         return createAction(fullQualifiedName, parameters, csdlReturnType,
-                isBound, ofbizService, isEntityAction, stickySession, entitySetPath, sideEffects);
+                isBound, ofbizService, isEntityAction, stickySession, entitySetPath, sideEffects, sideEffectsPath);
     }
 
     private static CsdlParameter loadParameterFromElement(Element parameterElement, Locale locale, Delegator delegator, List<CsdlProperty> boundProperties) {
@@ -2990,7 +3005,7 @@ public class EdmConfigLoader {
     private static OfbizCsdlAction createAction(final FullQualifiedName actionName,
                                                 List<CsdlParameter> parameters, CsdlReturnType csdlReturnType, boolean isBound,
                                                 String ofbizMethod, boolean isEntityAction,
-                                                boolean stickySession, String entitySetPath, boolean sideEffects) {
+                                                boolean stickySession, String entitySetPath, boolean sideEffects, List<String> sideEffectPath) {
         final OfbizCsdlAction csdlAction = new OfbizCsdlAction();
         try {
             // 处理IN参数
@@ -3007,6 +3022,7 @@ public class EdmConfigLoader {
             csdlAction.setEntityAction(isEntityAction);
             csdlAction.setEntitySetPath(entitySetPath);
             csdlAction.setSideEffects(sideEffects);
+            csdlAction.setSideEffectsPath(sideEffectPath);
         } catch (Exception e) { // 即使出错了，生活还要继续，打印错误，跳过，然后继续下一个
             e.printStackTrace();
             return null;
