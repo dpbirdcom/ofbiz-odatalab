@@ -74,6 +74,7 @@
                 <xs:element ref="HeaderFacets"/>
                 <xs:element ref="QuickViewFacets"/>
                 <xs:element ref="Contact"/>
+                <xs:element ref="Variant"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -533,6 +534,54 @@
                     <xs:restriction base="xs:string">
                         <xs:enumeration value="WithIcon"/>
                         <xs:enumeration value="WithoutIcon"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Variant">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="SelectOption"/>
+            </xs:sequence>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+            <xs:attribute name="Text" type="xs:anyURI"/>
+            <xs:attribute name="Visualizations" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="SelectOption">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="Range"/>
+            </xs:sequence>
+            <xs:attribute name="PropertyName" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Range">
+        <xs:complexType>
+            <xs:attribute name="Low" type="xs:anyURI"/>
+            <xs:attribute name="High" type="xs:anyURI"/>
+            <xs:attribute name="Option">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="EQ"/>
+                        <xs:enumeration value="BT"/>
+                        <xs:enumeration value="LE"/>
+                        <xs:enumeration value="GE"/>
+                        <xs:enumeration value="NE"/>
+                        <xs:enumeration value="NB"/>
+                        <xs:enumeration value="NP"/>
+                        <xs:enumeration value="GT"/>
+                        <xs:enumeration value="LT"/>
+                        <xs:enumeration value="CP"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Sign">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="I"/>
+                        <xs:enumeration value="E"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:attribute>

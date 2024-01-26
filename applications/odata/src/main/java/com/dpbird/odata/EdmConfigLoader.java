@@ -213,6 +213,8 @@ public class EdmConfigLoader {
                 csdlAnnotationList.add(generateQuickViewFacets(csdlEntityType, (QuickViewFacets) term, locale));
             } else if (term instanceof Contact) {
                 csdlAnnotationList.add(generateContact(csdlEntityType, (Contact) term, locale));
+            } else if (term instanceof SelectionPresentationVariant) {
+                csdlAnnotationList.add(generateVariant(csdlEntityType, (SelectionPresentationVariant) term, locale));
             }
         }
         if (UtilValidate.isEmpty(csdlAnnotationList)) {
@@ -775,6 +777,94 @@ public class EdmConfigLoader {
         csdlAnnotation.setExpression(csdlRecord);
         return csdlAnnotation;
     }
+
+
+    private static CsdlAnnotation generateVariant(OfbizCsdlEntityType csdlEntityType, SelectionPresentationVariant variant, Locale locale) {
+        CsdlAnnotation csdlAnnotation = createAnnotation(variant.getTermName(), variant.getQualifier());
+        CsdlRecord mainCsdlRecord = new CsdlRecord();
+        mainCsdlRecord.setType("UI.SelectionPresentationVariantType");
+        List<CsdlPropertyValue> mainPropertyValues = new ArrayList<>();
+        //text
+        if (UtilValidate.isNotEmpty(variant.getText())) {
+            mainPropertyValues.add(createPropertyValueString("Text", variant.getText()));
+        }
+        //生成 PresentationVariant
+        CsdlPropertyValue presentationVariantPropertyValue = new CsdlPropertyValue();
+        presentationVariantPropertyValue.setProperty("PresentationVariant");
+        CsdlRecord presentationVariantRecord = new CsdlRecord();
+        presentationVariantRecord.setType("UI.PresentationVariantType");
+
+        CsdlPropertyValue visualizationsProperty = new CsdlPropertyValue();
+        visualizationsProperty.setProperty("Visualizations");
+
+        CsdlCollection visualizationsCollection = new CsdlCollection();
+        List<CsdlExpression> csdlExpressions = new ArrayList<>();
+        csdlExpressions.add(createExpressionAnnotationPath(variant.getVisualizations()));
+        visualizationsCollection.setItems(csdlExpressions);
+        visualizationsProperty.setValue(visualizationsCollection);
+
+        //add PresentationVariant
+        presentationVariantRecord.setPropertyValues(UtilMisc.toList(visualizationsProperty));
+        presentationVariantPropertyValue.setValue(presentationVariantRecord);
+        mainPropertyValues.add(presentationVariantPropertyValue);
+
+        //生成SelectionVariant
+        CsdlPropertyValue selectionVariantProperty = new CsdlPropertyValue();
+        selectionVariantProperty.setProperty("SelectionVariant");
+        CsdlRecord selectionVariantTypeRecode = new CsdlRecord();
+        selectionVariantTypeRecode.setType("UI.PresentationVariantType");
+
+        CsdlPropertyValue selectOptionsProperty = new CsdlPropertyValue();
+        selectOptionsProperty.setProperty("SelectOptions");
+
+        CsdlCollection selectOptionCollection = new CsdlCollection();
+        List<CsdlExpression> selectOptionCollectionItems = new ArrayList<>();
+        for (SelectionPresentationVariant.SelectOption selectOption : variant.getSelectOptionList()) {
+            CsdlRecord selectOptionTypeRecord = new CsdlRecord();
+            selectOptionTypeRecord.setType("UI.SelectOptionType");
+            List<CsdlPropertyValue> csdlPropertyValues = new ArrayList<>();
+            csdlPropertyValues.add(createPropertyValuePropertyPath("PropertyName", selectOption.getPropertyName()));
+
+            CsdlPropertyValue rangesProperty = new CsdlPropertyValue();
+            rangesProperty.setProperty("Ranges");
+            CsdlCollection rangeCollection = new CsdlCollection();
+            List<CsdlExpression> rangeExpressionsItem = new ArrayList<>();
+            for (SelectionPresentationVariant.Range range : selectOption.getRangeList()) {
+                CsdlRecord selectionRangeTypeRecord = new CsdlRecord();
+                selectionRangeTypeRecord.setType("UI.SelectionRangeType");
+                List<CsdlPropertyValue> rangeTypePropertyValues = new ArrayList<>();
+                if (UtilValidate.isNotEmpty(range.getLow())) {
+                    rangeTypePropertyValues.add(createPropertyValueString("Low", range.getLow()));
+                }
+                if (UtilValidate.isNotEmpty(range.getHigh())) {
+                    rangeTypePropertyValues.add(createPropertyValueString("High", range.getHigh()));
+                }
+                if (UtilValidate.isNotEmpty(range.getOption())) {
+                    rangeTypePropertyValues.add(createPropertyValueEnum("Option", SelectionRangeOptionType.valueOf(range.getOption())));
+                }
+                if (UtilValidate.isNotEmpty(range.getSign())) {
+                    rangeTypePropertyValues.add(createPropertyValueEnum("Sign", SelectionRangeSignType.valueOf(range.getSign())));
+                }
+                selectionRangeTypeRecord.setPropertyValues(rangeTypePropertyValues);
+                rangeExpressionsItem.add(selectionRangeTypeRecord);
+            }
+            rangeCollection.setItems(rangeExpressionsItem);
+            rangesProperty.setValue(rangeCollection);
+            csdlPropertyValues.add(rangesProperty);
+
+            selectOptionTypeRecord.setPropertyValues(csdlPropertyValues);
+            selectOptionCollectionItems.add(selectOptionTypeRecord);
+        }
+        if (UtilValidate.isNotEmpty(selectOptionCollectionItems)) {
+            selectOptionCollection.setItems(selectOptionCollectionItems);
+            selectOptionsProperty.setValue(selectOptionCollection);
+            mainPropertyValues.add(selectOptionsProperty);
+        }
+        mainCsdlRecord.setPropertyValues(mainPropertyValues);
+        csdlAnnotation.setExpression(mainCsdlRecord);
+        return csdlAnnotation;
+    }
+
 
     private static CsdlAnnotation generateHeaderFacets(OfbizCsdlEntityType csdlEntityType, HeaderFacets facets, Locale locale) {
         List<ReferenceFacet> referenceFacets = facets.getReferenceFacets();
@@ -1482,6 +1572,8 @@ public class EdmConfigLoader {
                 terms.add(loadQuickViewFacetsFromElement(inEntityElement, locale, delegator));
             } else if (inEntityTagName.equals("Contact")) {
                 terms.add(loadContactFromElement(inEntityElement, locale, delegator));
+            } else if (inEntityTagName.equals("Variant")) {
+                terms.add(loadVariantElement(inEntityElement, locale, delegator));
             }
             // manually added Annotation
             if (inEntityTagName.equals("Annotation")) {
@@ -1894,6 +1986,48 @@ public class EdmConfigLoader {
         contact.setPrimaryPhone(primaryPhone);
         contact.setEmail(email);
         return contact;
+    }
+
+    private static Term loadVariantElement(Element variantElement, Locale locale, Delegator delegator) {
+        String qualifier = variantElement.getAttribute("Qualifier");
+        SelectionPresentationVariant variant = new SelectionPresentationVariant(qualifier);
+        String text = variantElement.getAttribute("Text");
+        if (UtilValidate.isNotEmpty(text)) {
+            variant.setText(getLabel(delegator,text, locale));
+        }
+        String visualizations = variantElement.getAttribute("Visualizations");
+        if (UtilValidate.isNotEmpty(visualizations)) {
+            variant.setVisualizations(visualizations);
+        }
+        List<SelectionPresentationVariant.SelectOption> selectOptionList = new ArrayList<>();
+        List<? extends Element> variantChildrenEles = UtilXml.childElementList(variantElement);
+        if (UtilValidate.isNotEmpty(variantChildrenEles)) {
+            for (Element variantChildrenEle : variantChildrenEles) {
+                String tagName = variantChildrenEle.getTagName();
+                if (tagName.equals("SelectOption")) {
+                    String propertyName = variantChildrenEle.getAttribute("PropertyName");
+                    SelectionPresentationVariant.SelectOption selectOption = new SelectionPresentationVariant.SelectOption(propertyName);
+                    selectOption.setRangeList(getRangeList(variantChildrenEle));
+                    selectOptionList.add(selectOption);
+                }
+            }
+        }
+        variant.setSelectOptionList(selectOptionList);
+        return variant;
+    }
+
+    private static List<SelectionPresentationVariant.Range> getRangeList(Element variantChildrenEle) {
+        List<? extends Element> rangeElementList = UtilXml.childElementList(variantChildrenEle);
+        List<SelectionPresentationVariant.Range> rangeList = new ArrayList<>();
+        for (Element rangeElement : rangeElementList) {
+            SelectionPresentationVariant.Range range = new SelectionPresentationVariant.Range();
+            range.setLow(rangeElement.getAttribute("Low"));
+            range.setHigh(rangeElement.getAttribute("High"));
+            range.setOption(rangeElement.getAttribute("Option"));
+            range.setSign(rangeElement.getAttribute("Sign"));
+            rangeList.add(range);
+        }
+        return rangeList;
     }
 
     private static Term loadHeaderFacetsFromElement(Element facetsElement, Locale locale, Delegator delegator) {
