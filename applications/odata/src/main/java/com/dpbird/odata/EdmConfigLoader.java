@@ -855,12 +855,11 @@ public class EdmConfigLoader {
             selectOptionTypeRecord.setPropertyValues(csdlPropertyValues);
             selectOptionCollectionItems.add(selectOptionTypeRecord);
         }
-        if (UtilValidate.isNotEmpty(selectOptionCollectionItems)) {
-            selectOptionCollection.setItems(selectOptionCollectionItems);
-            selectOptionsProperty.setValue(selectOptionCollection);
-            selectionVariantTypeRecode.setPropertyValues(UtilMisc.toList(selectOptionsProperty));
-            selectionVariantProperty.setValue(selectionVariantTypeRecode);
-        }
+        selectOptionCollection.setItems(selectOptionCollectionItems);
+        selectOptionsProperty.setValue(selectOptionCollection);
+        selectionVariantTypeRecode.setPropertyValues(UtilMisc.toList(selectOptionsProperty));
+        selectionVariantProperty.setValue(selectionVariantTypeRecode);
+        
         mainPropertyValues.add(selectionVariantProperty);
         mainCsdlRecord.setPropertyValues(mainPropertyValues);
         csdlAnnotation.setExpression(mainCsdlRecord);
