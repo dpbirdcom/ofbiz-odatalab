@@ -812,7 +812,7 @@ public class EdmConfigLoader {
         CsdlPropertyValue selectionVariantProperty = new CsdlPropertyValue();
         selectionVariantProperty.setProperty("SelectionVariant");
         CsdlRecord selectionVariantTypeRecode = new CsdlRecord();
-        selectionVariantTypeRecode.setType("UI.PresentationVariantType");
+        selectionVariantTypeRecode.setType("UI.SelectionVariantType");
 
         CsdlPropertyValue selectOptionsProperty = new CsdlPropertyValue();
         selectOptionsProperty.setProperty("SelectOptions");
@@ -858,8 +858,10 @@ public class EdmConfigLoader {
         if (UtilValidate.isNotEmpty(selectOptionCollectionItems)) {
             selectOptionCollection.setItems(selectOptionCollectionItems);
             selectOptionsProperty.setValue(selectOptionCollection);
-            mainPropertyValues.add(selectOptionsProperty);
+            selectionVariantTypeRecode.setPropertyValues(UtilMisc.toList(selectOptionsProperty));
+            selectionVariantProperty.setValue(selectionVariantTypeRecode);
         }
+        mainPropertyValues.add(selectionVariantProperty);
         mainCsdlRecord.setPropertyValues(mainPropertyValues);
         csdlAnnotation.setExpression(mainCsdlRecord);
         return csdlAnnotation;

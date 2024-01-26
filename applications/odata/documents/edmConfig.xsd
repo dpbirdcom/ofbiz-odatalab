@@ -546,7 +546,13 @@
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Text" type="xs:anyURI"/>
-            <xs:attribute name="Visualizations" type="xs:anyURI"/>
+            <xs:attribute name="Visualizations" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        For example: Visualizations="@UI.LineItem#Qualifier_A"
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="SelectOption">
