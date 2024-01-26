@@ -453,9 +453,20 @@ public class EdmConfigLoader {
             if (UtilValidate.isNotEmpty(referenceFacet.getLabel())) {
                 propertyValues.add(createPropertyValueString("Label", referenceFacet.getLabel()));
             }
-            propertyValues.add(createPropertyValueAnnotationPath("Target", referenceFacet.getTarget()));
-            String recordType = "UI.ReferenceFacet";
-            csdlRecord.setType(recordType);
+            if (referenceFacet instanceof CollectionFacet) {
+                //CollectionFacet
+                CollectionFacet collectionFacet = (CollectionFacet) referenceFacet;
+                csdlRecord.setType("UI.CollectionFacet");
+                CsdlCollection collectionReferenceFacet = createCollectionReferenceFacet(csdlEntityType, collectionFacet.getFacets(), locale);
+                CsdlPropertyValue propertyValue = new CsdlPropertyValue();
+                propertyValue.setProperty("Facets");
+                propertyValue.setValue(collectionReferenceFacet);
+                propertyValues.add(propertyValue);
+            } else {
+                //ReferenceFacet
+                propertyValues.add(createPropertyValueAnnotationPath("Target", referenceFacet.getTarget()));
+                csdlRecord.setType("UI.ReferenceFacet");
+            }
             csdlRecord.setPropertyValues(propertyValues);
             collectionItems.add(csdlRecord);
             //add annotation
@@ -1811,14 +1822,33 @@ public class EdmConfigLoader {
         Facets facets = new Facets(qualifier);
         List<ReferenceFacet> referenceFacets = new ArrayList<>();
         for (Element facetsChild : facetsChildrenEles) {
-            String lineItemChildTag = facetsChild.getTagName();
-            if (lineItemChildTag.equals("ReferenceFacet")) {
+            String facetsChildTag = facetsChild.getTagName();
+            if (facetsChildTag.equals("ReferenceFacet")) {
                 ReferenceFacet referenceFacet = new ReferenceFacet();
                 referenceFacet.setId(facetsChild.getAttribute("ID"));
                 referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
                 referenceFacet.setTarget(facetsChild.getAttribute("Target"));
                 referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
                 referenceFacets.add(referenceFacet);
+            }
+            if (facetsChildTag.equals("CollectionFacet")) {
+                CollectionFacet collectionFacet = new CollectionFacet();
+                collectionFacet.setId(facetsChild.getAttribute("ID"));
+                collectionFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                collectionFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                List<ReferenceFacet> collectionFacets = new ArrayList<>();
+                //Collection ReferenceFacet
+                List<? extends Element> facetsChildElements = UtilXml.childElementList(facetsChild);
+                for (Element referenceFacetElement : facetsChildElements) {
+                    ReferenceFacet referenceFacet = new ReferenceFacet();
+                    referenceFacet.setId(referenceFacetElement.getAttribute("ID"));
+                    referenceFacet.setLabel(getLabel(delegator, referenceFacetElement.getAttribute("Label"), locale));
+                    referenceFacet.setTarget(referenceFacetElement.getAttribute("Target"));
+                    referenceFacet.setHidden(referenceFacetElement.getAttribute("Hidden"));
+                    collectionFacets.add(referenceFacet);
+                }
+                collectionFacet.setFacets(collectionFacets);
+                referenceFacets.add(collectionFacet);
             }
         }
         facets.setReferenceFacets(referenceFacets);
@@ -1875,14 +1905,33 @@ public class EdmConfigLoader {
         HeaderFacets headerFacets = new HeaderFacets(qualifier);
         List<ReferenceFacet> referenceFacets = new ArrayList<>();
         for (Element facetsChild : facetsChildrenEles) {
-            String lineItemChildTag = facetsChild.getTagName();
-            if (lineItemChildTag.equals("ReferenceFacet")) {
+            String facetsChildTag = facetsChild.getTagName();
+            if (facetsChildTag.equals("ReferenceFacet")) {
                 ReferenceFacet referenceFacet = new ReferenceFacet();
                 referenceFacet.setId(facetsChild.getAttribute("ID"));
                 referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
                 referenceFacet.setTarget(facetsChild.getAttribute("Target"));
                 referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
                 referenceFacets.add(referenceFacet);
+            }
+            if (facetsChildTag.equals("CollectionFacet")) {
+                CollectionFacet collectionFacet = new CollectionFacet();
+                collectionFacet.setId(facetsChild.getAttribute("ID"));
+                collectionFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
+                collectionFacet.setHidden(facetsChild.getAttribute("Hidden"));
+                List<ReferenceFacet> collectionFacets = new ArrayList<>();
+                //Collection ReferenceFacet
+                List<? extends Element> facetsChildElements = UtilXml.childElementList(facetsChild);
+                for (Element referenceFacetElement : facetsChildElements) {
+                    ReferenceFacet referenceFacet = new ReferenceFacet();
+                    referenceFacet.setId(referenceFacetElement.getAttribute("ID"));
+                    referenceFacet.setLabel(getLabel(delegator, referenceFacetElement.getAttribute("Label"), locale));
+                    referenceFacet.setTarget(referenceFacetElement.getAttribute("Target"));
+                    referenceFacet.setHidden(referenceFacetElement.getAttribute("Hidden"));
+                    collectionFacets.add(referenceFacet);
+                }
+                collectionFacet.setFacets(collectionFacets);
+                referenceFacets.add(collectionFacet);
             }
         }
         headerFacets.setReferenceFacets(referenceFacets);

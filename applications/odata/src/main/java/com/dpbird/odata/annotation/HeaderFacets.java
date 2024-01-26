@@ -5,6 +5,7 @@ import java.util.List;
 public class HeaderFacets extends Term {
 
     List<ReferenceFacet> referenceFacets;
+    List<CollectionFacet> collectionFacets;
 
     public HeaderFacets(String qualifier) {
         super(qualifier);
@@ -20,4 +21,11 @@ public class HeaderFacets extends Term {
         this.referenceFacets = referenceFacets;
     }
 
+    public List<CollectionFacet> getCollectionFacets() {
+        return collectionFacets;
+    }
+
+    public void setCollectionFacets(List<CollectionFacet> collectionFacets) {
+        this.collectionFacets = collectionFacets;
+    }
 }

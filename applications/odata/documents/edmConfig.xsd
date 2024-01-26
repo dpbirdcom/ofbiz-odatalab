@@ -552,23 +552,35 @@
     </xs:element>
     <xs:element name="HeaderFacets">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="CollectionFacet"/>
+            </xs:choice>
         </xs:complexType>
     </xs:element>
     <xs:element name="QuickViewFacets">
         <xs:complexType>
             <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
     <xs:element name="Facets">
         <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="CollectionFacet"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="CollectionFacet">
+        <xs:complexType>
             <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
             </xs:sequence>
+            <xs:attribute name="ID" type="xs:anyURI"/>
+            <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReferenceFacet">
