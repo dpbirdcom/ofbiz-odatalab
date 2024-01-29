@@ -127,12 +127,14 @@ public class OfbizOdataProcessor {
         if (searchCondition != null) {
             entityCondition = Util.appendCondition(entityCondition, searchCondition);
         }
-        EntityCondition entitySetCondition = null;
-        EntityCondition entityTypeCondition = null;
         //检查是否是多段式的apply查询 如果是就不添加主对象的EntitySetCondition
         List<UriResource> uriResourceParts = (List<UriResource>) odataContext.get("uriResourceParts");
         boolean isMultistageApply = Util.isMultistageApply(uriResourceParts, queryOptions);
-        if (UtilValidate.isNotEmpty(edmParams) && !isMultistageApply) {
+        Boolean isNavigation = (Boolean) edmParams.get("isNavigation");
+        if (UtilValidate.isEmpty(isNavigation)) {
+            isNavigation = false;
+        }
+        if (UtilValidate.isNotEmpty(edmParams) && !isMultistageApply && !isNavigation) {
             EdmBindingTarget edmBindingTarget = (EdmBindingTarget) edmParams.get("edmBindingTarget");
             if (UtilValidate.isNotEmpty(edmBindingTarget) && edmBindingTarget instanceof EdmEntitySet) { // 只有entitySet时才会有entitySetCondition
                 OfbizCsdlEntitySet csdlEntitySet = (OfbizCsdlEntitySet) this.edmProvider.getEntityContainer()
@@ -140,18 +142,17 @@ public class OfbizOdataProcessor {
                 String entitySetConditionStr = csdlEntitySet.getConditionStr();
                 OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(csdlEntitySet.getTypeFQN());
                 if (UtilValidate.isNotEmpty(entitySetConditionStr)) {
-                    entitySetCondition = getStringCondition(entitySetConditionStr, csdlEntityType);
-                }
-                //EntityType的Condition
-                if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
-                    entityTypeCondition = getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType);
+                    //添加EntitySet Condition
+                    entityCondition = Util.appendCondition(entityCondition, getStringCondition(entitySetConditionStr, csdlEntityType));
                 }
             }
         }
-        entityCondition = Util.appendCondition(entityCondition, entitySetCondition);
-        entityCondition = Util.appendCondition(entityCondition, entityTypeCondition);
         if (this.edmEntityType != null) {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) this.edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
+            //添加EntityType的Condition
+            if (UtilValidate.isNotEmpty(csdlEntityType.getEntityConditionStr())) {
+                entityCondition = Util.appendCondition(entityCondition, getStringCondition(csdlEntityType.getEntityConditionStr(), csdlEntityType));
+            }
             this.filterByDate = csdlEntityType.isFilterByDate();
             if (UtilValidate.isNotEmpty(sapContextId) && UtilValidate.isNotEmpty(csdlEntityType.getDraftEntityName())) {
                 List<EntityCondition> exprs = new ArrayList<EntityCondition>();

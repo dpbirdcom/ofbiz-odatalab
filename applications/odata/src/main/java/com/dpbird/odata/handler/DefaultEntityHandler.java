@@ -73,7 +73,7 @@ public class DefaultEntityHandler implements EntityHandler {
             if (UtilValidate.isNotEmpty(mainEdmBindingTarget)) {
                 navEdmBindingTarget = Util.getNavigationTargetEntitySet(mainEdmBindingTarget, edmNavigationProperty);
             }
-            OdataReader optionReader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmNavigationProperty.getType(), "edmBindingTarget", navEdmBindingTarget));
+            OdataReader optionReader = new OdataReader(odataContext, queryOptions, UtilMisc.toMap("edmEntityType", edmNavigationProperty.getType(), "edmBindingTarget", navEdmBindingTarget, "isNavigation", true));
             handlerResults = optionReader.ofbizFindList(Util.getGenericValuesQueryCond(relatedList));
         }
         return handlerResults;
