@@ -6,6 +6,7 @@ public class ReferenceFacet {
     private String label;
     private String target;
     private String hidden = null;
+    private LogicalExpression hiddenExpr = null;
 
     public String getId() {
         return id;
@@ -37,5 +38,13 @@ public class ReferenceFacet {
 
     public void setHidden(String hidden) {
         this.hidden = hidden;
+    }
+
+    public LogicalExpression getHiddenExpr() {
+        return hiddenExpr;
+    }
+
+    public void setHiddenExpr(LogicalExpression hiddenExpr) {
+        this.hiddenExpr = hiddenExpr;
     }
 }

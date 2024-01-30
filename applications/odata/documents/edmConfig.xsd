@@ -361,6 +361,9 @@
     </xs:element>
     <xs:element name="DataFieldForAction">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" ref="Hidden"/>
+            </xs:sequence>
             <xs:attribute name="Label"/>
             <xs:attribute name="Action" type="xs:NCName"/>
             <xs:attribute name="InvocationGrouping">
@@ -414,6 +417,7 @@
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" ref="Mapping"/>
+                <xs:element minOccurs="0" ref="Hidden"/>
             </xs:choice>
             <xs:attribute name="Label"/>
             <xs:attribute name="SemanticObject" type="xs:anyURI"/>
@@ -436,6 +440,7 @@
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" ref="Mapping"/>
+                <xs:element minOccurs="0" ref="Hidden"/>
             </xs:choice>
             <xs:attribute name="Label"/>
             <xs:attribute name="Value"/>
@@ -632,6 +637,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element ref="Hidden"/>
             </xs:sequence>
             <xs:attribute name="ID" type="xs:anyURI"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
@@ -640,10 +646,84 @@
     </xs:element>
     <xs:element name="ReferenceFacet">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Hidden"/>
+            </xs:sequence>
             <xs:attribute name="ID" type="xs:anyURI"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
             <xs:attribute name="Target" type="xs:anyURI"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Hidden">
+        <xs:annotation>
+            <xs:documentation>
+            <!--
+                Demo:
+                    <Hidden>
+                        <Expr Path="workEffortTypeId" Operator="EQ" Int="WORK_XX"/>
+                        <Then Bool="true"/>
+                        <Else Bool="false"/>
+                    </Hidden>
+
+                Demo:
+                    <Hidden Combine="And">
+                        <Expr Path="sequence" Operator="Gt" Int="1"/>
+                        <Expr Path="workEffortTypeId" Operator="Eq" String="ACTIVITY"/>
+                        <Then Bool="true"/>
+                        <Else Bool="false"/>
+                    </Hidden>
+            -->
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="2" ref="Expr"/>
+                <xs:element ref="Then"/>
+                <xs:element ref="Else"/>
+            </xs:sequence>
+            <xs:attribute name="Combine">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="And"/>
+                        <xs:enumeration value="Or"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Expr">
+        <xs:complexType>
+            <xs:attribute name="Path" type="xs:anyURI"/>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
+            <xs:attribute name="Operator">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Eq"/>
+                        <xs:enumeration value="Ne"/>
+                        <xs:enumeration value="Gt"/>
+                        <xs:enumeration value="Ge"/>
+                        <xs:enumeration value="Lt"/>
+                        <xs:enumeration value="Le"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Then">
+        <xs:complexType>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Else">
+        <xs:complexType>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="PropertyRef">
