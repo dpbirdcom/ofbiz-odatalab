@@ -604,6 +604,7 @@
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
             </xs:sequence>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
@@ -637,7 +638,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
-                <xs:element ref="Hidden"/>
+                <xs:element ref="Hidden" minOccurs="0"/>
             </xs:sequence>
             <xs:attribute name="ID" type="xs:anyURI"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
@@ -647,7 +648,7 @@
     <xs:element name="ReferenceFacet">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="Hidden"/>
+                <xs:element ref="Hidden" minOccurs="0"/>
             </xs:sequence>
             <xs:attribute name="ID" type="xs:anyURI"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
