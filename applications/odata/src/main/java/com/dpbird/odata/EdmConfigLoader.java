@@ -308,6 +308,10 @@ public class EdmConfigLoader {
                     propertyValue = createPropertyValueEnum("Criticality", dataFieldForAction.getCriticality());
                     propertyValues.add(propertyValue);
                 }
+                if (UtilValidate.isNotEmpty(dataFieldForAction.getIconUrl())) {
+                    propertyValue = createPropertyValueString("IconUrl", dataFieldForAction.getIconUrl());
+                    propertyValues.add(propertyValue);
+                }
                 String recordType = "UI.DataFieldForAction";
                 csdlRecord.setType(recordType);
             } else if (dataFieldAbstract instanceof DataFieldForAnnotation) {
@@ -1715,9 +1719,11 @@ public class EdmConfigLoader {
                 String criticality = element.getAttribute("Criticality");
                 String inline = element.getAttribute("Inline");
                 String hidden = element.getAttribute("Hidden");
+                String iconUrl = element.getAttribute("IconUrl");
                 String importance = element.getAttribute("Importance");
                 DataFieldForAction dataFieldForAction = new DataFieldForAction();
                 dataFieldForAction.setLabel(label);
+                dataFieldForAction.setIconUrl(iconUrl);
                 dataFieldForAction.setAction(OfbizMapOdata.NAMESPACE + "." + action);
                 if (UtilValidate.isNotEmpty(invocationGrouping)) {
                     dataFieldForAction.setInvocationGrouping(OperationGroupingType.valueOf(invocationGrouping));

@@ -377,6 +377,7 @@
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
             <xs:attribute name="Importance">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
