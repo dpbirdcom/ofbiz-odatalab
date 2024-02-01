@@ -777,7 +777,7 @@
             <xs:attribute name="Only" type="xs:boolean"/>
             <xs:attribute name="Required" type="xs:boolean"/>
             <xs:attribute name="UnitPath" type="xs:anyURI"/>
-            <xs:attribute name="Unit" type="xs:anyURI"/>
+            <xs:attribute name="Unit" />
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">
