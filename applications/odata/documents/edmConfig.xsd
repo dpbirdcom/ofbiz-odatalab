@@ -753,7 +753,17 @@
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="HiddenFilter" type="xs:boolean"/>
             <xs:attribute name="SemanticObject" type="xs:NCName"/>
-            <xs:attribute name="FieldControl" type="xs:NCName"/>
+            <xs:attribute name="FieldControl">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Mandatory"/>
+                        <xs:enumeration value="Optional"/>
+                        <xs:enumeration value="ReadOnly"/>
+                        <xs:enumeration value="Inapplicable"/>
+                        <xs:enumeration value="Hidden"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
@@ -766,6 +776,8 @@
             <xs:attribute name="FileNamePath" type="xs:anyURI"/>
             <xs:attribute name="Only" type="xs:boolean"/>
             <xs:attribute name="Required" type="xs:boolean"/>
+            <xs:attribute name="UnitPath" type="xs:anyURI"/>
+            <xs:attribute name="Unit" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">

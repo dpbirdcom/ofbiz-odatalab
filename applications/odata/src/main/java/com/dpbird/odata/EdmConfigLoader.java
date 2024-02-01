@@ -1080,6 +1080,12 @@ public class EdmConfigLoader {
         if (csdlProperty.getFieldControl() != null) {
             csdlAnnotationList.add(createAnnotationEnum("Common.FieldControl", csdlProperty.getFieldControl(), null));
         }
+        if (UtilValidate.isNotEmpty(csdlProperty.getUnitPath())) {
+            csdlAnnotationList.add(createAnnotationPath("Measures.Unit", csdlProperty.getUnitPath(), null));
+        }
+        if (UtilValidate.isNotEmpty(csdlProperty.getUnit())) {
+            csdlAnnotationList.add(createAnnotationString("Measures.Unit", csdlProperty.getUnit(), null));
+        }
         List<Term> terms = csdlProperty.getTerms();
         if (terms != null) {
             for (Term term : terms) {
@@ -2611,6 +2617,8 @@ public class EdmConfigLoader {
         String isNumericAttribute = propertyElement.getAttribute("IsNumericAttribute");
         String isDateAttribute = propertyElement.getAttribute("IsDateAttribute");
         String mimeType = propertyElement.getAttribute("MimeType");
+        String unitPath = propertyElement.getAttribute("UnitPath");
+        String unit = propertyElement.getAttribute("Unit");
         FullQualifiedName fullQualifiedName;
         String type = propertyElement.getAttribute("Type");
         if (UtilValidate.isEmpty(type) && property.getOfbizFieldType() != null) {
@@ -2708,6 +2716,12 @@ public class EdmConfigLoader {
         }
         if (UtilValidate.isNotEmpty(required)) {
             property.setRequired(Boolean.valueOf(required));
+        }
+        if (UtilValidate.isNotEmpty(unitPath)) {
+            property.setUnitPath(unitPath);
+        }
+        if (UtilValidate.isNotEmpty(unit)) {
+            property.setUnit(unit);
         }
         List<? extends Element> propertyChildren = UtilXml.childElementList(propertyElement);
         List<CsdlAnnotation> annotations = new ArrayList<>();

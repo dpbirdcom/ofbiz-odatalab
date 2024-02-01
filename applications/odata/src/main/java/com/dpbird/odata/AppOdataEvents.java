@@ -68,7 +68,7 @@ public class AppOdataEvents {
 
             List<EdmxReference> edmxReferences = new ArrayList<EdmxReference>();
 
-            EdmxReference edmxReference = new EdmxReference(URI.create("http://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/vocabularies/Org.OData.Measures.V1.xml"));
+            EdmxReference edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Measures.xml"));
             EdmxReferenceInclude referenceInclude = new EdmxReferenceInclude("Org.OData.Measures.V1", "Measures");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
