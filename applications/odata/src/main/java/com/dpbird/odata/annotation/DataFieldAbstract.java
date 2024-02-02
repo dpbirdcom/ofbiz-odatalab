@@ -9,6 +9,7 @@ public abstract class DataFieldAbstract {
     private ImportanceType importance;
     private String hidden = null;
     private LogicalExpression hiddenExpr = null;
+    private LogicalExpression criticalityExpr = null;
 
     public String getLabel() {
         return label;
@@ -72,5 +73,13 @@ public abstract class DataFieldAbstract {
 
     public void setHiddenExpr(LogicalExpression hiddenExpr) {
         this.hiddenExpr = hiddenExpr;
+    }
+
+    public LogicalExpression getCriticalityExpr() {
+        return criticalityExpr;
+    }
+
+    public void setCriticalityExpr(LogicalExpression criticalityExpr) {
+        this.criticalityExpr = criticalityExpr;
     }
 }

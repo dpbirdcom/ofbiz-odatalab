@@ -118,6 +118,7 @@ public class EdmConfigLoader {
     public static void generateAnnotations(Delegator delegator, CsdlSchema csdlSchema, Locale locale) {
         // generate annotations for EntityType
         List<CsdlEntityType> entityTypes = csdlSchema.getEntityTypes();
+        List<CsdlEntitySet> entitySets = csdlSchema.getEntityContainer().getEntitySets();
         List<CsdlEntityType> autoValueListEntities = new ArrayList<>();
         List<CsdlAnnotations> csdlAnnotationsList = csdlSchema.getAnnotationGroups();
         List<CsdlAction> actions = csdlSchema.getActions();
@@ -143,6 +144,13 @@ public class EdmConfigLoader {
                 //StickySessionSupported
                 CsdlAnnotations stickySessionAnnotations = generateStickySessionAnnotations(ofbizCsdlEntityType, (OfbizCsdlSchema) csdlSchema, locale);
                 csdlAnnotationsList.add(stickySessionAnnotations);
+            }
+        }
+        //generate EntitySet Annotations
+        for (CsdlEntitySet entitySet : entitySets) {
+            CsdlAnnotations csdlAnnotations = generateEntitySetAnnotations((OfbizCsdlEntitySet) entitySet, (OfbizCsdlSchema) csdlSchema, locale);
+            if (UtilValidate.isNotEmpty(csdlAnnotations)) {
+                csdlAnnotationsList.add(csdlAnnotations);
             }
         }
         //generate action parameter Annotations
@@ -224,6 +232,57 @@ public class EdmConfigLoader {
         return csdlAnnotations;
     }
 
+    private static CsdlAnnotations generateEntitySetAnnotations(OfbizCsdlEntitySet csdlEntitySet,
+                                                                 OfbizCsdlSchema csdlSchema, Locale locale) {
+        CsdlAnnotations csdlAnnotations = new CsdlAnnotations();
+        csdlAnnotations.setTarget(csdlSchema.getNamespace() + "." + csdlSchema.getEntityContainer().getName() + "/" +csdlEntitySet.getName());
+        List<CsdlAnnotation> csdlAnnotationList = new ArrayList<CsdlAnnotation>();
+        String createHidden = csdlEntitySet.getCreateHidden();
+        String updateHidden = csdlEntitySet.getUpdateHidden();
+        String deleteHidden = csdlEntitySet.getDeleteHidden();
+        if (UtilValidate.isNotEmpty(createHidden)) {
+            csdlAnnotationList.add(createAnnotationBool("UI.CreateHidden", createHidden, null));
+            if (Boolean.parseBoolean(createHidden)) {
+                //generate Capabilities.InsertRestrictions
+                CsdlAnnotation annotation = createAnnotation("Capabilities.InsertRestrictions", null);
+                CsdlRecord csdlRecord = new CsdlRecord();
+                csdlRecord.setType("Capabilities.InsertRestrictionsType");
+                csdlRecord.setPropertyValues(UtilMisc.toList(createPropertyValueBool("Insertable", false)));
+                annotation.setExpression(csdlRecord);
+                csdlAnnotationList.add(annotation);
+            }
+        }
+        if (UtilValidate.isNotEmpty(updateHidden)) {
+            csdlAnnotationList.add(createAnnotationBool("UI.UpdateHidden", updateHidden, null));
+            if (Boolean.parseBoolean(updateHidden)) {
+                //generate Capabilities.UpdateRestrictions
+                CsdlAnnotation annotation = createAnnotation("Capabilities.UpdateRestrictions", null);
+                CsdlRecord csdlRecord = new CsdlRecord();
+                csdlRecord.setType("Capabilities.UpdateRestrictionsType");
+                csdlRecord.setPropertyValues(UtilMisc.toList(createPropertyValueBool("Updatable", false)));
+                annotation.setExpression(csdlRecord);
+                csdlAnnotationList.add(annotation);
+            }
+        }
+        if (UtilValidate.isNotEmpty(deleteHidden)) {
+            csdlAnnotationList.add(createAnnotationBool("UI.DeleteHidden", deleteHidden, null));
+            if (Boolean.parseBoolean(deleteHidden)) {
+                //generate Capabilities.DeleteRestrictions
+                CsdlAnnotation annotation = createAnnotation("Capabilities.DeleteRestrictions", null);
+                CsdlRecord csdlRecord = new CsdlRecord();
+                csdlRecord.setType("Capabilities.DeleteRestrictionsType");
+                csdlRecord.setPropertyValues(UtilMisc.toList(createPropertyValueBool("Deletable", false)));
+                annotation.setExpression(csdlRecord);
+                csdlAnnotationList.add(annotation);
+            }
+        }
+        if (UtilValidate.isEmpty(csdlAnnotationList)) {
+            return null;
+        }
+        csdlAnnotations.setAnnotations(csdlAnnotationList);
+        return csdlAnnotations;
+    }
+
     private static CsdlAnnotation generateSemanticKey(SemanticKey semanticKey, Locale locale) {
         CsdlAnnotation csdlAnnotation = createAnnotation(semanticKey.getTermName(), semanticKey.getQualifier());
         csdlAnnotation.setExpression(createCollectionPropertyPath(semanticKey.getPropertyPaths()));
@@ -281,6 +340,10 @@ public class EdmConfigLoader {
                 }
                 if (UtilValidate.isNotEmpty(dataField.getCriticalityRepresentationType())) {
                     propertyValues.add(createPropertyValueEnum("CriticalityRepresentation", dataField.getCriticalityRepresentationType()));
+                }
+                LogicalExpression criticalityExpr = dataField.getCriticalityExpr();
+                if (UtilValidate.isNotEmpty(criticalityExpr)) {
+                    propertyValues.add(createPropertyValueLogicalExpr("Criticality", criticalityExpr));
                 }
                 // add Label
                 String label = dataField.getLabel();
@@ -1685,6 +1748,14 @@ public class EdmConfigLoader {
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = element.getAttribute("Importance");
                 String labelsAttr = element.getAttribute("Labels");
+                LogicalExpression criticalityExpr = null;
+                List<? extends Element> childElementList = UtilXml.childElementList(element);
+                for (Element dataFieldChild : childElementList) {
+                    if (dataFieldChild.getTagName().equals("CriticalityExpr")) {
+                        //Criticality If表达式
+                        criticalityExpr = loadLogicalExpressionFromElement(dataFieldChild, locale, delegator);
+                    }
+                }
                 List<String> labels = StringUtil.split(labelsAttr, ",");
                 for (int i = 0; i < propertyNames.size(); i++) {
                     DataField dataField = new DataField(propertyNames.get(i));
@@ -1699,6 +1770,9 @@ public class EdmConfigLoader {
                     }
                     if (UtilValidate.isNotEmpty(hidden)) {
                         dataField.setHidden(hidden);
+                    }
+                    if (UtilValidate.isNotEmpty(criticalityExpr)) {
+                        dataField.setCriticalityExpr(criticalityExpr);
                     }
                     if (UtilValidate.isNotEmpty(criticality)) {
                         if (criticalityTypes.contains(criticality)) {
@@ -3191,7 +3265,14 @@ public class EdmConfigLoader {
                 csdlAnnotations.add(csdlAnnotation);
             }
         }
+        //CUD hidden
+        String createHidden = entitySetElement.getAttribute("CreateHidden");
+        String updateHidden = entitySetElement.getAttribute("UpdateHidden");
+        String deleteHidden = entitySetElement.getAttribute("DeleteHidden");
         OfbizCsdlEntitySet csdlEntitySet = new OfbizCsdlEntitySet(entityConditionStr);
+        csdlEntitySet.setCreateHidden(createHidden);
+        csdlEntitySet.setUpdateHidden(updateHidden);
+        csdlEntitySet.setDeleteHidden(deleteHidden);
         csdlEntitySet.setHandler(handler);
         csdlEntitySet.setName(name);
         csdlEntitySet.setType(new FullQualifiedName(OfbizMapOdata.NAMESPACE, entityType));
@@ -3970,6 +4051,13 @@ public class EdmConfigLoader {
         CsdlPropertyValue propertyValue = new CsdlPropertyValue();
         propertyValue.setProperty(property);
         propertyValue.setValue(createExpressionEnum(value));
+        return propertyValue;
+    }
+
+    private static CsdlPropertyValue createPropertyValueLogicalExpr(String property, LogicalExpression expression) {
+        CsdlPropertyValue propertyValue = new CsdlPropertyValue();
+        propertyValue.setProperty(property);
+        propertyValue.setValue(createExpressionIf(expression));
         return propertyValue;
     }
 

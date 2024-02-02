@@ -211,6 +211,9 @@
             <xs:attribute name="EntityType" use="required" type="xs:NCName"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Handler" type="xs:anyURI"/>
+            <xs:attribute name="DeleteHidden" type="xs:boolean"/>
+            <xs:attribute name="UpdateHidden" type="xs:boolean"/>
+            <xs:attribute name="CreateHidden" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Annotation">
@@ -336,6 +339,9 @@
     </xs:element>
     <xs:element name="DataField">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" ref="CriticalityExpr"/>
+            </xs:sequence>
             <xs:attribute name="Values"/>
             <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
@@ -601,13 +607,13 @@
     </xs:element>
     <xs:element name="FieldGroup">
         <xs:complexType>
-            <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
-            </xs:sequence>
+            </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
         </xs:complexType>
@@ -676,6 +682,44 @@
                         <Else Bool="false"/>
                     </Hidden>
             -->
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="2" ref="Expr"/>
+                <xs:element ref="Then"/>
+                <xs:element ref="Else"/>
+            </xs:sequence>
+            <xs:attribute name="Combine">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="And"/>
+                        <xs:enumeration value="Or"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="CriticalityExpr">
+        <xs:annotation>
+            <xs:documentation>
+                <!--
+                    Demo:
+                        <CriticalityExpr>
+                            <Expr Path="workEffortTypeId" Operator="EQ" Int="WORK_XX"/>
+                            <Then Int="1"/>
+                            <Else Int="3"/>
+                        </CriticalityExpr>
+
+                    Demo:
+                        <CriticalityExpr Combine="And">
+                            <Expr Path="sequence" Operator="Gt" Int="1"/>
+                            <Expr Path="workEffortTypeId" Operator="Eq" String="ACTIVITY"/>
+                            <Then Int="1"/>
+                            <Else Int="3"/>
+                        </CriticalityExpr>
+                -->
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
