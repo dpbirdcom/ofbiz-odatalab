@@ -1748,12 +1748,16 @@ public class EdmConfigLoader {
                 List<String> propertyNames = StringUtil.split(values, ",");
                 String importance = element.getAttribute("Importance");
                 String labelsAttr = element.getAttribute("Labels");
+                LogicalExpression hiddenExpr = null;
                 LogicalExpression criticalityExpr = null;
                 List<? extends Element> childElementList = UtilXml.childElementList(element);
                 for (Element dataFieldChild : childElementList) {
                     if (dataFieldChild.getTagName().equals("CriticalityExpr")) {
                         //Criticality If表达式
                         criticalityExpr = loadLogicalExpressionFromElement(dataFieldChild, locale, delegator);
+                    } else if (dataFieldChild.getTagName().equals("Hidden")) {
+                        //Hidden If表达式
+                        hiddenExpr = loadLogicalExpressionFromElement(dataFieldChild, locale, delegator);
                     }
                 }
                 List<String> labels = StringUtil.split(labelsAttr, ",");
@@ -1773,6 +1777,9 @@ public class EdmConfigLoader {
                     }
                     if (UtilValidate.isNotEmpty(criticalityExpr)) {
                         dataField.setCriticalityExpr(criticalityExpr);
+                    }
+                    if (UtilValidate.isNotEmpty(hiddenExpr)) {
+                        dataField.setHiddenExpr(hiddenExpr);
                     }
                     if (UtilValidate.isNotEmpty(criticality)) {
                         if (criticalityTypes.contains(criticality)) {

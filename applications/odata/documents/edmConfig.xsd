@@ -340,6 +340,7 @@
     <xs:element name="DataField">
         <xs:complexType>
             <xs:sequence>
+                <xs:element minOccurs="0" ref="Hidden"/>
                 <xs:element minOccurs="0" ref="CriticalityExpr"/>
             </xs:sequence>
             <xs:attribute name="Values"/>
@@ -540,7 +541,18 @@
             <xs:attribute name="Title" type="xs:anyURI"/>
             <xs:attribute name="TargetValue" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
-            <xs:attribute name="Visualization" type="xs:NCName"/>
+            <xs:attribute name="Visualization">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Number"/>
+                        <xs:enumeration value="BulletChart"/>
+                        <xs:enumeration value="Progress"/>
+                        <xs:enumeration value="Rating"/>
+                        <xs:enumeration value="Donut"/>
+                        <xs:enumeration value="DeltaBulletChart"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="CriticalityRepresentation">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
