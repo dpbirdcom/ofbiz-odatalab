@@ -2167,12 +2167,7 @@ public class EdmConfigLoader {
         for (Element facetsChild : facetsChildrenEles) {
             String facetsChildTag = facetsChild.getTagName();
             if (facetsChildTag.equals("ReferenceFacet")) {
-                ReferenceFacet referenceFacet = new ReferenceFacet();
-                referenceFacet.setId(facetsChild.getAttribute("ID"));
-                referenceFacet.setLabel(getLabel(delegator, facetsChild.getAttribute("Label"), locale));
-                referenceFacet.setTarget(facetsChild.getAttribute("Target"));
-                referenceFacet.setHidden(facetsChild.getAttribute("Hidden"));
-                referenceFacets.add(referenceFacet);
+                referenceFacets.add(loadReferenceFacetFromElement(facetsElement, locale, delegator));
             }
             if (facetsChildTag.equals("CollectionFacet")) {
                 CollectionFacet collectionFacet = new CollectionFacet();
@@ -2183,12 +2178,14 @@ public class EdmConfigLoader {
                 //Collection ReferenceFacet
                 List<? extends Element> facetsChildElements = UtilXml.childElementList(facetsChild);
                 for (Element referenceFacetElement : facetsChildElements) {
-                    ReferenceFacet referenceFacet = new ReferenceFacet();
-                    referenceFacet.setId(referenceFacetElement.getAttribute("ID"));
-                    referenceFacet.setLabel(getLabel(delegator, referenceFacetElement.getAttribute("Label"), locale));
-                    referenceFacet.setTarget(referenceFacetElement.getAttribute("Target"));
-                    referenceFacet.setHidden(referenceFacetElement.getAttribute("Hidden"));
-                    collectionFacets.add(referenceFacet);
+                    String tagName = referenceFacetElement.getTagName();
+                    if (tagName.equals("ReferenceFacet")) {
+                        collectionFacets.add(loadReferenceFacetFromElement(referenceFacetElement, locale, delegator));
+                    }
+                    if (tagName.equals("Hidden")) {
+                        //Hidden If表达式
+                        collectionFacet.setHiddenExpr(loadLogicalExpressionFromElement(referenceFacetElement, locale, delegator));
+                    }
                 }
                 collectionFacet.setFacets(collectionFacets);
                 referenceFacets.add(collectionFacet);
