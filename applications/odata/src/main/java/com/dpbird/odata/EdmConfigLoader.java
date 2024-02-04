@@ -2167,7 +2167,7 @@ public class EdmConfigLoader {
         for (Element facetsChild : facetsChildrenEles) {
             String facetsChildTag = facetsChild.getTagName();
             if (facetsChildTag.equals("ReferenceFacet")) {
-                referenceFacets.add(loadReferenceFacetFromElement(facetsElement, locale, delegator));
+                referenceFacets.add(loadReferenceFacetFromElement(facetsChild, locale, delegator));
             }
             if (facetsChildTag.equals("CollectionFacet")) {
                 CollectionFacet collectionFacet = new CollectionFacet();
