@@ -201,11 +201,20 @@ under the License.
         <field name="enable" type="indicator"/>
         <field name="label" type="value"/>
         <field name="target" type="value"/>
-        <field name="hidden" type="value"/>
+        <field name="hidden" type="very-long"/>
+        <field name="isCollection" type="indicator"/> <!-- CollectionFacet -->
+        <field name="parentFacetId" type="id"/> <!-- 当isCollection为true, 该字段为CollectionFacet的id-->
         <field name="description" type="value"/>
         <field name="sequenceNum" type="numeric"/>
         <prim-key field="referenceFacetId"/>
+        <relation type="one" title="Parent" rel-entity-name="ReferenceFacet" fk-name="FAC_PARENT_FAC">
+            <key-map field-name="parentFacetId" rel-field-name="referenceFacetId"/>
+        </relation>
+        <relation type="many" title="Child" rel-entity-name="ReferenceFacet" fk-name="FAC_CHILD_FAC">
+            <key-map field-name="referenceFacetId" rel-field-name="parentFacetId"/>
+        </relation>
     </entity>
+
 
     <entity entity-name="FacetsReferenceFacet" package-name="com.dpbird.odata">
         <description>Facets和ReferenceFacet的关联对象</description>
