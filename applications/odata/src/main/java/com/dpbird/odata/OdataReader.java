@@ -583,11 +583,11 @@ public class OdataReader extends OfbizOdataProcessor {
                 return null;
             }
             if (relations.size() == 1) {
-//                Map<String, EntityCondition> relationsCondition = relAlias.getRelationsCondition();
-//                if (UtilValidate.isNotEmpty(relationsCondition) && UtilValidate.isNotEmpty(relationsCondition.get(relations.get(0)))) {
-//                    EntityCondition entityCondition = relAlias.getRelationsCondition().get(relations.get(0));
-//                    return EntityUtil.filterByCondition(relGenericValues, entityCondition);
-//                }
+                Map<String, EntityCondition> relationsCondition = relAlias.getRelationsCondition();
+                if (UtilValidate.isNotEmpty(relationsCondition) && UtilValidate.isNotEmpty(relationsCondition.get(relations.get(0)))) {
+                    EntityCondition entityCondition = relAlias.getRelationsCondition().get(relations.get(0));
+                    return EntityUtil.filterByCondition(relGenericValues, entityCondition);
+                }
                 return relGenericValues;
             } else {
                 List<GenericValue> result = new ArrayList<>();
