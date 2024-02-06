@@ -1681,6 +1681,30 @@ public class EdmConfigLoader {
                 autoValueList = true;
             }
         }
+
+        if (autoProperties && modelEntity != null) { // 需要从ofbiz的entity定义里面获取所有Property
+            Iterator<ModelField> fieldIterator = modelEntity.getFieldsIterator();
+            // 获取所有的外键字段，以及关联到Enumeration表的字段
+//            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
+            List<String> automacticFieldNames = modelEntity.getAutomaticFieldNames(); // lastUpdatedStamp, lastUpdatedTxStamp, createdStamp, createdTxStamp
+            while (fieldIterator.hasNext()) {
+                ModelField field = fieldIterator.next();
+                String fieldName = field.getName();
+                if (automacticFieldNames.contains(fieldName) || excludeProperties.contains(fieldName)) {
+                    continue;
+                }
+                OfbizCsdlProperty csdlProperty = generatePropertyFromField(delegator, dispatcher, field, false);
+                if (csdlProperties.contains(csdlProperty)) {
+                    //已经xml定义了，就不要自动生成了
+                    continue;
+                }
+                if (autoLabel) {
+                    String label = getLabel(delegator, modelEntity.getEntityName(), csdlProperty.getName(), ofbizType, locale);
+                    csdlProperty.setLabel(label);
+                }
+                csdlProperties.add(csdlProperty);
+            }
+        }
         List<? extends Element> actionElements = UtilXml.childElementList(entityTypeElement, "Action");
         for (Element actionElement : actionElements) {
             actionList.add(loadActionFromElement(actionElement, locale,delegator, csdlProperties));
@@ -3752,41 +3776,6 @@ public class EdmConfigLoader {
                 modelEntity = delegator.getModelReader().getModelEntity(ofbizEntity);
             } catch (GenericEntityException e) {
                 Debug.logWarning(e.getMessage(), module);
-            }
-        }
-        if (autoProperties && modelEntity != null) { // 需要从ofbiz的entity定义里面获取所有Property
-            Iterator<ModelField> fieldIterator = modelEntity.getFieldsIterator();
-            // 获取所有的外键字段，以及关联到Enumeration表的字段
-//            Set<String> fkFieldNames = Util.getEntityFk(modelEntity);
-            List<String> automacticFieldNames = modelEntity.getAutomaticFieldNames(); // lastUpdatedStamp, lastUpdatedTxStamp, createdStamp, createdTxStamp
-            while (fieldIterator.hasNext()) {
-                ModelField field = fieldIterator.next();
-                String fieldName = field.getName();
-                if (automacticFieldNames.contains(fieldName)) {
-                    continue;
-                }
-                if (excludeProperties != null && excludeProperties.contains(fieldName)) {
-                    continue;
-                }
-                /**** fk先暂时加回来，牵扯面太广 **********************
-                 //中间表的主键同时也有外键约束，这种情况应该保留主键
-                 if (!pkFieldNames.contains(fieldName) && fkFieldNames.contains(fieldName)) {
-                 continue;
-                 }
-                 **************************************************/
-                OfbizCsdlProperty csdlProperty = generatePropertyFromField(delegator, dispatcher, field, false);
-                if (csdlProperties != null) {
-                    if (csdlProperties.contains(csdlProperty)) {
-                        //已经xml定义了，就不要自动生成了
-                        continue;
-                    }
-                    if (autoLabel) {
-//                        String label = (String) Util.getUiLabelMap(locale).get(entityName + Util.firstUpperCase(csdlProperty.getName()));
-                        String label = getLabel(delegator, modelEntity.getEntityName(), csdlProperty.getName(), ofbizType, locale);
-                        csdlProperty.setLabel(label);
-                    }
-                    csdlProperties.add(csdlProperty);
-                }
             }
         }
         if (UtilValidate.isEmpty(propertyRefs) && UtilValidate.isNotEmpty(modelEntity)) { // EntityType的Key还没有定义

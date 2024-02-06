@@ -54,6 +54,7 @@ public class ActionEvents {
         OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmBindingTarget.getEntityType().getFullQualifiedName());
         //get service
         String createService = Util.getEntityActionService(csdlEntityType, csdlEntityType.getOfbizEntity(), "create", delegator);
+        Map<String, Object> serviceParam = new HashMap<>(actionParameters);
         try {
             if (UtilValidate.isNotEmpty(odataParts) && odataParts.size() > 1) {
                 //多段式创建 向前一段获取relation key
@@ -67,19 +68,19 @@ public class ActionEvents {
                 if (UtilValidate.isNotEmpty(relAlias) && relAlias.getRelations().size() == 1) {
                     ModelRelation modelRelation = relAlias.getRelationsEntity().get(relAlias.getRelations().get(0));
                     for (ModelKeyMap keyMap : modelRelation.getKeyMaps()) {
-                        actionParameters.put(keyMap.getFieldName(), mainGenericValue.get(keyMap.getRelFieldName()));
+                        serviceParam.put(keyMap.getFieldName(), mainGenericValue.get(keyMap.getRelFieldName()));
                     }
                 }
             }
-            actionParameters.put("userLogin", userLogin);
+            serviceParam.put("userLogin", userLogin);
             for (Map.Entry<String, Object> entry : csdlEntityType.getDefaultValueProperties().entrySet()) {
-                actionParameters.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
+                serviceParam.putIfAbsent(entry.getKey(), Util.parseVariable(entry.getValue(), request));
             }
             //创建Path参数
-            Map<String, Object> createdKeys = createRelationOnePath(oDataContext, actionParameters, csdlEntityType);
-            actionParameters.putAll(createdKeys);
+            Map<String, Object> createdKeys = createRelationOnePath(oDataContext, serviceParam, csdlEntityType);
+            serviceParam.putAll(createdKeys);
             //创建主对象
-            Map<String, Object> validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, actionParameters, userLogin, null, null);
+            Map<String, Object> validFieldsForService = ServiceUtil.setServiceFields(dispatcher, createService, serviceParam, userLogin, null, null);
             Map<String, Object> result = dispatcher.runSync(createService, validFieldsForService);
             ModelEntity modelEntity = delegator.getModelEntity(csdlEntityType.getOfbizEntity());
             List<String> primaryKeys = modelEntity.getPkFieldNames();
@@ -89,8 +90,8 @@ public class ActionEvents {
                     pkMap.put(primaryKey, result.get(primaryKey));
                 }
                 //创建Path参数
-                actionParameters.putAll(result);
-                createRelationManyPath(oDataContext, actionParameters, csdlEntityType,  pkMap);
+                serviceParam.putAll(result);
+                createRelationManyPath(oDataContext, serviceParam, csdlEntityType,  pkMap);
 
                 //Return Entity
                 return delegator.findOne(csdlEntityType.getOfbizEntity(), pkMap, false);
@@ -137,35 +138,6 @@ public class ActionEvents {
         } catch (GeneralException e) {
             throw new OfbizODataException(e.getMessage());
         }
-    }
-
-
-    /**
-     * Create navigation entity
-     */
-    public static Object createNavigation(Map<String, Object> oDataContext, Map<String, Object> actionParameters, EdmBindingTarget edmBindingTarget)
-            throws OfbizODataException {
-        Delegator delegator = (Delegator) oDataContext.get("delegator");
-        OfbizAppEdmProvider edmProvider = (OfbizAppEdmProvider) oDataContext.get("edmProvider");
-        List<OdataParts> odataPartsList = UtilGenerics.toList(oDataContext.get("odataParts"));
-        if (UtilValidate.isNotEmpty(odataPartsList) || odataPartsList.size() >= 2) {
-            OdataParts mainOdataParts = odataPartsList.get(odataPartsList.size() - 2);
-            OdataParts lastOdataParts = odataPartsList.get(odataPartsList.size() - 1);
-            EdmEntityType edmEntityType = mainOdataParts.getEdmEntityType();
-            OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
-            OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(lastOdataParts.getUriResource().getSegmentValue());
-            //添加对象之间的外键字段 和Navigation中定义的条件
-            Map<String, Object> entityFields = Util.entityToMap((Entity) mainOdataParts.getEntityData());
-            Map<String, Object> relatedFieldMap = Util.getRelatedFieldMap(delegator, csdlEntityType.getOfbizEntity(), csdlNavigationProperty, entityFields, edmProvider);
-            Map<String, Object> relatedConditionMap = Util.getRelatedConditionMap(csdlNavigationProperty);
-            if (UtilValidate.isNotEmpty(relatedFieldMap)) {
-                actionParameters.putAll(relatedFieldMap);
-            }
-            if (UtilValidate.isNotEmpty(relatedConditionMap)) {
-                actionParameters.putAll(relatedConditionMap);
-            }
-        }
-        return createEntity(oDataContext, actionParameters, edmBindingTarget);
     }
 
     /**
