@@ -31,6 +31,8 @@ public class OfbizCsdlProperty extends CsdlProperty {
     //StickySession保存时的校验
     private boolean only = false;
     private boolean required = false;
+    private String unit = null;
+    private String unitPath = null;
 
     public List<Term> getTerms() {
         return terms;
@@ -222,6 +224,22 @@ public class OfbizCsdlProperty extends CsdlProperty {
 
     public void setRequired(boolean required) {
         this.required = required;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public String getUnitPath() {
+        return unitPath;
+    }
+
+    public void setUnitPath(String unitPath) {
+        this.unitPath = unitPath;
     }
 
     public boolean equals(Object o) {

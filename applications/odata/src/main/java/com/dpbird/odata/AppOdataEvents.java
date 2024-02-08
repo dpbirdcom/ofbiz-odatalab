@@ -68,7 +68,7 @@ public class AppOdataEvents {
 
             List<EdmxReference> edmxReferences = new ArrayList<EdmxReference>();
 
-            EdmxReference edmxReference = new EdmxReference(URI.create("http://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/vocabularies/Org.OData.Measures.V1.xml"));
+            EdmxReference edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Measures.xml"));
             EdmxReferenceInclude referenceInclude = new EdmxReferenceInclude("Org.OData.Measures.V1", "Measures");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
@@ -99,6 +99,11 @@ public class AppOdataEvents {
 
             edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Session.xml"));
             referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Session.v1", "Session");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Communication.xml"));
+            referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Communication.v1", "Communication");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
 
@@ -194,6 +199,11 @@ public class AppOdataEvents {
 
             edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Session.xml"));
             referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Session.v1", "Session");
+            edmxReference.addInclude(referenceInclude);
+            edmxReferences.add(edmxReference);
+
+            edmxReference = new EdmxReference(URI.create("/odata/vocabularies/Communication.xml"));
+            referenceInclude = new EdmxReferenceInclude("com.sap.vocabularies.Communication.v1", "Communication");
             edmxReference.addInclude(referenceInclude);
             edmxReferences.add(edmxReference);
 

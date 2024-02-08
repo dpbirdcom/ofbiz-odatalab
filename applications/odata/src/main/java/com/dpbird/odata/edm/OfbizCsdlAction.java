@@ -2,12 +2,16 @@ package com.dpbird.odata.edm;
 
 import org.apache.olingo.commons.api.edm.provider.CsdlAction;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class OfbizCsdlAction extends CsdlAction {
 	private String ofbizMethod;
 	private String returnName;
 	private boolean stickySession = false;
 	private boolean entityAction = false; // 比如create entity，update entity，delete entity
 	private boolean sideEffects = false;
+	private List<String> sideEffectsPath = new ArrayList<>();
 
 	public OfbizCsdlAction() {
 		super();
@@ -70,5 +74,13 @@ public class OfbizCsdlAction extends CsdlAction {
 
 	public void setSideEffects(boolean sideEffects) {
 		this.sideEffects = sideEffects;
+	}
+
+	public List<String> getSideEffectsPath() {
+		return sideEffectsPath;
+	}
+
+	public void setSideEffectsPath(List<String> sideEffectsPath) {
+		this.sideEffectsPath = sideEffectsPath;
 	}
 }

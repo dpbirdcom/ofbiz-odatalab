@@ -10,6 +10,7 @@ public class DataPoint extends Term {
     private String value;
     private String title;
     private CriticalityType criticality;
+    private CriticalityRepresentationType criticalityRepresentationType; // WithIcon, WithoutIcon
     private VisualizationType visualization;
     private String criticalityPath;
     private String targetValue;
@@ -59,4 +60,12 @@ public class DataPoint extends Term {
     public VisualizationType getVisualization() { return visualization; }
 
     public void setVisualization(VisualizationType visualization) { this.visualization = visualization; }
+
+    public CriticalityRepresentationType getCriticalityRepresentationType() {
+        return criticalityRepresentationType;
+    }
+
+    public void setCriticalityRepresentationType(CriticalityRepresentationType criticalityRepresentationType) {
+        this.criticalityRepresentationType = criticalityRepresentationType;
+    }
 }

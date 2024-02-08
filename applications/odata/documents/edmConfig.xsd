@@ -23,6 +23,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="Parameter"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="SideEffectsPath"/>
                 <xs:element minOccurs="0" ref="ReturnType"/>
             </xs:sequence>
             <xs:attribute name="EntitySetPath" type="xs:NCName"/>
@@ -73,6 +74,7 @@
                 <xs:element ref="HeaderFacets"/>
                 <xs:element ref="QuickViewFacets"/>
                 <xs:element ref="Contact"/>
+                <xs:element ref="Variant"/>
             </xs:choice>
             <xs:attribute name="AutoId" type="xs:boolean"/>
             <xs:attribute name="OfbizEntity" type="xs:NCName"/>
@@ -209,6 +211,9 @@
             <xs:attribute name="EntityType" use="required" type="xs:NCName"/>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Handler" type="xs:anyURI"/>
+            <xs:attribute name="DeleteHidden" type="xs:boolean"/>
+            <xs:attribute name="UpdateHidden" type="xs:boolean"/>
+            <xs:attribute name="CreateHidden" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="Annotation">
@@ -334,38 +339,93 @@
     </xs:element>
     <xs:element name="DataField">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" ref="Hidden"/>
+                <xs:element minOccurs="0" ref="CriticalityExpr"/>
+            </xs:sequence>
             <xs:attribute name="Values"/>
             <xs:attribute name="Labels"/>
             <xs:attribute name="Criticality"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="CriticalityRepresentation">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="WithIcon"/>
+                        <xs:enumeration value="WithoutIcon"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Hidden"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForAction">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" ref="Hidden"/>
+            </xs:sequence>
             <xs:attribute name="Label"/>
             <xs:attribute name="Action" type="xs:NCName"/>
-            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="InvocationGrouping">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Isolated"/>
+                        <xs:enumeration value="ChangeSet"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="IconUrl" type="xs:anyURI"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForAnnotation">
         <xs:complexType>
             <xs:attribute name="Label"/>
             <xs:attribute name="Target" type="xs:anyURI"/>
-            <xs:attribute name="InvocationGrouping" type="xs:NCName"/>
+            <xs:attribute name="InvocationGrouping">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Isolated"/>
+                        <xs:enumeration value="ChangeSet"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Criticality" type="xs:NCName"/>
             <xs:attribute name="Hidden" type="xs:NCName"/>
-            <xs:attribute name="Importance" type="xs:NCName"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldForIntentBasedNavigation">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" ref="Mapping"/>
+                <xs:element minOccurs="0" ref="Hidden"/>
             </xs:choice>
             <xs:attribute name="Label"/>
             <xs:attribute name="SemanticObject" type="xs:anyURI"/>
@@ -373,13 +433,22 @@
             <xs:attribute name="Inline" type="xs:boolean"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="IconUrl" type="xs:anyURI"/>
-            <xs:attribute name="Importance" type="xs:anyURI"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithIntentBasedNavigation">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element minOccurs="0" ref="Mapping"/>
+                <xs:element minOccurs="0" ref="Hidden"/>
             </xs:choice>
             <xs:attribute name="Label"/>
             <xs:attribute name="Value"/>
@@ -388,7 +457,15 @@
             <xs:attribute name="Hidden" type="xs:anyURI"/>
             <xs:attribute name="IconUrl" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:anyURI"/>
-            <xs:attribute name="Importance" type="xs:anyURI"/>
+            <xs:attribute name="Importance">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="High"/>
+                        <xs:enumeration value="Medium"/>
+                        <xs:enumeration value="Low"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="DataFieldWithUrl">
@@ -464,48 +541,247 @@
             <xs:attribute name="Title" type="xs:anyURI"/>
             <xs:attribute name="TargetValue" type="xs:anyURI"/>
             <xs:attribute name="Criticality" type="xs:NCName"/>
-            <xs:attribute name="Visualization" type="xs:NCName"/>
+            <xs:attribute name="Visualization">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Number"/>
+                        <xs:enumeration value="BulletChart"/>
+                        <xs:enumeration value="Progress"/>
+                        <xs:enumeration value="Rating"/>
+                        <xs:enumeration value="Donut"/>
+                        <xs:enumeration value="DeltaBulletChart"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="CriticalityRepresentation">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="WithIcon"/>
+                        <xs:enumeration value="WithoutIcon"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Variant">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="SelectOption"/>
+            </xs:sequence>
+            <xs:attribute name="Qualifier" type="xs:NCName"/>
+            <xs:attribute name="Text" type="xs:anyURI"/>
+            <xs:attribute name="Visualizations" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        For example: Visualizations="@UI.LineItem#Qualifier_A"
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="SelectOption">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="Range"/>
+            </xs:sequence>
+            <xs:attribute name="PropertyName" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Range">
+        <xs:complexType>
+            <xs:attribute name="Low" type="xs:anyURI"/>
+            <xs:attribute name="High" type="xs:anyURI"/>
+            <xs:attribute name="Option">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="EQ"/>
+                        <xs:enumeration value="BT"/>
+                        <xs:enumeration value="LE"/>
+                        <xs:enumeration value="GE"/>
+                        <xs:enumeration value="NE"/>
+                        <xs:enumeration value="NB"/>
+                        <xs:enumeration value="NP"/>
+                        <xs:enumeration value="GT"/>
+                        <xs:enumeration value="LT"/>
+                        <xs:enumeration value="CP"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Sign">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="I"/>
+                        <xs:enumeration value="E"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="FieldGroup">
         <xs:complexType>
-            <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataField"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAction"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithUrl"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldForAnnotation"/>
                 <xs:element minOccurs="0" maxOccurs="unbounded" ref="DataFieldWithIntentBasedNavigation"/>
-            </xs:sequence>
+            </xs:choice>
             <xs:attribute name="Qualifier" type="xs:NCName"/>
             <xs:attribute name="Label"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="HeaderFacets">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="CollectionFacet"/>
+            </xs:choice>
         </xs:complexType>
     </xs:element>
     <xs:element name="QuickViewFacets">
         <xs:complexType>
             <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
     <xs:element name="Facets">
         <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="CollectionFacet"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="CollectionFacet">
+        <xs:complexType>
             <xs:sequence>
-                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element maxOccurs="unbounded" ref="ReferenceFacet"/>
+                <xs:element ref="Hidden" minOccurs="0"/>
             </xs:sequence>
+            <xs:attribute name="ID" type="xs:anyURI"/>
+            <xs:attribute name="Label" type="xs:anyURI"/>
+            <xs:attribute name="Hidden" type="xs:anyURI"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ReferenceFacet">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Hidden" minOccurs="0"/>
+            </xs:sequence>
             <xs:attribute name="ID" type="xs:anyURI"/>
             <xs:attribute name="Label" type="xs:anyURI"/>
             <xs:attribute name="Target" type="xs:anyURI"/>
             <xs:attribute name="Hidden" type="xs:anyURI"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Hidden">
+        <xs:annotation>
+            <xs:documentation>
+            <!--
+                Demo:
+                    <Hidden>
+                        <Expr Path="workEffortTypeId" Operator="EQ" Int="WORK_XX"/>
+                        <Then Bool="true"/>
+                        <Else Bool="false"/>
+                    </Hidden>
+
+                Demo:
+                    <Hidden Combine="And">
+                        <Expr Path="sequence" Operator="Gt" Int="1"/>
+                        <Expr Path="workEffortTypeId" Operator="Eq" String="ACTIVITY"/>
+                        <Then Bool="true"/>
+                        <Else Bool="false"/>
+                    </Hidden>
+            -->
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="2" ref="Expr"/>
+                <xs:element ref="Then"/>
+                <xs:element ref="Else"/>
+            </xs:sequence>
+            <xs:attribute name="Combine">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="And"/>
+                        <xs:enumeration value="Or"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="CriticalityExpr">
+        <xs:annotation>
+            <xs:documentation>
+                <!--
+                    Demo:
+                        <CriticalityExpr>
+                            <Expr Path="workEffortTypeId" Operator="EQ" Int="WORK_XX"/>
+                            <Then Int="1"/>
+                            <Else Int="3"/>
+                        </CriticalityExpr>
+
+                    Demo:
+                        <CriticalityExpr Combine="And">
+                            <Expr Path="sequence" Operator="Gt" Int="1"/>
+                            <Expr Path="workEffortTypeId" Operator="Eq" String="ACTIVITY"/>
+                            <Then Int="1"/>
+                            <Else Int="3"/>
+                        </CriticalityExpr>
+                -->
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="2" ref="Expr"/>
+                <xs:element ref="Then"/>
+                <xs:element ref="Else"/>
+            </xs:sequence>
+            <xs:attribute name="Combine">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="And"/>
+                        <xs:enumeration value="Or"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Expr">
+        <xs:complexType>
+            <xs:attribute name="Path" type="xs:anyURI"/>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
+            <xs:attribute name="Operator">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Eq"/>
+                        <xs:enumeration value="Ne"/>
+                        <xs:enumeration value="Gt"/>
+                        <xs:enumeration value="Ge"/>
+                        <xs:enumeration value="Lt"/>
+                        <xs:enumeration value="Le"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Then">
+        <xs:complexType>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Else">
+        <xs:complexType>
+            <xs:attribute name="Bool" type="xs:boolean"/>
+            <xs:attribute name="String" type="xs:string"/>
+            <xs:attribute name="Int" type="xs:int"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="PropertyRef">
@@ -534,7 +810,17 @@
             <xs:attribute name="Hidden" type="xs:NCName"/>
             <xs:attribute name="HiddenFilter" type="xs:boolean"/>
             <xs:attribute name="SemanticObject" type="xs:NCName"/>
-            <xs:attribute name="FieldControl" type="xs:NCName"/>
+            <xs:attribute name="FieldControl">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="Mandatory"/>
+                        <xs:enumeration value="Optional"/>
+                        <xs:enumeration value="ReadOnly"/>
+                        <xs:enumeration value="Inapplicable"/>
+                        <xs:enumeration value="Hidden"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="Name" use="required" type="xs:NCName"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Precision" type="xs:integer"/>
@@ -547,6 +833,8 @@
             <xs:attribute name="FileNamePath" type="xs:anyURI"/>
             <xs:attribute name="Only" type="xs:boolean"/>
             <xs:attribute name="Required" type="xs:boolean"/>
+            <xs:attribute name="UnitPath" type="xs:anyURI"/>
+            <xs:attribute name="Unit" />
         </xs:complexType>
     </xs:element>
     <xs:element name="Text">
@@ -583,6 +871,19 @@
             <xs:attribute name="IsCollection" type="xs:boolean"/>
             <xs:attribute name="Nullable" type="xs:boolean"/>
             <xs:attribute name="Name" type="xs:NCName"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="SideEffectsPath">
+        <xs:complexType>
+            <xs:attribute name="Path" use="required" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        Recommended configuration:
+                        Starting from container: /com.dpbird.O3Container/EntitySetA/NavigationA
+                        Starting from boundEntity: boundEntity/NavigationA
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:element name="NavigationPropertyBinding">

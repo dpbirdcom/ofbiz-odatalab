@@ -27,6 +27,7 @@ import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.QueryOption;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -533,7 +534,8 @@ public class OdataReader extends OfbizOdataProcessor {
             OfbizCsdlEntityType csdlEntityType = (OfbizCsdlEntityType) edmProvider.getEntityType(edmEntityType.getFullQualifiedName());
             OfbizCsdlNavigationProperty csdlNavigationProperty = (OfbizCsdlNavigationProperty) csdlEntityType.getNavigationProperty(edmNavigationProperty.getName());
             EntityTypeRelAlias relAlias = csdlNavigationProperty.getRelAlias();
-            List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(), csdlNavigationProperty.isFilterByDate());
+            List<GenericValue> relatedList = getGenericValuesFromRelations(genericValue, relAlias, relAlias.getRelations(),
+                    csdlNavigationProperty.isFilterByDate(), httpServletRequest);
             if (condition != null) {
                 relatedList = EntityUtil.filterByCondition(relatedList, condition);
             }
@@ -546,7 +548,7 @@ public class OdataReader extends OfbizOdataProcessor {
 
     private List<GenericValue> getGenericValuesFromRelations(GenericValue genericValue, EntityTypeRelAlias relAlias,
                                                              List<String> relations,
-                                                             boolean filterByDate) throws GenericEntityException {
+                                                             boolean filterByDate, HttpServletRequest request) throws GenericEntityException {
         String relation = relations.get(0);
         ModelEntity theModelEntity = genericValue.getModelEntity();
         ModelRelation modelRelation = theModelEntity.getRelation(relation);
@@ -563,10 +565,16 @@ public class OdataReader extends OfbizOdataProcessor {
             if (relations.size() == 1) {
                 return UtilMisc.toList(relGenericValue);
             } else {
-                return getGenericValuesFromRelations(relGenericValue, relAlias, relations.subList(1, relations.size()), filterByDate);
+                return getGenericValuesFromRelations(relGenericValue, relAlias, relations.subList(1, relations.size()), filterByDate, request);
             }
         } else {
             Map<String, Object> relFieldMap = relAlias.getRelationsFieldMap().get(relation);
+            if (UtilValidate.isNotEmpty(relFieldMap)) {
+                //处理条件表达式中的变量
+                for (Map.Entry<String, Object> entry : relFieldMap.entrySet()) {
+                    relFieldMap.put(entry.getKey(), Util.parseVariable(entry.getValue(), request));
+                }
+            }
             List<GenericValue> relGenericValues = genericValue.getRelated(relation, relFieldMap, null, true);
             if (filterByDate) {
                 relGenericValues = EntityUtil.filterByDate(relGenericValues);
@@ -584,7 +592,8 @@ public class OdataReader extends OfbizOdataProcessor {
             } else {
                 List<GenericValue> result = new ArrayList<>();
                 for (GenericValue relGenericValue : relGenericValues) {
-                    List<GenericValue> genericValuesFromRelations = getGenericValuesFromRelations(relGenericValue, relAlias, relations.subList(1, relations.size()), filterByDate);
+                    List<GenericValue> genericValuesFromRelations = getGenericValuesFromRelations(relGenericValue, relAlias,
+                            relations.subList(1, relations.size()), filterByDate, request);
                     if (UtilValidate.isNotEmpty(genericValuesFromRelations)) {
                         result.addAll(genericValuesFromRelations);
                     }
